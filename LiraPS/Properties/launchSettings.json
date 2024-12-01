@@ -1,0 +1,25 @@
+{
+  "profiles": {
+    "LiraPS": {
+      "commandName": "Project"
+    },
+    "Net8.0 - Pwsh 7": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "commandLineArgs": "-NoLogo -NoExit -File \"Debug.ps1\"",
+      "workingDirectory": "$(ProjectDir)"
+    },
+    "NetStandard - Powershell 5.1": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "commandLineArgs": "-NoLogo -NoExit -File \"Debug.ps1\" \"netstandard2.0\"",
+      "workingDirectory": "$(ProjectDir)"
+    },
+    "NetStandard - Pwsh 7": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+      "commandLineArgs": "-NoLogo -NoExit -File \"Debug.ps1\" \"NetStandard2.0\"",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}
