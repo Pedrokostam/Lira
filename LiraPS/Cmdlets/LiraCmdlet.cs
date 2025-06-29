@@ -1,19 +1,39 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Lira;
+using Lira.Jql;
 using Lira.Objects;
+using Lira.StateMachines;
+using LiraPS.Cmdlets;
+using LiraPS.Transformers;
 using Microsoft.Extensions.Logging;
+using Serilog.Events;
+using Serilog.Formatting.Display;
+using AllowNullAttribute = System.Management.Automation.AllowNullAttribute;
 
 namespace LiraPS.Cmdlets
 {
     public abstract class LiraCmdlet : PSCmdlet
     {
+        protected void EnsureNotEmpty(string text, string name)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                ThrowTerminatingError(
+                    new ErrorRecord(new ArgumentException($"{name} cannot be empty"), $"Empty{name}", ErrorCategory.InvalidArgument, null)
+                    );
+            }
+        }
         protected LiraCmdlet() : base()
         {
 
@@ -112,6 +132,17 @@ namespace LiraPS.Cmdlets
                     ThrowTerminatingError(new ErrorRecord(log.Exception ?? new Exception(), txt, ErrorCategory.NotSpecified, null));
                     break;
             }
+        }
+
+        protected static string ReplaceCurrentUserAlias(string value)
+        {
+            var l = value.ToLowerInvariant();
+            var replacement = l switch
+            {
+                "me" or "myself" or "current" or "currentuser" or "ooh! a clone of myself" => LiraSession.Client.Myself.Name,
+                _ => l
+            };
+            return replacement;
         }
 
     }

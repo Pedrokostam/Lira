@@ -49,6 +49,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="UserDetails.ps1xml">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Update="LiraPS.psd1">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

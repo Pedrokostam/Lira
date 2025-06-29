@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -59,13 +60,7 @@ namespace LiraPS.Cmdlets
             }
             for (int i = 0; i < User.Length; i++)
             {
-                var l = User[i].ToLowerInvariant();
-                var replacement = l switch
-                {
-                    "me" or "myself" or "current" or "currentuser" or "ooh! a clone of myself" => LiraSession.Client.Myself.Name,
-                    _ => l
-                };
-                User[i] = replacement;
+                User[i] = ReplaceCurrentUserAlias(User[i]);
             }
             var uniqueUsers = User.Distinct(StringComparer.OrdinalIgnoreCase);
             if (ParameterSetName == "PERIOD")
@@ -87,8 +82,9 @@ namespace LiraPS.Cmdlets
                 PrintLogs();
                 CommentState(in state);
             }
-            WriteObject(state.Worklogs);
-            SetGlobal("LiraLastWorklogs", state.Worklogs);
+            var sorted = state.Worklogs.OrderBy(x=>x.Started).ToList();
+            WriteObject(sorted);
+            SetGlobal("LiraLastWorklogs", sorted);
         }
 
         private void PeriodToDates()

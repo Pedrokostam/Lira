@@ -64,7 +64,7 @@ public static class LiraSession
         Config ??= Configuration.Load();
         if (!Config.IsInitialized)
         {
-            throw new InvalidOperationException("Attempted to load unitialized configuration. Call Set-Configuration to initiialize it.");
+            throw new InvalidOperationException("Attempted to load unitialized configuration. Call Set-Configuration to initialize it.");
         }
         Client = await LiraSessionFactory.Create(Config.BaseAddress)
              .WithLogger(Logger)

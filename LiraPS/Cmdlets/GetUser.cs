@@ -29,7 +29,7 @@ namespace LiraPS.Cmdlets
             foreach (var userName in Name)
             {
                 var machine = new UsersMachine(LiraSession.Client);
-                var state = machine.GetStartState(userName);
+                var state = machine.GetStartState(ReplaceCurrentUserAlias(userName));
                 while (!state.IsFinished)
                 {
                     var t = machine.Process(state).GetAwaiter();

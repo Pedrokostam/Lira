@@ -21,6 +21,7 @@ namespace LiraPS.Cmdlets
         [Parameter(ParameterSetName = "COOKIE")]
         [Parameter(ParameterSetName = "PAT")]
         [Parameter(ParameterSetName = "MANUAL")]
+        [Parameter(ParameterSetName = "ATLASSIAN")]
         public string ServerAddress { get; set; } = default!;
 
         [Parameter(Mandatory = true, ParameterSetName = "COOKIE")]
@@ -29,6 +30,13 @@ namespace LiraPS.Cmdlets
         [Alias("PAT")]
         [Parameter(Mandatory = true, ParameterSetName = "PAT")]
         public string PersonalAccessToken { get; set; } = default!;
+
+        [Parameter(DontShow =true,Mandatory = true, ParameterSetName = "ATLASSIAN")]
+        public string AtlassianApiKey { get; set; } = default!;
+        [Parameter(DontShow = true, Mandatory = true, ParameterSetName = "ATLASSIAN")]
+        public string UserEmail { get; set; } = default!;
+
+
         [Parameter(Mandatory = true, ParameterSetName = "CLEAR")]
         public SwitchParameter Clear { get; set; }
         private IAuthorization Authorization { get; set; } = default!;
@@ -63,7 +71,9 @@ namespace LiraPS.Cmdlets
                 Host.UI.WriteLine(ConsoleColor.Cyan, Host.UI.RawUI.BackgroundColor, "You will be asked to provide your username password.");
                 Host.UI.WriteLine(ConsoleColor.Cyan, Host.UI.RawUI.BackgroundColor, "If you want to use personal access token, call this cmdlet with -PersonalAccessKey parameter.");
                 var username = ReadInput("Enter your username");
+                EnsureNotEmpty(username, "Username");
                 var password = ReadInput("Enter your password", asSecure: true);
+                EnsureNotEmpty(password, "Password");
                 Authorization = new CookieProvider(username, password);
                 LiraSession.Logger.LogDebug("Created new authorization for user {username}", username);
             }
@@ -79,6 +89,12 @@ namespace LiraPS.Cmdlets
                 SetAddressManuallyIfMissing();
                 Authorization = new PersonalAccessToken(PersonalAccessToken);
                 LiraSession.Logger.LogDebug("Created new authorization with access token");
+            }
+            else if (ParameterSetName == "ATLASSIAN")
+            {
+                SetAddressManuallyIfMissing();
+                Authorization = new AtlassianApiKey(UserEmail, AtlassianApiKey);
+                LiraSession.Logger.LogDebug("Created new authorization for email {userEmail}", UserEmail);
             }
             else if (ParameterSetName == "CLEAR")
             {
@@ -104,12 +120,20 @@ namespace LiraPS.Cmdlets
         private void SetAddressManuallyIfMissing()
         {
             bool paramNotSet = !TestBoundParameter(nameof(ServerAddress));
-            bool paramNotInConfig = !LiraSession.Config.IsInitialized;
-            if (paramNotSet && paramNotInConfig)
+            bool validAddress = LiraSession.Config.IsInitialized;
+            if (validAddress)
+            {
+                ServerAddress = ReadInput($"Enter new server address (leave empty to reuse {LiraSession.Config.BaseAddress})");
+                if (string.IsNullOrWhiteSpace(ServerAddress))
+                {
+                    ServerAddress = LiraSession.Config.BaseAddress;
+                }
+            }
+            else
             {
                 ServerAddress = ReadInput("Enter server address (usually \"https://jira.(company).com\")");
             }
-
+            EnsureNotEmpty(ServerAddress,nameof(ServerAddress));
         }
     }
 

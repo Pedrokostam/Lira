@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management.Automation.Language;
+using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -23,6 +25,9 @@ namespace LiraPS;
 
 public class Configuration
 {
+    /// <summary>
+    /// Checks if <see cref="BaseAddress"/> is valid.
+    /// </summary>
     public bool IsInitialized => !string.IsNullOrWhiteSpace(BaseAddress);
     internal static string GetPath()
     {
@@ -97,5 +102,21 @@ public class Configuration
         };
         var json = JsonSerializer.Serialize(dto);
         File.WriteAllText(GetPath(), json);
+    }
+    public Information ToInformation()
+    {
+        return new Information(GetPath(), Authorization.GetType().Name, BaseAddress);
+    }
+    public readonly record struct Information
+    {
+        public string Location { get; }
+        public string Type { get; }
+        public string ServerAddress { get; }
+        internal Information(string location, string type, string serverAddress)
+        {
+            Location = location;
+            Type = type;
+            ServerAddress = serverAddress;
+        }
     }
 }

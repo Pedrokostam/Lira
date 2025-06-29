@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Lira.Objects;
 
 namespace Lira.Objects;
-public record Worklog: SelfReferential
+public record Worklog : SelfReferential
 {
     public required UserDetails Author { get; set; }
     public required UserDetails UpdateAuthor { get; set; }
@@ -14,5 +14,6 @@ public record Worklog: SelfReferential
     [JsonPropertyName("timeSpentSeconds")]
     public TimeSpan TimeSpent { get; set; }
     public required string IssueId { get; set; }
+    public Issue Issue { get; set; } = default!;
     public required string ID { get; set; }
 }

@@ -54,22 +54,25 @@ public record Issue : SelfReferential
         var response = await lira.HttpClient.GetAsync(address).ConfigureAwait(false);
         await lira.HandleErrorResponse(response).ConfigureAwait(false);
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        _worklogs = JsonHelper.Deserialize<List<Worklog>>(content, "worklogs");
+        _worklogs = JsonHelper.Deserialize<List<Worklog>>(content, "worklogs") ?? [];
+        foreach (var log in _worklogs)
+        {
+            log.Issue = this;
+        }
     }
     public async Task LoadWorklogsRecurse(LiraClient lira)
     {
         await LoadWorklogs(lira).ConfigureAwait(false);
-        if (Subtasks.Count == 0)
-        {
-            return;
-        }
-        lira.Logger.LoadingWorklogsOfSubtask(this, this.Subtasks);
         List<Worklog> gather = [.. _worklogs];
-        //var bag = new ConcurrentBag<Worklog>(Worklogs);
-        foreach (var sub in Subtasks)
+        if (Subtasks.Count != 0)
         {
-            await sub.LoadWorklogsRecurse(lira).ConfigureAwait(false);
-            gather.AddRange(sub.AllWorklogs);
+            lira.Logger.LoadingWorklogsOfSubtask(this, this.Subtasks);
+            //var bag = new ConcurrentBag<Worklog>(Worklogs);
+            foreach (var sub in Subtasks)
+            {
+                await sub.LoadWorklogsRecurse(lira).ConfigureAwait(false);
+                gather.AddRange(sub.AllWorklogs);
+            }
         }
         _recurseWorklogs = [.. gather.OrderBy(x => x.Started)];
     }

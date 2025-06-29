@@ -14,7 +14,7 @@ public class UsersMachine(LiraClient client) : StateMachine<UsersMachine.State,U
         None,
         EnsureAuthorization,
         GetUsers,
-        End
+        End,
     }
     public readonly record struct State(string UserName, ImmutableArray<UserDetails> Users,Steps FinishedStep = Steps.None) : IState<Steps>
     {

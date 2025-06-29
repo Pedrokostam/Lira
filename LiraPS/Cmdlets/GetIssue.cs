@@ -28,6 +28,7 @@ namespace LiraPS.Cmdlets
         {
             foreach (var issueId in Id)
             {
+                WriteProgress(new ProgressRecord(1379, $"Fetching issues...", issueId));
                 var machine = new IssueMachine(LiraSession.Client);
                 var state = machine.GetStartState(issueId);
                 while (!state.IsFinished)
