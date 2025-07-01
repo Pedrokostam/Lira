@@ -355,6 +355,17 @@ public partial class LiraClient : IDisposable
         }
     }
 
+    public void ClearCache()
+    {
+        Cache.Clear();
+        CacheLite.Clear();
+    }
+    public void InvalidateCacheEntry(string issueKey)
+    {
+        Cache.Remove(issueKey);
+        CacheLite.Remove(issueKey);
+    }
+
     public void Dispose()
     {
         // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method

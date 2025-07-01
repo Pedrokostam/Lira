@@ -7,17 +7,18 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Lira.Objects;
 
-namespace Lira.Objects;
+namespace Lira;
 /// <summary>
 /// Class used to store already loaded Issues. It may speed up fetching.
 /// </summary>
-public class IssueCache<T> where T:IssueLite
+public class IssueCache<T> where T : IssueCommon
 {
     public TimeSpan InvalidationPeriod { get; } = TimeSpan.FromMinutes(15);
     public IssueCache()
     {
-        
+
     }
     public IssueCache(TimeSpan invalidationPeriod)
     {
@@ -25,7 +26,7 @@ public class IssueCache<T> where T:IssueLite
     }
 
     private readonly Dictionary<string, T> _dict = new(StringComparer.OrdinalIgnoreCase);
-    private readonly object _lock = new ();
+    private readonly object _lock = new();
     private DateTime _oldestItemDate = DateTime.MaxValue;
     public T this[string key]
     {

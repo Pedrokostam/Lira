@@ -22,9 +22,6 @@
 					<TableColumnHeader>
 						<Label>Timezone</Label>
 					</TableColumnHeader>
-					<TableColumnHeader>
-						<Label>SelfLink</Label>
-					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
 					<TableRowEntry>
@@ -44,9 +41,6 @@
 									$sign = if($negative){'-'}else {'+'}
 									"UTC {0}{1:hh\:mm}" -f $sign,$_.TimeZone.BaseUtcOffset
 								</ScriptBlock>
-							</TableColumnItem>
-							<TableColumnItem>
-								<PropertyName>Name</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
