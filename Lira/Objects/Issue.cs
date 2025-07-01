@@ -34,11 +34,13 @@ public record IssueLite : IssueStem
         Created = donor.Fields.Created;
         Updated = donor.Fields.Updated;
         Description = donor.Fields.Description;
+        Fetched = DateTime.UtcNow;
 
     }
     private List<Worklog>? _worklogs;
     internal readonly List<IssueStem> _shallowSubtasks;
     public string Description { get; init; }
+    public DateTime Fetched { get; init; }
     public UserDetails Assignee { get; init; }
     public UserDetails Reporter { get; init; }
     public UserDetails Creator { get; init; }
@@ -136,6 +138,5 @@ public record Issue : IssueLite
     }
     internal readonly List<Issue> _subtasks = [];
     public IReadOnlyList<IssueStem> Subtasks => _subtasks.AsReadOnly();
-    public DateTime Fetched { get; init; }
     public TimeSpan TotalTimeSpent => TimeSpan.FromMinutes(AllWorklogs.Sum(x => x.TimeSpent.TotalMinutes));
 }

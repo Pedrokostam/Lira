@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
@@ -29,9 +30,9 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
     {
         public Steps FinishedStep { get; init; }
         public PaginationMachine<IssueLite>.State PaginationState { get; init; }
-        public JqlQuery Query{ get; init; }
+        public JqlQuery Query { get; init; }
         public ImmutableList<Worklog> Worklogs { get; init; } = [];
-        public State(LiraClient client, JqlQuery jqlQuery) 
+        public State(LiraClient client, JqlQuery jqlQuery)
         {
             FinishedStep = Steps.None;
             Query = jqlQuery;
@@ -89,12 +90,40 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
             FinishedStep = Steps.QueryForIssues,
         };
     }
+    private async Task<List<Worklog>> LoadWorklogsImpl(IEnumerable<IssueLite> issueLites)
+    {
+        List<IssueLite> unchachedLites = [];
+        List<Worklog> worklogs = [];
+        foreach (var potentiallyUncached in issueLites)
+        {
+            if (Cache.TryGetValue(potentiallyUncached.Key, out var issue))
+            {
+                worklogs.AddRange(issue.Worklogs);
+            }
+            else if (CacheLite.TryGetValue(potentiallyUncached.Key, out var cachedLite))
+            {
+                worklogs.AddRange(cachedLite.Worklogs);
+            }
+            else
+            {
+                unchachedLites.Add(potentiallyUncached);
+            }
+        }
+        await unchachedLites.LoadWorklogs(LiraClient).ConfigureAwait(false);
+        foreach (var issue in unchachedLites)
+        {
+            worklogs.AddRange(issue.Worklogs);
+            CacheLite.Add(issue);
+        }
+        return worklogs;
+    }
     private async Task<State> LoadWorklogs(State state)
     {
+        var loadedLogs = await LoadWorklogsImpl(state.PaginationState.Values).ConfigureAwait(false);
         await state.PaginationState.Values.LoadWorklogs(LiraClient).ConfigureAwait(false);
         var allWorklogs = state.PaginationState.Values.SelectMany(x => x.Worklogs);
         // Log.Information("Filtering worklogs");
-        var worklogs = state.Query.FilterItems(allWorklogs, LiraClient).ToImmutableList();
+        var worklogs = state.Query.FilterItems(loadedLogs, LiraClient).ToImmutableList();
         return state with
         {
             Worklogs = worklogs,

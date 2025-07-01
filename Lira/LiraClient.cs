@@ -49,7 +49,8 @@ public partial class LiraClient : IDisposable
     private readonly AddWorklogMachine _addWorklogMachine;
     private readonly CurrentUserMachine _currentUserMachine;
 
-    internal IssueCache Cache { get; } = new();
+    internal IssueCache<Issue> Cache { get; } = new();
+    internal IssueCache<IssueLite> CacheLite { get; } = new();
 
     public UsersMachine GetUsersStateMachine() => _usersMachine;
     public WorklogMachine GetWorklogStateMachine() => _worklogMachine;

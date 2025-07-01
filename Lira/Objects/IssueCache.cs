@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,7 @@ namespace Lira.Objects;
 /// <summary>
 /// Class used to store already loaded Issues. It may speed up fetching.
 /// </summary>
-public class IssueCache
+public class IssueCache<T> where T:IssueLite
 {
     public TimeSpan InvalidationPeriod { get; } = TimeSpan.FromMinutes(15);
     public IssueCache()
@@ -23,10 +24,10 @@ public class IssueCache
         InvalidationPeriod = invalidationPeriod;
     }
 
-    private readonly Dictionary<string, Issue> _dict = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, T> _dict = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _lock = new ();
-    private DateTime OldestItemDate = DateTime.MaxValue;
-    public Issue this[string key]
+    private DateTime _oldestItemDate = DateTime.MaxValue;
+    public T this[string key]
     {
         get
         {
@@ -42,9 +43,9 @@ public class IssueCache
             lock (_lock)
             {
                 _dict[key] = value;
-                if (value.Fetched < OldestItemDate)
+                if (value.Fetched < _oldestItemDate)
                 {
-                    OldestItemDate = value.Fetched;
+                    _oldestItemDate = value.Fetched;
                 }
             }
         }
@@ -62,7 +63,7 @@ public class IssueCache
         }
     }
 
-    public ICollection<Issue> Values
+    public ICollection<T> Values
     {
         get
         {
@@ -76,14 +77,14 @@ public class IssueCache
 
     public int Count => _dict.Count;
 
-    public void Add(Issue value)
+    public void Add(T value)
     {
         lock (_lock)
         {
             _dict[value.Key] = value;
-            if (value.Fetched < OldestItemDate)
+            if (value.Fetched < _oldestItemDate)
             {
-                OldestItemDate = value.Fetched;
+                _oldestItemDate = value.Fetched;
             }
         }
     }
@@ -107,11 +108,11 @@ public class IssueCache
                 _dict.Remove(key);
                 if (_dict.Count == 0)
                 {
-                    OldestItemDate = DateTime.MaxValue;
+                    _oldestItemDate = DateTime.MaxValue;
                 }
-                else if (removee.Fetched == OldestItemDate)
+                else if (removee.Fetched == _oldestItemDate)
                 {
-                    OldestItemDate = _dict.Select(x => x.Value.Fetched).Min();
+                    _oldestItemDate = _dict.Select(x => x.Value.Fetched).Min();
                 }
                 return true;
             }
@@ -119,7 +120,7 @@ public class IssueCache
         }
     }
 
-    public bool TryGetValue(string key, [NotNullWhen(returnValue: true)] out Issue? value)
+    public bool TryGetValue(string key, [NotNullWhen(returnValue: true)] out T? value)
     {
         lock (_lock)
         {
@@ -133,22 +134,24 @@ public class IssueCache
         lock (_lock)
         {
             _dict.Clear();
-            OldestItemDate = DateTime.MaxValue;
+            _oldestItemDate = DateTime.MaxValue;
         }
     }
 
     public void PurgeOld()
     {
         var now = DateTime.UtcNow;
-        if (OldestItemDate - now < InvalidationPeriod)
+        if (now - _oldestItemDate < InvalidationPeriod)
         {
             return;
         }
+        Debug.WriteLine("Invalidation!");
         var vals = _dict.Values.ToList();
         foreach (var issue in vals)
         {
-            if (issue.Fetched - now > InvalidationPeriod)
+            if (now - issue.Fetched > InvalidationPeriod)
             {
+                Debug.WriteLine($"Cache removed {issue}");
                 _dict.Remove(issue.Key);
             }
         }

@@ -17,7 +17,8 @@ public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMach
 {
     private readonly LiraClient _liraClient = client;
 
-    protected IssueCache Cache => LiraClient.Cache;
+    protected IssueCache<Issue> Cache => LiraClient.Cache;
+    protected IssueCache<IssueLite> CacheLite => LiraClient.CacheLite;
     protected LiraClient LiraClient
     {
         get
