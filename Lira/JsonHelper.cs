@@ -21,7 +21,7 @@ public static class JsonHelper
         Converters = {
             new Converters.JiraDatetimeConverter(),
             new Converters.SecondsToTimespanConverter(),
-            new Converters.DtoConverterSimplex<Issue,IssueDto>(),
+            new Converters.DtoConverterSimplex<IssueLite,IssueDto>(),
             new Converters.StringToTimeZoneConverter(),
         },
     };

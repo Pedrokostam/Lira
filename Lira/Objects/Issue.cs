@@ -13,10 +13,16 @@ using System.Threading.Tasks;
 using Lira.DataTransferObjects;
 
 namespace Lira.Objects;
-public record Issue : SelfReferential
+public record IssueStem : SelfReferential
+{
+    [JsonPropertyName("key")]
+    public required string Key { get; init; }
+    public override string ToString() => Key;
+}
+public record IssueLite : IssueStem
 {
     [SetsRequiredMembers()]
-    internal Issue(IssueDto donor)
+    internal IssueLite(IssueDto donor)
     {
         Key = donor.Key;
         SelfLink = donor.Self;
@@ -24,12 +30,15 @@ public record Issue : SelfReferential
         Reporter = donor.Fields.Reporter;
         Creator = donor.Fields.Creator;
         _worklogs = donor.Fields.Worklog.HasAllWorklogs ? new(donor.Fields.Worklog.InitialWorklogs) : null;
-        Subtasks = new List<Issue>(donor.Fields.Subtasks).AsReadOnly();
+        _shallowSubtasks = new List<IssueStem>(donor.Fields.Subtasks);
         Created = donor.Fields.Created;
         Updated = donor.Fields.Updated;
+        Description = donor.Fields.Description;
+
     }
     private List<Worklog>? _worklogs;
-    private List<Worklog>? _recurseWorklogs;
+    internal readonly List<IssueStem> _shallowSubtasks;
+    public string Description { get; init; }
     public UserDetails Assignee { get; init; }
     public UserDetails Reporter { get; init; }
     public UserDetails Creator { get; init; }
@@ -37,21 +46,21 @@ public record Issue : SelfReferential
     public DateTimeOffset Created { get; init; }
     public DateTimeOffset Updated { get; init; }
 
-    public required string Key { get; init; }
     public IReadOnlyList<Worklog> Worklogs => _worklogs is null ? [] : _worklogs.AsReadOnly();
-    public IReadOnlyList<Worklog> AllWorklogs => _recurseWorklogs is null ? [] : _recurseWorklogs.AsReadOnly();
-    public IReadOnlyList<Issue> Subtasks { get; set; }
 
+    internal IReadOnlyList<IssueStem> ShallowSubtasks => _shallowSubtasks.AsReadOnly();
 
-    public async Task LoadWorklogs(LiraClient lira)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="lira"></param>
+    /// <param name="cache">If provided, all issue whose worklogs have been fetched will be added to it.</param>
+    /// <returns></returns>
+    internal async Task LoadWorklogs(LiraClient lira)
     {
         lira.Logger.LoadingWorklogs(this);
-        if (_worklogs is not null)
-        {
-            return;
-        }
         var address = $"{SelfLink}/worklog";
-        var response = await lira.HttpClient.GetAsync(address).ConfigureAwait(false);
+        var response = await lira.HttpClient.GetAsync(address, lira.CancellationTokenSource.Token).ConfigureAwait(false);
         await lira.HandleErrorResponse(response).ConfigureAwait(false);
         var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         _worklogs = JsonHelper.Deserialize<List<Worklog>>(content, "worklogs") ?? [];
@@ -60,30 +69,73 @@ public record Issue : SelfReferential
             log.Issue = this;
         }
     }
-    public async Task LoadWorklogsRecurse(LiraClient lira)
-    {
-        await LoadWorklogs(lira).ConfigureAwait(false);
-        List<Worklog> gather = [.. _worklogs];
-        if (Subtasks.Count != 0)
-        {
-            lira.Logger.LoadingWorklogsOfSubtask(this, this.Subtasks);
-            //var bag = new ConcurrentBag<Worklog>(Worklogs);
-            foreach (var sub in Subtasks)
-            {
-                await sub.LoadWorklogsRecurse(lira).ConfigureAwait(false);
-                gather.AddRange(sub.AllWorklogs);
-            }
-        }
-        _recurseWorklogs = [.. gather.OrderBy(x => x.Started)];
-    }
+    ///// <summary>
+    ///// 
+    ///// </summary>
+    ///// <param name="lira"></param>
+    ///// <param name="cache">If provided, all issue whose worklogs have been fetched will be added to it.</param>
+    ///// <returns></returns>
+    //public async Task LoadWorklogsRecurse(LiraClient lira, IssueCache? cache = null)
+    //{
+    //    await LoadWorklogs(lira, cache).ConfigureAwait(false);
+    //    List<Worklog> gather = [.. _worklogs];
+    //    if (Subtasks.Count != 0)
+    //    {
+
+    //        lira.Logger.LoadingWorklogsOfSubtask(this, this.Subtasks);
+    //        //var bag = new ConcurrentBag<Worklog>(Worklogs);
+    //        for (int i = 0; i < _shallowSubtasks.Count; i++)
+    //        {
+    //            if (_shallowSubtasks[i] is not Issue fullIssue)
+    //            {
+    //                lira.Logger.UpliftingShallowIssue(_shallowSubtasks[i]);
+    //            }
+    //        }
+    //        foreach (var sub in Subtasks)
+    //        {
+    //            await sub.LoadWorklogsRecurse(lira,cache).ConfigureAwait(false);
+    //            gather.AddRange(sub.AllWorklogs);
+    //        }
+    //    }
+    //    _recurseWorklogs = [.. gather.OrderBy(x => x.Started)];
+    //}
     /// <summary>
     /// Total time spent on this issue and its Subtasks.
     /// </summary>
-    public TimeSpan TotalTimeSpent => TimeSpan.FromMinutes(AllWorklogs.Sum(x => x.TimeSpent.TotalMinutes));
+    //public TimeSpan TotalTimeSpent => TimeSpan.FromMinutes(AllWorklogs.Sum(x => x.TimeSpent.TotalMinutes));
     /// <summary>
     /// Time noted in this issue's worklogs, excluding time spent on Subtasks.
     /// </summary>
     public TimeSpan TimeSpent => TimeSpan.FromMinutes(Worklogs.Sum(x => x.TimeSpent.TotalMinutes));
     //public Issue? Parent { get; set; }
-    public override string ToString() => Key;
+}
+
+public record Issue : IssueLite
+{
+    [SetsRequiredMembers]
+    public Issue(IssueLite issueLite, IEnumerable<Issue> substasks) : base(issueLite)
+    {
+        _subtasks = [.. substasks.OrderBy(x => x.Created)];
+        Fetched = DateTime.UtcNow;
+        foreach (var log in Worklogs)
+        {
+            log.Issue = this;
+        }
+    }
+    public IReadOnlyList<Worklog> AllWorklogs
+    {
+        get
+        {
+            List<Worklog> q = [.. Worklogs];
+            foreach (var sub in _subtasks)
+            {
+                q.AddRange(sub.Worklogs);
+            }
+            return q.AsReadOnly();
+        }
+    }
+    internal readonly List<Issue> _subtasks = [];
+    public IReadOnlyList<IssueStem> Subtasks => _subtasks.AsReadOnly();
+    public DateTime Fetched { get; init; }
+    public TimeSpan TotalTimeSpent => TimeSpan.FromMinutes(AllWorklogs.Sum(x => x.TimeSpent.TotalMinutes));
 }

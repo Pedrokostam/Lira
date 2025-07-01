@@ -12,10 +12,11 @@ public class IssueFields
     [JsonPropertyName("worklog")]
     public WorklogResponse Worklog { get; set; }
     [JsonPropertyName("subtasks")]
-    public IList<Issue> Subtasks { get; set; }
+    public IList<IssueStem> Subtasks { get; set; }
     public UserDetails Assignee { get; set; } = default!;
     public UserDetails Reporter { get; set; } = default!;
     public UserDetails Creator { get; set; } = default!;
+    public string Description { get; set; } = "";
     public DateTimeOffset Created { get; set; } = default!;
     public DateTimeOffset Updated { get; set; } = default!;
     public IssueFields()

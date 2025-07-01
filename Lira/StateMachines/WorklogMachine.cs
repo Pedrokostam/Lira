@@ -28,7 +28,7 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
     public readonly record struct State : IState<Steps>
     {
         public Steps FinishedStep { get; init; }
-        public PaginationMachine<Issue>.State PaginationState { get; init; }
+        public PaginationMachine<IssueLite>.State PaginationState { get; init; }
         public JqlQuery Query{ get; init; }
         public ImmutableList<Worklog> Worklogs { get; init; } = [];
         public State(LiraClient client, JqlQuery jqlQuery) 
@@ -36,7 +36,7 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
             FinishedStep = Steps.None;
             Query = jqlQuery;
             HttpQuery httpQuery = [HttpQuery.JqlSearchQuery(jqlQuery.BuildQueryString(client))];
-            PaginationState = new PaginationMachine<Issue>.State(PaginationMachine<Issue>.Steps.EnsureAuthorization, httpQuery);
+            PaginationState = new PaginationMachine<IssueLite>.State(PaginationMachine<IssueLite>.Steps.EnsureAuthorization, httpQuery);
         }
         public bool IsFinished => NextStep == Steps.End;
         public bool ShouldContinue => !IsFinished;
@@ -103,7 +103,7 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
     }
 
 
-    private readonly PaginationMachine<Issue> _pagination;
+    private readonly PaginationMachine<IssueLite> _pagination;
 
     public override Task<State> Process(State state)
     {
@@ -118,7 +118,7 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
     }
     public WorklogMachine(LiraClient client) : base(client)
     {
-        _pagination = new PaginationMachine<Issue>(LiraClient, LiraClient.SearchEndpoint, "issues");
+        _pagination = new PaginationMachine<IssueLite>(LiraClient, LiraClient.SearchEndpoint, "issues");
     }
     public State GetStartState(JqlQuery jqlQuery)
     {

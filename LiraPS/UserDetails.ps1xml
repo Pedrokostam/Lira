@@ -247,7 +247,7 @@
 						<Label>TotalTimeSpent</Label>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>Summary</Label>
+						<Label>Description</Label>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
@@ -288,10 +288,10 @@
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>
-									if ([string]::IsNullOrWhiteSpace($_.Comment)) {
-									"`e[2m`e[3mNo summary`e[0m"
+									if ([string]::IsNullOrWhiteSpace($_.Description)) {
+									"`e[2m`e[3mNo description`e[0m"
 									} else {
-									$_.Summary
+									$_.Description
 									}
 								</ScriptBlock>
 							</TableColumnItem>

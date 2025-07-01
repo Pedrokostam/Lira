@@ -2,7 +2,9 @@
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Lira.Objects;
 using Lira.StateMachines;
@@ -26,10 +28,11 @@ namespace LiraPS.Cmdlets
         // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called
         protected override void ProcessRecord()
         {
+
+            var machine = new IssueMachine(LiraSession.Client);
             foreach (var issueId in Id)
             {
                 WriteProgress(new ProgressRecord(1379, $"Fetching issues...", issueId));
-                var machine = new IssueMachine(LiraSession.Client);
                 var state = machine.GetStartState(issueId);
                 while (!state.IsFinished)
                 {
@@ -37,7 +40,10 @@ namespace LiraPS.Cmdlets
                     state = t.GetResult();
                     PrintLogs();
                 }
-
+                if (state.Issue is null)
+                {
+                    continue;
+                }
                 WriteObject(state.Issue);
             }
         }

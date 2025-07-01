@@ -14,6 +14,6 @@ public record Worklog : SelfReferential
     [JsonPropertyName("timeSpentSeconds")]
     public TimeSpan TimeSpent { get; set; }
     public required string IssueId { get; set; }
-    public Issue Issue { get; set; } = default!;
+    public IssueLite Issue { get; set; } = default!;
     public required string ID { get; set; }
 }

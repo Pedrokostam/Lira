@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Lira.Exceptions;
+using Lira.Objects;
 using Microsoft.Extensions.Logging;
 
 namespace Lira.StateMachines;
@@ -15,6 +17,7 @@ public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMach
 {
     private readonly LiraClient _liraClient = client;
 
+    protected IssueCache Cache => LiraClient.Cache;
     protected LiraClient LiraClient
     {
         get
@@ -43,6 +46,7 @@ public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMach
     protected TState AdjustState(ref readonly TState state)
 #endif
     {
+        Debug.WriteLine($"Executing state {state}");
         if (EqualityComparer<TState>.Default.Equals(state, default!))
         {
             return new TState();

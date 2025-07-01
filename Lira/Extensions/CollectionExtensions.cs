@@ -55,7 +55,7 @@ internal static class CollectionExtensions
         }
     }
 #endif
-    private static async Task LoadWorklogsImpl(IEnumerable<Issue> issues, LiraClient lira, Func<Issue, LiraClient, Task> functor)
+    private static async Task LoadWorklogsImpl(IEnumerable<IssueLite> issues, LiraClient lira, Func<IssueLite, LiraClient, Task> functor)
     {
         int parallelism = 20;
 #if NETSTANDARD2_0
@@ -104,15 +104,15 @@ internal static class CollectionExtensions
 
     //#endif
     //    }
-    public static async Task LoadWorklogs(this IList<Issue> issues, LiraClient lira)
+    public static async Task LoadWorklogs(this IList<IssueLite> issues, LiraClient lira)
     {
         await LoadWorklogsImpl(issues, lira, (i, l) => i.LoadWorklogs(l)).ConfigureAwait(false);
     }
 
-    public static async Task LoadWorklogsRecurse(this IList<Issue> issues, LiraClient lira)
-    {
-        await LoadWorklogsImpl(issues, lira, (i, l) => i.LoadWorklogsRecurse(l)).ConfigureAwait(false);
-    }
+    //public static async Task LoadWorklogsRecurse(this IList<Issue> issues, LiraClient lira)
+    //{
+    //    await LoadWorklogsImpl(issues, lira, (i, l) => i.LoadWorklogsRecurse(l)).ConfigureAwait(false);
+    //}
 
     //public static async Task LoadWorklogs(this IAsyncEnumerable<Issue> issues, Lira lira, ConcurrentBag<Issue> output)
     //{

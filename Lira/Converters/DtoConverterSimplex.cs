@@ -10,6 +10,7 @@ public class DtoConverterSimplex<TObject, TDto> : JsonConverter<TObject> where T
 {
     public override TObject? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
+  
         var dto = JsonSerializer.Deserialize<TDto>(ref reader, options);
         if (dto is null)
         {

@@ -21,7 +21,10 @@ internal static partial class LogMessages
         CookieProviderPeriodicRecheckFinished,
         GotIssueFromQuery,
         LoadingWorklogs,
+        UsingCachedWorklogs,
+        CachingWorklogs,
         LoadingWorklogsSubtask,
+        UpliftingShallowIssue,
         StartedMethod,
         EndedMethod,
         CreatedNewInstance,
@@ -39,7 +42,7 @@ internal static partial class LogMessages
            Level = LogLevel.Debug,
            Message = "Loading worklogs of subtasks of {Issue}: {Subtasks}"
            )]
-    public static partial void LoadingWorklogsOfSubtask(this ILogger logger, Issue issue, IEnumerable<Issue> Subtasks);
+    public static partial void LoadingWorklogsOfSubtask(this ILogger logger, Issue issue, IEnumerable<IssueStem> Subtasks);
 
     [LoggerMessage(
            EventId = (int)Events.StartedMethod,
@@ -73,11 +76,32 @@ internal static partial class LogMessages
     public static partial void GotIssueFromQuery(this ILogger logger, int issueCount);
 
     [LoggerMessage(
+           EventId = (int)Events.UpliftingShallowIssue,
+           Level = LogLevel.Debug,
+           Message = "Converting IssueStem {issue} to Issue."
+           )]
+    public static partial void UpliftingShallowIssue(this ILogger logger, IssueStem issue);
+
+    [LoggerMessage(
            EventId = (int)Events.LoadingWorklogs,
            Level = LogLevel.Debug,
            Message = "Loading worklogs of {Issue}."
            )]
-    public static partial void LoadingWorklogs(this ILogger logger, Issue issue);
+    public static partial void LoadingWorklogs(this ILogger logger, IssueStem issue);
+
+    [LoggerMessage(
+           EventId = (int)Events.UsingCachedWorklogs,
+           Level = LogLevel.Debug,
+           Message = "Using cached worklogs of {Issue}."
+           )]
+    public static partial void UsingCachedWorklogs(this ILogger logger, Issue issue);
+
+    [LoggerMessage(
+           EventId = (int)Events.CachingWorklogs,
+           Level = LogLevel.Debug,
+           Message = "Caching worklogs of {Issue}."
+           )]
+    public static partial void CachingWorklogs(this ILogger logger, IssueStem issue);
 
     [LoggerMessage(
            EventId = (int)Events.PaginatedResponse,

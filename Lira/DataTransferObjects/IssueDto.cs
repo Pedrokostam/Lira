@@ -4,7 +4,7 @@ using Lira.Objects;
 
 namespace Lira.DataTransferObjects;
 
-public class IssueDto : IToObject<Issue>
+public class IssueDto : IToObject<IssueLite>
 {
     public string Key { get; set; }
     public Uri Self { get; set; }
@@ -17,8 +17,8 @@ public class IssueDto : IToObject<Issue>
         Fields = new();
     }
 
-    public Issue ToObject()
+    public IssueLite ToObject()
     {
-        return new Issue(this);
+        return new IssueLite(this);
     }
 }

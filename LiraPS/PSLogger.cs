@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,7 @@ public class PSLogger<T>(string filepath) : ILogger<T>, IEnumerable<Log>
 {
     public string FilePath { get; } = filepath;
     private readonly Queue<Log> _queue = new();
-
+    private readonly object _lock = new object();
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {
         throw new NotImplementedException();
@@ -25,9 +26,11 @@ public class PSLogger<T>(string filepath) : ILogger<T>, IEnumerable<Log>
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        var log = new Log(formatter(state,exception),logLevel,exception);
+        var log = new Log(formatter(state, exception), logLevel, exception);
         _queue.Enqueue(log);
-        File.AppendAllText(FilePath,$"{DateTime.Now:yyyy-MM-dd HH:mm:ss:fff}: {log.Message}\n");
+        Debug.WriteLine(log.Message);
+        lock (_lock)
+            File.AppendAllText(FilePath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss:fff}: {log.Message}\n");
     }
 
     public IEnumerator<Log> GetEnumerator()
