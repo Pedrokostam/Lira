@@ -49,7 +49,7 @@ namespace LiraPS.Cmdlets
         [Parameter(ParameterSetName = "PAT")]
         [Parameter(ParameterSetName = "MANUAL")]
         [Parameter(ParameterSetName = "ATLASSIAN")]
-        [Alias( "Profile")]
+        [Alias("Profile")]
         public string? Name { get; set; }
         private IAuthorization Authorization { get; set; } = default!;
         protected override void BeginProcessing()
@@ -80,8 +80,8 @@ namespace LiraPS.Cmdlets
             if (ParameterSetName == "MANUAL")
             {
                 SetAddressManuallyIfMissing();
-                Host.UI.WriteLine(ConsoleColor.Cyan, Host.UI.RawUI.BackgroundColor, "You will be asked to provide your username password.");
-                Host.UI.WriteLine(ConsoleColor.Cyan, Host.UI.RawUI.BackgroundColor, "If you want to use personal access token, call this cmdlet with -PersonalAccessKey parameter.");
+                WriteHost("You will be asked to provide your username password.", ConsoleColor.Cyan);
+                WriteHost("If you want to use personal access token, call this cmdlet with -PersonalAccessKey parameter.", ConsoleColor.Cyan);
                 var username = ReadInput("Enter your username");
                 EnsureNotEmpty(username, "Username");
                 var password = ReadInput("Enter your password", asSecure: true);
@@ -124,7 +124,7 @@ namespace LiraPS.Cmdlets
             c.Save();
             if (NoSwitch.IsPresent && LiraSession.HasConfig)
             {
-                WriteWarning($"Configuration {c.Name} saved. Configuration {LiraSession.Config.Name} still active");
+                LiraSession.Logger.LogWarning("Configuration {new} saved. Configuration {old} is still active.", c.Name, LiraSession.Config.Name);
             }
             else
             {
@@ -143,7 +143,7 @@ namespace LiraPS.Cmdlets
         private void SetAddressManuallyIfMissing()
         {
             bool paramSet = TestBoundParameter(nameof(ServerAddress));
-            if(paramSet && !string.IsNullOrWhiteSpace(ServerAddress))
+            if (paramSet && !string.IsNullOrWhiteSpace(ServerAddress))
             {
                 return;
             }

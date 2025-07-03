@@ -18,7 +18,7 @@ public static class LiraSession
 {
     private static Configuration? _config;
 
-    public static IEnumerable<Log> LogQueue { get; } = (Logger as IEnumerable<Log>) ?? [];
+    public static IEnumerable<Log> LogQueue => (Logger as IEnumerable<Log>) ?? [];
     public static bool IsActiveASession(Configuration.Information info) => info.Equals(_config?.ToInformation());
     public static LoggingLevelSwitch LogSwitch { get; } = new(Serilog.Events.LogEventLevel.Verbose);
     [AllowNull]
@@ -65,8 +65,8 @@ public static class LiraSession
         //             //.WriteTo.Debug()
         //#endif
         //             .CreateLogger();
-        Logger = new PSLogger<LiraClient>("log.log");
         //Logger = new SerilogLoggerFactory(serilogger).CreateLogger<LiraClient>();
+        Logger = new PSLogger<LiraClient>("log.log");
     }
     public static LiraClient Client { get; private set; } = default!;
     internal static async Task<LiraClient> StartSession()

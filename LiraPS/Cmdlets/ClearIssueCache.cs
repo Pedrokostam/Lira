@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Clear, "IssueCache", DefaultParameterSetName = "MANUAL")]
@@ -27,12 +28,15 @@ public class ClearIssueCache : LiraCmdlet
         if (All.IsPresent)
         {
             LiraSession.Client?.ClearCache();
+                LiraSession.Logger.LogDebug("Cleared all cached entries");
         }
         else
         {
             foreach (var id in Id)
             {
                 LiraSession.Client?.InvalidateCacheEntry(id);
+                LiraSession.Logger.LogDebug("Cleared entry for {issue}", id);
+
             }
         }
     }

@@ -112,6 +112,23 @@ namespace LiraPS.Cmdlets
             LiraSession.StartSession().Wait();
             PrintLogs();
         }
+        public void WriteHost(string message,ConsoleColor? foregroundColor = null, ConsoleColor? backgroundColor = null)
+        {
+            // If colors are specified, use Host.UI.WriteLine for color output
+            if (foregroundColor.HasValue || backgroundColor.HasValue)
+            {
+                Host.UI.WriteLine(
+                    foregroundColor ?? Host.UI.RawUI.ForegroundColor,
+                    backgroundColor ?? Host.UI.RawUI.BackgroundColor,
+                    message
+                );
+            }
+            else
+            {
+                // Otherwise, use WriteInformation to write to the information stream
+                WriteInformation(message, new string[] { "PSHOST" });
+            }
+        }
         protected void Print(Log log)
         {
             var txt = log.Message;
