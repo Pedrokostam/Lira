@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Lira.Authorization;
 using Lira.Converters;
 using Lira.DataTransferObjects;
@@ -22,7 +23,7 @@ public static class JsonHelper
     private static readonly SecondsToTimespanConverter _secondsToTimespanConverter = new();
     private static readonly DtoConverterSimplex<IssueLite, IssueDto> _dtoConverterSimplex_IssueLite = new();
     private static readonly StringToTimeZoneConverter _stringToTimeZoneConverter = new();
-    private static readonly AuthorizationConverter _authorizationConverter = new();
+    private static readonly WriteAuthorizationConverter _authorizationConverter = new();
 
     public static JsonSerializerOptions Options => new JsonSerializerOptions()
     {
@@ -37,14 +38,14 @@ public static class JsonHelper
         },
     };
 
-    public static void RegisterAuthorizationType<T>(string key) where T : IAuthorization
-    {
-        AuthorizationConverter.RegisterType<T>(key);
-    }
-    public static void RegisterAuthorizationType<T>(T instance) where T : IAuthorization
-    {
-        AuthorizationConverter.RegisterType(instance);
-    }
+    //public static void RegisterAuthorizationType<T>(string key) where T : IAuthorization
+    //{
+    //    AuthorizationConverter.RegisterType<T>(key);
+    //}
+    //public static void RegisterAuthorizationType<T>(T instance) where T : IAuthorization
+    //{
+    //    AuthorizationConverter.RegisterType(instance);
+    //}
 
     public static T? Deserialize<T>(JsonElement jsonElement, string? propertyName = null)
     {
@@ -74,8 +75,9 @@ public static class JsonHelper
         {
             return JsonSerializer.Deserialize(jsonString, type, Options);
         }
-        using var doc = JsonDocument.Parse(jsonString);
-        var elem = doc.RootElement.GetProperty(propertyName);
+        using var doc = JsonDocument.Parse(jsonString,new JsonDocumentOptions() { AllowTrailingCommas=true, });
+        var elem = doc.RootElement.GetProperty(Options.PropertyNamingPolicy!.ConvertName(propertyName));
+        var s = elem.GetRawText();
         return JsonSerializer.Deserialize(elem, type, Options);
     }
 

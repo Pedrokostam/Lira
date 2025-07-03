@@ -49,8 +49,8 @@ namespace LiraPS.Cmdlets
         [Parameter(ParameterSetName = "PAT")]
         [Parameter(ParameterSetName = "MANUAL")]
         [Parameter(ParameterSetName = "ATLASSIAN")]
-        [Alias("Name", "Profile")]
-        public string ProfileName { get; set; }
+        [Alias( "Profile")]
+        public string? Name { get; set; }
         private IAuthorization Authorization { get; set; } = default!;
         protected override void BeginProcessing()
         {
@@ -116,11 +116,11 @@ namespace LiraPS.Cmdlets
             {
                 LiraSession.Logger.LogCritical("Invalid ParameterSetName: {Name}", ParameterSetName);
             }
-            if (!TestBoundParameter(nameof(ProfileName)))
+            if (!TestBoundParameter(nameof(Name)))
             {
-                ProfileName = ReadInput("Do you want to specify custom name for this profile? Leave empty to use the default name");
+                Name = ReadInput("Do you want to specify custom name for this configuration? Leave empty to use the default name");
             }
-            var c = Configuration.Create(Authorization, ServerAddress, ProfileName);
+            var c = Configuration.Create(Authorization, ServerAddress, Name);
             c.Save();
             if (NoSwitch.IsPresent && LiraSession.HasConfig)
             {
@@ -142,7 +142,11 @@ namespace LiraPS.Cmdlets
         }
         private void SetAddressManuallyIfMissing()
         {
-            bool paramNotSet = !TestBoundParameter(nameof(ServerAddress));
+            bool paramSet = TestBoundParameter(nameof(ServerAddress));
+            if(paramSet && !string.IsNullOrWhiteSpace(ServerAddress))
+            {
+                return;
+            }
             bool validAddress = LiraSession.Config.IsInitialized;
             if (validAddress)
             {

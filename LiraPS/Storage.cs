@@ -33,16 +33,23 @@ public static class Storage
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "MA0144:Use System.OperatingSystem to check the current OS", Justification = "Standard dont have it")]
     public static T? Deobfuscate<T>(byte[] data)
     {
+        byte[] itemBytes = DeobfuscateBytes(data);
+        var itemString = Encoding.UTF8.GetString(itemBytes);
+        var item = JsonHelper.Deserialize<T>(itemString);
+        return item;
+    }
+
+    public static byte[] DeobfuscateBytes(byte[] data)
+    {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             data = ProtectedData.Unprotect(data, Entropy, DataProtectionScope.CurrentUser);
         }
         var itemBase64String = Encoding.UTF8.GetString(data);
         var itemBytes = Convert.FromBase64String(itemBase64String);
-        var itemString = Encoding.UTF8.GetString(itemBytes);
-        var item = JsonHelper.Deserialize<T>(itemString);
-        return item;
+        return itemBytes;
     }
+
     public static void ObfuscateToFile<T>(T item, string filepath)
     {
         var encrypto = Obfuscate(item);

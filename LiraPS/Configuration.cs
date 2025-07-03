@@ -7,6 +7,7 @@ using System.Management.Automation.Language;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
@@ -29,18 +30,45 @@ namespace LiraPS;
 public class Configuration
 {
     private string profileName = DefaultConfigName;
-
-    /// <summary>
-    /// Checks if <see cref="ServerAddress"/> is valid.
-    /// </summary>
-    [JsonIgnore]
-    public bool IsInitialized => !string.IsNullOrWhiteSpace(ServerAddress);
     private const string Extension = ".lbs";
     private static string DefaultConfigName => "DefaultConfig";
     private static string DefaultConfigPath => Path.Combine(GetConfigFolderPath(), DefaultConfigName);
+
+    [JsonIgnore]
+    public bool IsInitialized => !string.IsNullOrWhiteSpace(ServerAddress);
+
+    public IAuthorization Authorization { get; set; }
+    [JsonInclude]
+    public string AuthorizationType => Authorization.TypeIdentifier;
+    public string ServerAddress { get; set; }
+
+    [JsonIgnore]
+    public string SelfPath => Path.Combine(GetConfigFolderPath(), Name + Extension);
+
+    [AllowNull]
+    public required string Name
+    {
+        get => profileName;
+        init
+        {
+            profileName = !string.IsNullOrWhiteSpace(value) ? value! : DefaultConfigName;
+        }
+    }
+
     public static string[] GetAvailableProfiles()
     {
         return Directory.GetFiles(GetConfigFolderPath(), "*" + Extension);
+    }
+
+    public static string? GetProfilePath_Null(string? profileName = null)
+    {
+        var present = GetAvailableProfiles();
+        var matching = profileName switch
+        {
+            string name => present.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x).Equals(profileName, StringComparison.OrdinalIgnoreCase)),
+            null => null,
+        };
+        return matching;
     }
     public static string GetProfilePath(string? profileName = null)
     {
@@ -55,13 +83,8 @@ public class Configuration
             lastProfilePath = Path.ChangeExtension(lastProfilePath, Extension);
             lastProfilePath = File.Exists(lastProfilePath) ? lastProfilePath : null;
         }
-        profileName = string.IsNullOrWhiteSpace(profileName) ? null : profileName!.Trim();
         var present = GetAvailableProfiles();
-        var matching = profileName switch
-        {
-            string name => present.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x).Equals(profileName, StringComparison.OrdinalIgnoreCase)),
-            null => null,
-        };
+        var matching = GetProfilePath_Null(profileName);
         return matching ?? lastProfilePath ?? present.FirstOrDefault() ?? DefaultConfigPath;
     }
 
@@ -73,7 +96,7 @@ public class Configuration
     private static string GetConfigFolderPath()
     {
         string folder;
-        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             var localAppdata = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             folder = Path.Combine(localAppdata, nameof(LiraPS));
@@ -87,40 +110,19 @@ public class Configuration
         {
             Directory.CreateDirectory(folder);
         }
-
         return folder;
     }
+
     public static void MarkLast(Configuration conf)
     {
         File.WriteAllText(GetLastProfileTxtPath(GetConfigFolderPath()), conf.profileName);
     }
+
     public static Configuration Create(IAuthorization auth, string server, string? profile = null)
     {
         var conf = new Configuration(profile, auth, server);
         conf.Save();
         return conf;
-    }
-    public IAuthorization Authorization { get; set; }
-    public string ServerAddress { get; set; }
-    [JsonIgnore]
-    public string SelfPath => Path.Combine(GetConfigFolderPath(), Name+Extension);
-
-    [AllowNull]
-    public required string Name
-    {
-        get => profileName;
-        init
-        {
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                profileName = value!;
-            }
-            else
-            {
-                profileName = DefaultConfigName;
-
-            }
-        }
     }
 
     public static Configuration Load(string? profileName = null)
@@ -130,10 +132,28 @@ public class Configuration
         {
             return new Configuration() { Name = profileName };
         }
-        var empty = new Configuration(profileName);
-        var conf = Storage.DeobfuscateFromFile<Configuration>(path) ?? empty;
+        var confBytes = Storage.DeobfuscateBytes(File.ReadAllBytes(path));
+        var confJson = Encoding.UTF8.GetString(confBytes);
+
+        var dto = JsonHelper.Deserialize<Dto>(confJson);
+
+        if (!TypeRegistry.TryGetValue(dto.AuthorizationType, out var authType))
+        {
+            throw new JsonException($"Unknown TypeIdentifier: {dto.AuthorizationType}");
+        }
+
+        var auth = JsonHelper.Deserialize(confJson, authType, nameof(Authorization)) as IAuthorization;
+
+        if (auth is null)
+        {
+            throw new JsonException($"Could not deserialize Authorization");
+        }
+
+        var conf = new Configuration(dto.Name, auth, dto.ServerAddress);
+
         return conf;
     }
+
     [SetsRequiredMembers]
     private Configuration(string? profileName = null, IAuthorization? auth = null, string? address = null)
     {
@@ -141,22 +161,20 @@ public class Configuration
         ServerAddress = address ?? "";
         Authorization = auth ?? NoAuthorization.Instance;
     }
-    [SetsRequiredMembers]
-    public Configuration() : this(null, null, null)
-    {
 
-    }
+    [SetsRequiredMembers]
+    public Configuration() : this(null, null, null) { }
+
     private static Type GetType(string? typeName)
     {
         if (string.IsNullOrWhiteSpace(typeName))
         {
             throw new ArgumentNullException(nameof(typeName));
         }
-        Type? type;
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
         foreach (var assembly in assemblies.Reverse())
         {
-            type = assembly.GetType(typeName);
+            var type = assembly.GetType(typeName);
             if (type is not null)
             {
                 return type;
@@ -164,35 +182,62 @@ public class Configuration
         }
         throw new TypeAccessException($"Could not find the type {typeName}");
     }
+
     public void Save()
     {
         Storage.ObfuscateToFile(this, SelfPath);
     }
+
     public void SaveAs(string profileName)
     {
         var updated = new Configuration(profileName, this.Authorization, this.ServerAddress);
         updated.Save();
     }
+
+
+    internal static readonly Dictionary<string, Type> TypeRegistry = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+    public static void RegisterType<T>(string key) where T : IAuthorization
+    {
+        TypeRegistry[key] = typeof(T);
+    }
+    public static void RegisterType<T>(T instance) where T : IAuthorization
+    {
+        TypeRegistry[instance.TypeIdentifier] = typeof(T);
+    }
+
+    static Configuration()
+    {
+        RegisterType<PersonalAccessToken>(PersonalAccessToken.Type);
+        RegisterType<CookieProvider>(CookieProvider.Type);
+        RegisterType<NoAuthorization>(NoAuthorization.Type);
+        RegisterType<AtlassianApiKey>(AtlassianApiKey.Type);
+    }
+
+
     public Information ToInformation()
     {
-        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress);
+        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress,Name);
     }
+
     public readonly record struct Information
     {
-        public string Location { get; }
+        public string Name { get; }
         public string Type { get; }
         public string ServerAddress { get; }
-        internal Information(string location, string type, string serverAddress)
+        public string Location { get; }
+        internal Information(string location, string type, string serverAddress, string name)
         {
             Location = location;
             Type = type;
             ServerAddress = serverAddress;
+            Name = name;
         }
     }
+
     private readonly record struct Dto
     {
-        public string ServerAddress { get; init; }
-        public string AuthorizationType { get; init; }
-        public string Name { get; init; }
+        public required string ServerAddress { get; init; }
+        public required string AuthorizationType { get; init; }
+        public required string Name { get; init; }
     }
 }

@@ -13,11 +13,8 @@ public readonly record struct PersonalAccessToken(
     ) : IAuthorization
 {
 
-    [JsonInclude()]
     public string TypeIdentifier => Type;
     public static readonly string Type = "PersonalAccessToken";
-
-    public string Name { get; } = "PAT";
 
     public Task Authorize(LiraClient lira)
     {

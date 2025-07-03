@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -18,7 +19,9 @@ public static class LiraSession
     private static Configuration? _config;
 
     public static IEnumerable<Log> LogQueue { get; } = (Logger as IEnumerable<Log>) ?? [];
+    public static bool IsActiveASession(Configuration.Information info) => info.Equals(_config?.ToInformation());
     public static LoggingLevelSwitch LogSwitch { get; } = new(Serilog.Events.LogEventLevel.Verbose);
+    [AllowNull]
     internal static Configuration Config
     {
         get
@@ -34,15 +37,18 @@ public static class LiraSession
         }
         set
         {
-            if (_config != value)
+            if (_config != value && _config is not null)
             {
                 CloseSession();
                 _config = value;
             }
-            Configuration.MarkLast(_config);
+            if (_config is not null)
+            {
+                Configuration.MarkLast(_config);
+            }
         }
     }
-    public static  bool HasConfig
+    public static bool HasConfig
     {
         get
         {
