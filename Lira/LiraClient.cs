@@ -110,7 +110,7 @@ public partial class LiraClient : IDisposable
             throw new InvalidOperationException($"Specified address: \"{serverAddress}\" is invalid");
         }
         string host = urlMatch.Groups["domain"].Value;
-        if (urlMatch.Groups.TryGetValue("scheme", out var protocolGroup))
+        if (urlMatch.Groups.TryGetValue("scheme", out var protocolGroup) && !string.IsNullOrWhiteSpace(protocolGroup.Value))
         {
             scheme = protocolGroup.Value;
         }
@@ -376,8 +376,8 @@ public partial class LiraClient : IDisposable
     private const RegexOptions UrlRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
     private const int RegexTimeout = 250;
 #if NETSTANDARD2_0
-    private static readonly Regex _urlValidator=new(UrlRegex,UrlRegexOptions, TimeSpan.FromMilliseconds(RegexTimeout));
-    private static Regex UrlValidator()=>_urlValidator;
+    private static readonly Regex _urlValidator = new(UrlRegex, UrlRegexOptions, TimeSpan.FromMilliseconds(RegexTimeout));
+    private static Regex UrlValidator() => _urlValidator;
 #else
     [GeneratedRegex(UrlRegex, UrlRegexOptions, RegexTimeout)]
     private static partial Regex UrlValidator();

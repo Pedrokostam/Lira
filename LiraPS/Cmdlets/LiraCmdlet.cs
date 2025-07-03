@@ -44,6 +44,10 @@ namespace LiraPS.Cmdlets
             var variable = new PSVariable(name, data, ScopedItemOptions.AllScope);
             SessionState.PSVariable.Set(variable);
         }
+        protected object GetGlobal(string name)
+        {
+            return SessionState.PSVariable.GetValue(name);
+        }
         protected bool TryGetBoundParameter<T>(string name, [NotNullWhen(true)] out T? value)
         {
             if (TestBoundParameter(name))

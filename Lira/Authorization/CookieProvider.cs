@@ -16,29 +16,8 @@ namespace Lira.Authorization;
 
 public record CookieProvider(string Username, string Password) : IAuthorization
 {
-    //public readonly record struct Credentials(
-    //   string Name,
-    //    string Value)
-
-    //{
-    //    public void AddToHeaders(HttpClient client)
-    //    {
-    //        //client.DefaultRequestHeaders.Remove("Cookie");
-    //        //client.DefaultRequestHeaders.Add("Cookie", $"{Name}={Value}");
-    //    }
-    //    public static Credentials Load(string filepath)
-    //    {
-    //        return JsonHelper.Deserialize<Credentials>(File.ReadAllText(filepath));
-    //    }
-    //    public void Save(string filepath)
-    //    {
-    //        var json = JsonSerializer.Serialize(this);
-    //        var bytes = Encoding.UTF8.GetBytes(json);
-    //        var protectedBytes = ProtectedData.Protect(bytes, null, DataProtectionScope.CurrentUser);
-    //        File.WriteAllBytes(filepath, protectedBytes);
-    //    }
-
-    //}
+    public string TypeIdentifier => Type;
+    public static readonly string Type = "CookieProvider";
 
     long _lastCheckTime;
     readonly TimeSpan _checkPeriod = TimeSpan.FromMinutes(60);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Management.Automation.Language;
@@ -7,7 +8,9 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Lira;
 using Lira.Authorization;
 
 /* Unmerged change from project 'LiraPS (net8.0)'
@@ -25,11 +28,49 @@ namespace LiraPS;
 
 public class Configuration
 {
+    private string profileName = DefaultConfigName;
+
     /// <summary>
-    /// Checks if <see cref="BaseAddress"/> is valid.
+    /// Checks if <see cref="ServerAddress"/> is valid.
     /// </summary>
-    public bool IsInitialized => !string.IsNullOrWhiteSpace(BaseAddress);
-    internal static string GetPath()
+    [JsonIgnore]
+    public bool IsInitialized => !string.IsNullOrWhiteSpace(ServerAddress);
+    private const string Extension = ".lbs";
+    private static string DefaultConfigName => "DefaultConfig";
+    private static string DefaultConfigPath => Path.Combine(GetConfigFolderPath(), DefaultConfigName);
+    public static string[] GetAvailableProfiles()
+    {
+        return Directory.GetFiles(GetConfigFolderPath(), "*" + Extension);
+    }
+    public static string GetProfilePath(string? profileName = null)
+    {
+        profileName = profileName?.Trim();
+        var configFolder = GetConfigFolderPath();
+        var lastProfileTxtPath = GetLastProfileTxtPath(configFolder);
+        string? lastProfilePath = null;
+        if (File.Exists(lastProfileTxtPath))
+        {
+            var name = File.ReadAllText(lastProfileTxtPath);
+            lastProfilePath = Path.Combine(configFolder, name);
+            lastProfilePath = Path.ChangeExtension(lastProfilePath, Extension);
+            lastProfilePath = File.Exists(lastProfilePath) ? lastProfilePath : null;
+        }
+        profileName = string.IsNullOrWhiteSpace(profileName) ? null : profileName!.Trim();
+        var present = GetAvailableProfiles();
+        var matching = profileName switch
+        {
+            string name => present.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x).Equals(profileName, StringComparison.OrdinalIgnoreCase)),
+            null => null,
+        };
+        return matching ?? lastProfilePath ?? present.FirstOrDefault() ?? DefaultConfigPath;
+    }
+
+    private static string GetLastProfileTxtPath(string configFolder)
+    {
+        return Path.Combine(configFolder, "LastProfile.txt");
+    }
+
+    private static string GetConfigFolderPath()
     {
         string folder;
         if (Environment.OSVersion.Platform == PlatformID.Win32NT)
@@ -46,33 +87,64 @@ public class Configuration
         {
             Directory.CreateDirectory(folder);
         }
-        return Path.Combine(folder, "Config.json");
-    }
-    public IAuthorization Authorization { get; set; } = NoAuthorization.Instance;
-    public string BaseAddress { get; set; } = default!;
 
-    public static Configuration Load()
+        return folder;
+    }
+    public static void MarkLast(Configuration conf)
     {
-        var path = GetPath();
-        var json = File.ReadAllText(path);
-        using var doc = JsonDocument.Parse(json);
-        IAuthorization auth;
-        string address = "";
-        try
+        File.WriteAllText(GetLastProfileTxtPath(GetConfigFolderPath()), conf.profileName);
+    }
+    public static Configuration Create(IAuthorization auth, string server, string? profile = null)
+    {
+        var conf = new Configuration(profile, auth, server);
+        conf.Save();
+        return conf;
+    }
+    public IAuthorization Authorization { get; set; }
+    public string ServerAddress { get; set; }
+    [JsonIgnore]
+    public string SelfPath => Path.Combine(GetConfigFolderPath(), Name+Extension);
+
+    [AllowNull]
+    public required string Name
+    {
+        get => profileName;
+        init
         {
-            var typeElem = doc.RootElement.GetProperty(nameof(Authorization) + "Type");
-            var typeName = typeElem.GetString();
-            var authorizationType = GetType(typeName);
-            var authDataProp = doc.RootElement.GetProperty(nameof(Authorization));
-            auth = authDataProp.Deserialize(authorizationType) as IAuthorization ?? throw new ArgumentNullException();
-            address = doc.RootElement.GetProperty(nameof(BaseAddress)).GetString() ?? throw new ArgumentNullException();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                profileName = value!;
+            }
+            else
+            {
+                profileName = DefaultConfigName;
+
+            }
         }
-        catch
+    }
+
+    public static Configuration Load(string? profileName = null)
+    {
+        var path = GetProfilePath(profileName);
+        if (!File.Exists(path))
         {
-            auth = NoAuthorization.Instance;
-            address = "";
+            return new Configuration() { Name = profileName };
         }
-        return new Configuration() { BaseAddress = address, Authorization = auth };
+        var empty = new Configuration(profileName);
+        var conf = Storage.DeobfuscateFromFile<Configuration>(path) ?? empty;
+        return conf;
+    }
+    [SetsRequiredMembers]
+    private Configuration(string? profileName = null, IAuthorization? auth = null, string? address = null)
+    {
+        Name = profileName;
+        ServerAddress = address ?? "";
+        Authorization = auth ?? NoAuthorization.Instance;
+    }
+    [SetsRequiredMembers]
+    public Configuration() : this(null, null, null)
+    {
+
     }
     private static Type GetType(string? typeName)
     {
@@ -94,18 +166,16 @@ public class Configuration
     }
     public void Save()
     {
-        var dto = new Dictionary<string, object>()
-        {
-            {"BaseAddress",BaseAddress },
-            {"AuthorizationType",Authorization.GetType().FullName! },
-            {"Authorization",Authorization },
-        };
-        var json = JsonSerializer.Serialize(dto);
-        File.WriteAllText(GetPath(), json);
+        Storage.ObfuscateToFile(this, SelfPath);
+    }
+    public void SaveAs(string profileName)
+    {
+        var updated = new Configuration(profileName, this.Authorization, this.ServerAddress);
+        updated.Save();
     }
     public Information ToInformation()
     {
-        return new Information(GetPath(), Authorization.GetType().Name, BaseAddress);
+        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress);
     }
     public readonly record struct Information
     {
@@ -118,5 +188,11 @@ public class Configuration
             Type = type;
             ServerAddress = serverAddress;
         }
+    }
+    private readonly record struct Dto
+    {
+        public string ServerAddress { get; init; }
+        public string AuthorizationType { get; init; }
+        public string Name { get; init; }
     }
 }

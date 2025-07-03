@@ -19,6 +19,7 @@ public class ClearIssueCache : LiraCmdlet
     public SwitchParameter All { get; set; }
     protected override void BeginProcessing()
     {
+        // No need to load anything here. No session - no cache.
         //base.BeginProcessing();
     }
     protected override void ProcessRecord()

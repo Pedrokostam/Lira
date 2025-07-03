@@ -31,7 +31,7 @@ namespace LiraPS.Cmdlets
         [Parameter(Mandatory = true, ParameterSetName = "PAT")]
         public string PersonalAccessToken { get; set; } = default!;
 
-        [Parameter(DontShow =true,Mandatory = true, ParameterSetName = "ATLASSIAN")]
+        [Parameter(DontShow = true, Mandatory = true, ParameterSetName = "ATLASSIAN")]
         public string AtlassianApiKey { get; set; } = default!;
         [Parameter(DontShow = true, Mandatory = true, ParameterSetName = "ATLASSIAN")]
         public string UserEmail { get; set; } = default!;
@@ -39,6 +39,18 @@ namespace LiraPS.Cmdlets
 
         [Parameter(Mandatory = true, ParameterSetName = "CLEAR")]
         public SwitchParameter Clear { get; set; }
+
+        [Parameter(ParameterSetName = "COOKIE")]
+        [Parameter(ParameterSetName = "PAT")]
+        [Parameter(ParameterSetName = "MANUAL")]
+        [Parameter(ParameterSetName = "ATLASSIAN")]
+        public SwitchParameter NoSwitch { get; set; }
+        [Parameter(ParameterSetName = "COOKIE")]
+        [Parameter(ParameterSetName = "PAT")]
+        [Parameter(ParameterSetName = "MANUAL")]
+        [Parameter(ParameterSetName = "ATLASSIAN")]
+        [Alias("Name", "Profile")]
+        public string ProfileName { get; set; }
         private IAuthorization Authorization { get; set; } = default!;
         protected override void BeginProcessing()
         {
@@ -52,7 +64,7 @@ namespace LiraPS.Cmdlets
             if (LiraSession.TestSessionDateAvailable())
             {
                 LiraSession.Logger.LogTrace("Updating configuration: ServerAddress=\"{Address}\", Authorization={AuthorizationType}",
-                                            LiraSession.Config!.BaseAddress,
+                                            LiraSession.Config!.ServerAddress,
                                             LiraSession.Config.Authorization.GetType().FullName);
             }
             else if (ParameterSetName == "CLEAR")
@@ -104,9 +116,20 @@ namespace LiraPS.Cmdlets
             {
                 LiraSession.Logger.LogCritical("Invalid ParameterSetName: {Name}", ParameterSetName);
             }
-            var c = new Configuration() { BaseAddress = ServerAddress, Authorization = Authorization };
+            if (!TestBoundParameter(nameof(ProfileName)))
+            {
+                ProfileName = ReadInput("Do you want to specify custom name for this profile? Leave empty to use the default name");
+            }
+            var c = Configuration.Create(Authorization, ServerAddress, ProfileName);
             c.Save();
-            LiraSession.Config = c;
+            if (NoSwitch.IsPresent && LiraSession.HasConfig)
+            {
+                WriteWarning($"Configuration {c.Name} saved. Configuration {LiraSession.Config.Name} still active");
+            }
+            else
+            {
+                LiraSession.Config = c;
+            }
             PrintLogs();
         }
         protected override void EndProcessing()
@@ -123,17 +146,17 @@ namespace LiraPS.Cmdlets
             bool validAddress = LiraSession.Config.IsInitialized;
             if (validAddress)
             {
-                ServerAddress = ReadInput($"Enter new server address (leave empty to reuse {LiraSession.Config.BaseAddress})");
+                ServerAddress = ReadInput($"Enter new server address (leave empty to reuse {LiraSession.Config.ServerAddress})");
                 if (string.IsNullOrWhiteSpace(ServerAddress))
                 {
-                    ServerAddress = LiraSession.Config.BaseAddress;
+                    ServerAddress = LiraSession.Config.ServerAddress;
                 }
             }
             else
             {
                 ServerAddress = ReadInput("Enter server address (usually \"https://jira.(company).com\")");
             }
-            EnsureNotEmpty(ServerAddress,nameof(ServerAddress));
+            EnsureNotEmpty(ServerAddress, nameof(ServerAddress));
         }
     }
 

@@ -13,6 +13,7 @@ using Lira;
 using Lira.Jql;
 using Lira.Objects;
 using Lira.StateMachines;
+using LiraPS.Completers;
 using LiraPS.Transformers;
 using Serilog.Events;
 using Serilog.Formatting.Display;
@@ -128,9 +129,11 @@ namespace LiraPS.Cmdlets
         private void WritePaginationProgress(in WorklogMachine.State currState, bool finished)
         {
             var got = currState.PaginationState.Pagination.EndsAt;
-            var total = currState.PaginationState.Pagination.Total.ToString();
-            var perc = (int)(currState.PaginationState.Progress * 100);
-            var record = new ProgressRecord(IssuePaginationProgressId, "Gathering issues", $"Paginating results {got}/{total} ({perc:d2}%)")
+            long totalCount = currState.PaginationState.Pagination.Total;
+            var totalString = totalCount.ToString();
+            var perc = totalCount == 0 ? -1 :(int)(currState.PaginationState.Progress * 100);
+            var status = totalCount == 0 ? "Fetching issues..." : $"Paginating results {got}/{totalString} issues ({perc:d2}%)...";
+            var record = new ProgressRecord(IssuePaginationProgressId, "Gathering issues", status)
             {
                 PercentComplete = perc,
                 RecordType = finished ? ProgressRecordType.Completed : ProgressRecordType.Processing

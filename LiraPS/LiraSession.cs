@@ -26,6 +26,7 @@ public static class LiraSession
             if (_config is null)
             {
                 _config = Configuration.Load();
+                Configuration.MarkLast(_config);
                 Logger.LogDebug("Loaded configuration");
 
             }
@@ -38,18 +39,26 @@ public static class LiraSession
                 CloseSession();
                 _config = value;
             }
+            Configuration.MarkLast(_config);
+        }
+    }
+    public static  bool HasConfig
+    {
+        get
+        {
+            return _config is not null && _config.IsInitialized;
         }
     }
     public static ILogger<LiraClient> Logger { get; }
     static LiraSession()
     {
-//        var serilogger = new LoggerConfiguration()
-//             //.WriteTo.File("test.log").MinimumLevel.Verbose()
-//             .WriteTo.Sink(LogSink).MinimumLevel.Verbose()
-//#if DEBUG
-//             //.WriteTo.Debug()
-//#endif
-//             .CreateLogger();
+        //        var serilogger = new LoggerConfiguration()
+        //             //.WriteTo.File("test.log").MinimumLevel.Verbose()
+        //             .WriteTo.Sink(LogSink).MinimumLevel.Verbose()
+        //#if DEBUG
+        //             //.WriteTo.Debug()
+        //#endif
+        //             .CreateLogger();
         Logger = new PSLogger<LiraClient>("log.log");
         //Logger = new SerilogLoggerFactory(serilogger).CreateLogger<LiraClient>();
     }
@@ -66,7 +75,7 @@ public static class LiraSession
         {
             throw new InvalidOperationException("Attempted to load unitialized configuration. Call Set-Configuration to initialize it.");
         }
-        Client = await LiraSessionFactory.Create(Config.BaseAddress)
+        Client = await LiraSessionFactory.Create(Config.ServerAddress)
              .WithLogger(Logger)
              .AuthorizedBy(Config.Authorization)
              .Initialize();
@@ -74,7 +83,7 @@ public static class LiraSession
         {
             Logger.LogWarning("Created session with no authorization.");
         }
-        Config.BaseAddress = Client.ServerAddress.ToString();
+        Config.ServerAddress = Client.ServerAddress.ToString();
         Config.Save();
         return Client;
     }
@@ -84,7 +93,7 @@ public static class LiraSession
         {
             return Config.IsInitialized;
         }
-        if (File.Exists(Configuration.GetPath()))
+        if (File.Exists(Configuration.GetProfilePath()))
         {
             try
             {

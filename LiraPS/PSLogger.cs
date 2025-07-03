@@ -17,6 +17,7 @@ public class PSLogger<T>(string filepath) : ILogger<T>, IEnumerable<Log>
     public string FilePath { get; } = filepath;
     private readonly Queue<Log> _queue = new();
     private readonly object _lock = new object();
+    private const int MaxCount = 10_000;
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {
         throw new NotImplementedException();
@@ -27,8 +28,15 @@ public class PSLogger<T>(string filepath) : ILogger<T>, IEnumerable<Log>
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         var log = new Log(formatter(state, exception), logLevel, exception);
+        Debug.WriteLine(_queue.Count);
         _queue.Enqueue(log);
-        Debug.WriteLine(log.Message);
+        if (_queue.Count > MaxCount)
+        {
+            while (_queue.Count > MaxCount)
+            {
+                _queue.Dequeue();
+            }
+        }
         lock (_lock)
             File.AppendAllText(FilePath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss:fff}: {log.Message}\n");
     }

@@ -102,7 +102,7 @@ public readonly partial record struct JqlKeywordDate : IJqlDate
             JqlDateKeywords.EndOfMonth => accountTime.EndOfMonth(),
             JqlDateKeywords.StartOfYear => accountTime.StartOfYear(),
             JqlDateKeywords.EndOfYear => accountTime.EndOfYear(),
-            _ => throw new NotSupportedException()
+            _ => throw new NotSupportedException(),
         };
     }
 

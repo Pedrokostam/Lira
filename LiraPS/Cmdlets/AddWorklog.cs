@@ -2,6 +2,7 @@
 using System.Management.Automation;
 using System.Reflection;
 using Lira.Objects;
+using LiraPS.Completers;
 using LiraPS.Transformers;
 
 namespace LiraPS.Cmdlets

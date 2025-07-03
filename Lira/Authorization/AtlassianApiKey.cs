@@ -18,13 +18,15 @@ public readonly record struct AtlassianApiKey : IAuthorization
 
     public string UserEmail { get; }
     public string ApiKey { get; }
+    public string TypeIdentifier => Type;
+    public static readonly string Type = "AtlassianApiKey";
     private string GetStringForm()
     {
         return $"{UserEmail}:{ApiKey}";
     }
     public Task Authorize(LiraClient lira)
     {
-        var bytes = Encoding.UTF8.GetBytes(GetStringForm());   
+        var bytes = Encoding.UTF8.GetBytes(GetStringForm());
         var base64 = Convert.ToBase64String(bytes);
         lira.HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", base64);
         return Task.CompletedTask;

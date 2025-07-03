@@ -10,6 +10,9 @@ namespace Lira.Authorization;
 public  class NoAuthorization : IAuthorization
 {
     public static readonly NoAuthorization Instance = new ();
+
+    public string TypeIdentifier => Type;
+    public static readonly string Type = "NoAuthorization";
     private NoAuthorization()
     {
     }

@@ -59,7 +59,7 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
         }
     }
 
-    private int _queryLimit = 25;
+    private int _queryLimit = 15;
     public int QueryLimit
     {
         get => _queryLimit;
@@ -71,7 +71,7 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
             }
             else
             {
-                _queryLimit = 25;
+                _queryLimit = 15;
             }
         }
     }

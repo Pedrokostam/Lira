@@ -14,6 +14,6 @@ public interface IAuthorization
     /// <returns></returns>
     Task Authorize(LiraClient lira);
     Task<bool> EnsureAuthorized(LiraClient lira);
-    //void Save(string filepath);
     Task<Exception?> CreateExceptionForUnauthorized(HttpResponseMessage message);
+    public string TypeIdentifier { get; }
 }
