@@ -1,4 +1,4 @@
-﻿namespace LiraPS.Completers;
+﻿namespace LiraPS.Arguments;
 
 internal enum TimeUnit
 {

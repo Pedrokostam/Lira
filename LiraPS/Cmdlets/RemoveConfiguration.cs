@@ -30,12 +30,11 @@ public class RemoveConfiguration : LiraCmdlet
             var path = Configuration.GetProfilePath_Null(Name);
             if (!File.Exists(path))
             {
-                ThrowTerminatingError(
-                    new ErrorRecord(
+                Terminate(
                         new Exception("Specified configuration does not exist"),
                         "InvalidConfigName",
-                        ErrorCategory.InvalidArgument,
-                        null));
+                        ErrorCategory.InvalidArgument
+                       );
             }
             File.Delete(path);
         }

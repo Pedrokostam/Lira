@@ -10,6 +10,7 @@ using static LiraPS.StringFormatter;
 using System.Diagnostics.CodeAnalysis;
 using LiraPS.Extensions;
 using LiraPS.Completers;
+using LiraPS.Arguments;
 namespace LiraPS;
 
 /// <summary>

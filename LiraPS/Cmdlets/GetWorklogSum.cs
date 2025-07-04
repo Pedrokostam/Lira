@@ -5,6 +5,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using Lira.Objects;
+using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets;
 
@@ -48,7 +49,7 @@ public class GetWorklogSum : LiraCmdlet
     [Parameter()]
     public SwitchParameter PassThru { get; set; }
 
-    private List<Worklog> _worklogs = [];
+    private readonly List<Worklog> _worklogs = [];
 
     protected override void BeginProcessing()
     {
@@ -62,13 +63,14 @@ public class GetWorklogSum : LiraCmdlet
             if (GetGlobal("LiraLastWorklogs") is IEnumerable<Worklog> logs)
             {
                 Worklogs = logs.ToArray();
-                WriteWarning("Using previously fetched logs");
+                LiraSession.Logger.LogWarning("Using previously fetched logs");
             }
             else
             {
-                ThrowTerminatingError(new ErrorRecord(new ArgumentException("No worklogs provided"), "NoWorklogs", ErrorCategory.InvalidArgument, null));
+                Terminate(new ArgumentException("No worklogs provided"), "NoWorklogs", ErrorCategory.InvalidArgument);
             }
         }
+        PrintLogs();
         foreach (var worklog in Worklogs)
         {
             _worklogs.Add(worklog);

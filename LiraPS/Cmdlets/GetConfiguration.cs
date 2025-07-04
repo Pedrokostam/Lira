@@ -13,15 +13,11 @@ namespace LiraPS.Cmdlets
             // Ensure configuration is loaded and valid
             if (LiraSession.Config is null)
             {
-                ThrowTerminatingError(
-                    new ErrorRecord(
+                Terminate(
                         new InvalidOperationException("No active configuration found. Please run Set-Configuration first."),
                         "NoActiveConfiguration",
-                        ErrorCategory.ResourceUnavailable,
-                        null
-                    )
+                        ErrorCategory.ResourceUnavailable
                 );
-                return;
             }
 
             WriteObject(LiraSession.Config.ToInformation());

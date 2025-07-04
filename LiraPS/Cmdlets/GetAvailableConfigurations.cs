@@ -10,21 +10,15 @@ namespace LiraPS.Cmdlets;
 [OutputType(typeof(LiraPS.Configuration.Information))]
 public class GetAvailableConfigurations : LiraCmdlet
 {
-    [Parameter(Position = 0)]
-    public string? Name { get; set; }
-
     protected override void BeginProcessing()
     {
         //base.BeginProcessing();
     }
     protected override void ProcessRecord()
     {
-        if (string.IsNullOrWhiteSpace(Name))
+        foreach (var confInfo in GetAvailable())
         {
-            foreach (var confInfo in GetAvailable())
-            {
-                WriteObject(confInfo);
-            }
+            WriteObject(confInfo);
         }
     }
     internal static IEnumerable<Configuration.Information> GetAvailable()

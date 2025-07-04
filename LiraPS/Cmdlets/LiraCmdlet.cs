@@ -20,7 +20,6 @@ using LiraPS.Transformers;
 using Microsoft.Extensions.Logging;
 using Serilog.Events;
 using Serilog.Formatting.Display;
-using AllowNullAttribute = System.Management.Automation.AllowNullAttribute;
 
 namespace LiraPS.Cmdlets
 {
@@ -30,9 +29,7 @@ namespace LiraPS.Cmdlets
         {
             if (string.IsNullOrWhiteSpace(text))
             {
-                ThrowTerminatingError(
-                    new ErrorRecord(new ArgumentException($"{name} cannot be empty"), $"Empty{name}", ErrorCategory.InvalidArgument, null)
-                    );
+                Terminate(new ArgumentException($"{name} cannot be empty"), $"Empty{name}");
             }
         }
         protected LiraCmdlet() : base()
@@ -95,7 +92,7 @@ namespace LiraPS.Cmdlets
             Host.UI.Write(message + ": ");
             if (asSecure)
             {
-                var secure = Host.UI.ReadLineAsSecureString();
+                using var secure = Host.UI.ReadLineAsSecureString();
                 return new System.Net.NetworkCredential("", secure).Password;
             }
             else
@@ -112,7 +109,7 @@ namespace LiraPS.Cmdlets
             LiraSession.StartSession().Wait();
             PrintLogs();
         }
-        public void WriteHost(string message,ConsoleColor? foregroundColor = null, ConsoleColor? backgroundColor = null)
+        public void WriteHost(string message, ConsoleColor? foregroundColor = null, ConsoleColor? backgroundColor = null)
         {
             // If colors are specified, use Host.UI.WriteLine for color output
             if (foregroundColor.HasValue || backgroundColor.HasValue)
@@ -151,11 +148,20 @@ namespace LiraPS.Cmdlets
                     WriteError(new ErrorRecord(log.Exception ?? new Exception(), txt, ErrorCategory.NotSpecified, null));
                     break;
                 case LogLevel.Critical:
-                    ThrowTerminatingError(new ErrorRecord(log.Exception ?? new Exception(), txt, ErrorCategory.NotSpecified, null));
+                    Terminate(log.Exception ?? new Exception(), txt, ErrorCategory.NotSpecified);
                     break;
             }
         }
-
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+        protected void Terminate<T>(T error, string id, ErrorCategory category = ErrorCategory.InvalidArgument, object? target = null) where T : Exception
+        {
+            ThrowTerminatingError(
+                   new ErrorRecord(
+                       error,
+                       id,
+                       category,
+                       target));
+        }
         protected static string ReplaceCurrentUserAlias(string value)
         {
             var l = value.ToLowerInvariant();

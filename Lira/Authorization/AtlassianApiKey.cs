@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Lira.Exceptions;
 
 namespace Lira.Authorization;
-[Obsolete]
 public readonly record struct AtlassianApiKey : IAuthorization
 {
     public AtlassianApiKey(string userEmail, string apiKey)

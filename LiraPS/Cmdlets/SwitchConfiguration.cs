@@ -26,12 +26,10 @@ public class SwitchConfiguration : LiraCmdlet
         var path = Configuration.GetProfilePath_Null(Name);
         if (!File.Exists(path))
         {
-            ThrowTerminatingError(
-                new ErrorRecord(
+            Terminate(
                     new Exception("Specified configuration does not exist"),
                     "InvalidConfigName",
-                    ErrorCategory.InvalidArgument,
-                    null));
+                    ErrorCategory.InvalidArgument);
         }
         LiraSession.Config = Configuration.Load(Name);
         WriteObject(LiraSession.Config.ToInformation());
