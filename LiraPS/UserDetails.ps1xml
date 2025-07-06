@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Configuration
-	>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd">
 	<ViewDefinitions>
 
 		<!-- UserDetails View -->
@@ -68,7 +69,6 @@
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Time</Label>
-						<Width>8</Width>
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
@@ -86,18 +86,18 @@
 
 							<!-- Started -->
 							<TableColumnItem>
-								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started)</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started,1)</ScriptBlock>
 							</TableColumnItem>
 
 							<!-- Author.Name -->
 							<TableColumnItem>
 								<ScriptBlock>$_.Author.DisplayName</ScriptBlock>
 							</TableColumnItem>
-							
+
 							<!-- TimeSpent as hours -->
 							<TableColumnItem>
 								<ScriptBlock>
-									[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)
+									[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent,1)
 								</ScriptBlock>
 							</TableColumnItem>
 
@@ -133,16 +133,19 @@
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Created</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Updated</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Started</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Time</Label>
-						<Width>8</Width>
+					
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
@@ -163,24 +166,24 @@
 
 							<!-- Created -->
 							<TableColumnItem>
-								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Created)</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Created,1)</ScriptBlock>
 							</TableColumnItem>
 
 							<!-- Updated -->
 							<TableColumnItem>
-								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Updated)</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Updated,1)</ScriptBlock>
 							</TableColumnItem>
 
 							<!-- Started -->
 							<TableColumnItem>
-								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started)</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started,1)</ScriptBlock>
 							</TableColumnItem>
-							
+
 							<!-- UpdateAuthor.Name -->
 							<TableColumnItem>
 								<ScriptBlock>$_.UpdateAuthor.Name</ScriptBlock>
 							</TableColumnItem>
-							
+
 							<!-- Author.Name -->
 							<TableColumnItem>
 								<ScriptBlock>$_.Author.Name</ScriptBlock>
@@ -188,7 +191,7 @@
 
 							<!-- TimeSpent as hours -->
 							<TableColumnItem>
-								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent,1)</ScriptBlock>
 							</TableColumnItem>
 
 							<!-- Comment -->
@@ -231,21 +234,18 @@
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Created</Label>
-						<Width>28</Width>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>      Updated       </Label>
-						<Width>18</Width>
+						<Label>Updated</Label>
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Time</Label>
-						<Width>18</Width>
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>TotalTime</Label>
-						<Width>8</Width>
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
@@ -348,7 +348,7 @@
 		<View>
 			<Name>WorklogSumTable</Name>
 			<ViewSelectedBy>
-				<TypeName>LiraPS.Cmdlets.WorklogSum</TypeName>
+				<TypeName>LiraPS.Outputs.WorklogSum</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>

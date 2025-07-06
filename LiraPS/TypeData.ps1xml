@@ -10,6 +10,15 @@
 		</Members>
 	</Type>
 	<Type>
+		<Name>Lira.Objects.Worklog</Name>
+		<Members>
+			<AliasProperty>
+				<Name>Time</Name>
+				<ReferencedMemberName>TimeSpent</ReferencedMemberName>
+			</AliasProperty>
+		</Members>
+	</Type>
+	<Type>
 		<Name>LiraPS.Outputs.WorklogSum</Name>
 		<Members>
 			<AliasProperty>

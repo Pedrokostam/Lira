@@ -51,14 +51,20 @@ public static partial class TimeExtensions
         value = DateTimeCorrecter().Replace(value, "-");
         return DateTimeOffset.TryParseExact(value, ParseFormatters, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out dto);
     }
-    public static string PrettyTime(this TimeSpan ts,int pad)
+    private static string Pad(int pad)
     {
-        return $"{(int)ts.TotalHours}h {ts.Minutes}m".PadLeft(pad).PadRight(pad);
+        return "".PadLeft(pad, ' ');
+    }
+    public static string PrettyTime(this TimeSpan ts, int pad)
+    {
+
+        return $"{Pad(pad)}{(int)ts.TotalHours}h {ts.Minutes}m{Pad(pad)}";
     }
     public static string PrettyTime(this TimeSpan ts) => PrettyTime(ts, 0);
     public static string PrettyDate(this DateTimeOffset dto, int pad)
     {
-        return dto.ToLocalTime().ToString("yyyy-MM-dd HH:mm").PadLeft(pad).PadRight(pad);
+        var s = dto.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        return $"{Pad(pad)}{s}{Pad(pad)}";
     }
     public static string PrettyDate(this DateTimeOffset dto) => PrettyDate(dto, 0);
     [GeneratedRegex(@"[\/\\\.]", RegexOptions.ExplicitCapture, 250)]
