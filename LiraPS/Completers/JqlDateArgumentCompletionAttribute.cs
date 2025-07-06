@@ -27,7 +27,7 @@ internal abstract class JqlDateArgumentCompletionAttributeBase : IArgumentComple
     {
         wordToComplete = (wordToComplete ?? "").Trim();
 
-        if (LiraPS.Extensions.DateTimeExtensions.TryParseDateTimeOffset(wordToComplete,out var dto))
+        if (LiraPS.Extensions.TimeExtensions.TryParseDateTimeOffset(wordToComplete,out var dto))
         {
             yield return DateCompletionHelper.CreateCompletion(dto.NumericalForm(), dto.UnambiguousForm(), CompletionResultType.ParameterValue, "Current date");
         }

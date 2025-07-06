@@ -91,7 +91,7 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
             {
                 return WrapUnwrap(keywordDate);
             }
-            if (DateTimeExtensions.TryParseDateTimeOffset(s, out var parsedDate))
+            if (TimeExtensions.TryParseDateTimeOffset(s, out var parsedDate))
             {
                 if (parsedDate.TimeOfDay == TimeSpan.Zero)
                 {

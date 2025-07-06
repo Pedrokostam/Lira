@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Configuration
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd">
+	>
 	<ViewDefinitions>
 
 		<!-- UserDetails View -->
@@ -68,7 +67,8 @@
 						<Label>Author</Label>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>TimeSpent</Label>
+						<Label>Time</Label>
+						<Width>8</Width>
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
@@ -86,7 +86,7 @@
 
 							<!-- Started -->
 							<TableColumnItem>
-								<ScriptBlock>$_.Started.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss ")</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started)</ScriptBlock>
 							</TableColumnItem>
 
 							<!-- Author.Name -->
@@ -97,7 +97,7 @@
 							<!-- TimeSpent as hours -->
 							<TableColumnItem>
 								<ScriptBlock>
-									[LiraPS.LiraSession]::NiceTime($_.TimeSpent)
+									[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)
 								</ScriptBlock>
 							</TableColumnItem>
 
@@ -141,7 +141,8 @@
 						<Label>Started</Label>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>TimeSpent</Label>
+						<Label>Time</Label>
+						<Width>8</Width>
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
@@ -162,17 +163,17 @@
 
 							<!-- Created -->
 							<TableColumnItem>
-								<ScriptBlock>$_.Created.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss ")</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Created)</ScriptBlock>
 							</TableColumnItem>
 
 							<!-- Updated -->
 							<TableColumnItem>
-								<ScriptBlock>$_.Updated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss ")</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Updated)</ScriptBlock>
 							</TableColumnItem>
 
 							<!-- Started -->
 							<TableColumnItem>
-								<ScriptBlock>$_.Started.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss ")</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started)</ScriptBlock>
 							</TableColumnItem>
 							
 							<!-- UpdateAuthor.Name -->
@@ -187,9 +188,7 @@
 
 							<!-- TimeSpent as hours -->
 							<TableColumnItem>
-								<ScriptBlock>
-									[LiraPS.LiraSession]::NiceTime($_.TimeSpent)
-								</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
 							</TableColumnItem>
 
 							<!-- Comment -->
@@ -232,15 +231,22 @@
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Created</Label>
+						<Width>28</Width>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>Updated</Label>
+						<Label>      Updated       </Label>
+						<Width>18</Width>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>TimeSpent</Label>
+						<Label>Time</Label>
+						<Width>18</Width>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>TotalTimeSpent</Label>
+						<Label>TotalTime</Label>
+						<Width>8</Width>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Summary</Label>
@@ -267,19 +273,19 @@
 								</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>$_.Created.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss ")</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Created,1)</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>$_.Updated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss ")</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Updated,1)</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>
-									[LiraPS.LiraSession]::NiceTime($_.TimeSpent)
+									[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent,1)
 								</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>
-									("{0:D2}:{1:D2}" -f [int]$_.TotalTimeSpent.TotalHours, $_.TimeSpent.Minutes)
+									[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TotalTimeSpent,1)
 								</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
@@ -366,7 +372,7 @@
 								<ScriptBlock>$_.Worklogs.Length</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>[LiraPS.LiraSession]::NiceTime($_.TimeSpent)</ScriptBlock>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
