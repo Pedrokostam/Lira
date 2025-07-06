@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using LiraPS.Extensions;
 using LiraPS.Completers;
 using LiraPS.Arguments;
+using LiraPS.Transformers;
 namespace LiraPS;
 
 /// <summary>
@@ -33,10 +34,23 @@ internal static partial class DateCompletionHelper
     [GeneratedRegex(Pattern, RegexOptions.ExplicitCapture, Timeout)]
     public static partial Regex DateStringChecker();
 #endif
+    /// <summary>
+    /// Gets a specific date based on a JQL keyword, converted to the local time zone.
+    /// </summary>
     private static DateTimeOffset GetSpecificDate(JqlKeywordDate.JqlDateKeywords keyword)
     {
         return new JqlKeywordDate(keyword).ToAccountDatetime(TimeZoneInfo.Local);
     }
+  
+    internal static CompletionResult CreateCompletion(string completionText, string listItemText, CompletionResultType resultType, string toolTip)
+    {
+        var completionNoSpace = completionText.Contains(' ') ? $"'{completionText}'" : completionText;
+        return new CompletionResult(completionNoSpace, listItemText, resultType, toolTip);
+    }
+    /// <summary>
+    /// Adds a date variant to the list based on the start/end of a specified time unit (day, week, month, year).
+    /// </summary>
+    /// <param name="dates">The list to add the date to.</param>
     private static void AddDateFromStartAndUnit(List<ITooltipDate> dates, DateTimeOffset baseDate, bool isStart, TimeUnit unit)
     {
         string baseString = baseDate.UnambiguousForm();
@@ -49,36 +63,53 @@ internal static partial class DateCompletionHelper
             (false, TimeUnit.Week) => (JqlKeywordDate.JqlDateKeywords.EndOfWeek, Format($"Last day of week number {weekNumber}")),
             (true, TimeUnit.Month) => (JqlKeywordDate.JqlDateKeywords.StartOfMonth, Format($"First day of month {baseDate:MMMM}/{baseDate:yyyy}")),
             (false, TimeUnit.Month) => (JqlKeywordDate.JqlDateKeywords.EndOfMonth, Format($"Last day of month {baseDate:MMMM}/{baseDate:yyyy}")),
-            (true, TimeUnit.Year) => (JqlKeywordDate.JqlDateKeywords.StartOfYear, Format($"First day of year {baseDate:Year}")),
-            (false, TimeUnit.Year) => (JqlKeywordDate.JqlDateKeywords.EndOfYear, Format($"Last day of year {baseDate:Year}")),
+            (true, TimeUnit.Year) => (JqlKeywordDate.JqlDateKeywords.StartOfYear, Format($"First day of year {baseDate:yyyy}")),
+            (false, TimeUnit.Year) => (JqlKeywordDate.JqlDateKeywords.EndOfYear, Format($"Last day of year {baseDate:yyyy}")),
             _ => throw new NotSupportedException(),
         };
         dates.Add(new TooltipManualDate(keyword.ToDateTimeOffset(baseDate), tooltip));
     }
-
+    /// <summary>
+    /// Gets the week number of the year for the specified date, using the current culture's calendar.
+    /// </summary>
     private static int GetWeekNumber(DateTimeOffset baseDate)
     {
         return CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(baseDate.Date, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Sunday);
     }
 
+    private static string PluralYear(int yearDiff)
+    {
+        return yearDiff switch
+        {
+            1 => $"{yearDiff} year",
+            _ => $"{yearDiff} years"
+        };
+    }
     // TODO tests
 
+    /// <summary>
+    /// Returns a string describing the difference between the specified year and the current year.
+    /// </summary>
+    /// <param name="year">The year to compare.</param>
     private static string GetYearDifferenceString(int year, ref DateTimeOffset now)
     {
         var yearDiff = now.Year - year;
         return yearDiff switch
         {
             0 => Format($"this year"),
-            > 0 => Format($"{yearDiff} years ago"),
-            < 0 => Format($"{yearDiff} years in the future")
+            > 0 => Format($"{PluralYear(yearDiff)} ago"),
+            < 0 => Format($"{PluralYear(yearDiff)} in the future")
         };
     }
-
-    private static void TryAddDateVariant(List<ITooltipDate> variants, int year, int month, int day, string tooltip)
+    /// <summary>
+    /// Attempts to add a date variant to the list, handling invalid dates gracefully.
+    /// </summary>
+    /// <param name="variants">The list to add the date to.</param>
+    private static void TryAddDateVariant(List<ITooltipDate> variants, int year, int month, int day,int hour, int minute, string tooltip)
     {
         try
         {
-            variants.Add(new TooltipManualDate(new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Local), tooltip));
+            variants.Add(new TooltipManualDate(new DateTime(year, month, day, hour, minute, 0, DateTimeKind.Local), tooltip));
         }
         catch (ArgumentOutOfRangeException)
         {
@@ -86,7 +117,9 @@ internal static partial class DateCompletionHelper
             // dont do anything
         }
     }
-
+    /// <summary>
+    /// Sets an integer value from a named regex group if present.
+    /// </summary>
     private static int SetNumber(Match match, string name, ref int value)
     {
         if (GetGroup(match, name) is string numberStr)
@@ -96,7 +129,9 @@ internal static partial class DateCompletionHelper
         }
         return 0;
     }
-
+    /// <summary>
+    /// Gets the value of a named regex group, or null if not present or empty.
+    /// </summary>
     private static string? GetGroup(Match match, string group)
     {
         var s = match.Groups[group]?.Value;
@@ -104,9 +139,12 @@ internal static partial class DateCompletionHelper
     }
 
     private static readonly JqlKeywordDate.JqlDateKeywords[] _periods = Enum.GetValues(typeof(JqlKeywordDate.JqlDateKeywords)).Cast<JqlKeywordDate.JqlDateKeywords>().ToArray();
-    public static IEnumerable<CompletionResult> MatchDate(string wordToComplete, bool start)
+    /// <summary>
+    /// Matches a partial or complete date string and generates completion results for possible date values.
+    /// </summary>
+    public static IEnumerable<CompletionResult> MatchDate(string wordToComplete, DateMode mode)
     {
-        wordToComplete.Trim();
+        wordToComplete = wordToComplete.Trim();
         if (string.IsNullOrEmpty(wordToComplete))
         {
             wordToComplete = DateTimeOffset.Now.NumericalForm();
@@ -130,73 +168,121 @@ internal static partial class DateCompletionHelper
         SetNumber(match, "month", ref month);
         SetNumber(match, "day", ref day);
         var now = DateTimeOffset.Now;
+        var time = mode switch
+        {
+            DateMode.Current => now.TimeOfDay,
+            DateMode.Start => TimeSpan.Zero,
+            DateMode.End =>TimeSpan.FromHours(24).Subtract(TimeSpan.FromTicks(1)),
+            _ => throw new NotImplementedException(),
+        };
         List<ITooltipDate> variants = [];
+        var isStart = mode != DateMode.End;
         if (year > 0)
         {
-            var yearDate = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Local);
+            var yearDate = new DateTime(year, 1, 1, time.Hours, time.Minutes, 0, DateTimeKind.Local);
             if (month > 0)
             {
-                var monthDate = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Local);
+                var monthDate = new DateTime(year, month, 1, time.Hours, time.Minutes, 0, DateTimeKind.Local);
                 if (day > 0)
                 {
-                    variants.Add(new TooltipManualDate(new DateTime(year, month, day), "Today's date"));
+                    variants.Add(new TooltipManualDate(new DateTime(year, month, day,time.Hours,time.Minutes,0), "Today's date"));
                 }
                 else
                 {
-                    AddDateFromStartAndUnit(variants, monthDate, start, TimeUnit.Month);
-                    TryAddDateVariant(variants, year, month, now.Day, "Exact parsed day");
+                    AddDateFromStartAndUnit(variants, monthDate, isStart, TimeUnit.Month);
+                    TryAddDateVariant(variants, year, month, now.Day, time.Hours, time.Minutes, "Exact parsed day");
                 }
             }
             else
             {
-                AddDateFromStartAndUnit(variants, yearDate, start, TimeUnit.Year);
+                AddDateFromStartAndUnit(variants, yearDate, isStart, TimeUnit.Year);
             }
             string yearDiff = GetYearDifferenceString(year, ref now);
-            TryAddDateVariant(variants, year, now.Month, 1, Format($"First day of {now:MMMM}, {yearDiff}"));
-            TryAddDateVariant(variants, year, now.Month, now.Day, "Today's date, " + yearDiff);
+            TryAddDateVariant(variants, year, now.Month, 1, time.Hours, time.Minutes, Format($"First day of {now:MMMM}, {yearDiff}"));
+            TryAddDateVariant(variants, year, now.Month, now.Day, time.Hours, time.Minutes, "Today's date, " + yearDiff);
         }
         else
         {
             variants.Add(new TooltipManualDate(now, "Today's date"));
-            AddDateFromStartAndUnit(variants, now, start, TimeUnit.Day);
-            AddDateFromStartAndUnit(variants, now, start, TimeUnit.Month);
-            AddDateFromStartAndUnit(variants, now, start, TimeUnit.Year);
+            AddDateFromStartAndUnit(variants, now, isStart, TimeUnit.Day);
+            AddDateFromStartAndUnit(variants, now, isStart, TimeUnit.Month);
+            AddDateFromStartAndUnit(variants, now, isStart, TimeUnit.Year);
         }
         var uniques = variants.Distinct();
         foreach (var item in uniques)
         {
             var str = item.NumericalForm();
-            yield return new CompletionResult(str, str, CompletionResultType.ParameterValue, item.Tooltip);
+            yield return CreateCompletion(str, str, CompletionResultType.ParameterValue, item.Tooltip);
         }
     }
-    public static bool GetDateFromNonPositiveInt(string s, out DateTimeOffset date, out int number)
+    /// <summary>
+    /// Attempts to parse a non-positive integer as a relative date (e.g., "0" for today, "-1" for yesterday).
+    /// </summary>
+    public static bool GetDateFromNonPositiveInt(string s, DateMode mode, out DateTimeOffset date, out int number)
     {
         if (int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out number) && number <= 0)
         {
-            var today = DateTimeOffset.Now;
-            date = today.AddDays(number);
-            return true;
+            IJqlDate? todayo = mode switch
+            {
+                DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(number)),
+                DateMode.Start => new JqlKeywordDate(JqlKeywordDate.JqlDateKeywords.StartOfDay, number),
+                DateMode.End => new JqlKeywordDate(JqlKeywordDate.JqlDateKeywords.EndOfDay, number),
+                _ =>null,
+            };
+            date = todayo?.ToAccountDatetime(TimeZoneInfo.Local) ?? default;
+            return todayo is not null;
         }
         number = default;
         date = default;
         return false;
     }
-    public static bool GetIntCompletions(string wordToComplete, [NotNullWhen(true)] out CompletionResult? completionResult)
+    /// <summary>
+    /// Attempts to generate a completion result for a non-positive integer date input.
+    /// </summary>
+    public static bool GetIntCompletions(string wordToComplete, DateMode mode, [NotNullWhen(true)] out CompletionResult? completionResult)
     {
         completionResult = null;
-        if (GetDateFromNonPositiveInt(wordToComplete, out var desiredDate, out int number))
+        if (GetDateFromNonPositiveInt(wordToComplete, mode, out var desiredDate, out int number))
         {
             var unambiguous = desiredDate.UnambiguousForm();
             var completion = desiredDate.NumericalForm();
             var tooltip = number == 0 ? "Today" : $"{-number} days ago";
-            completionResult = new CompletionResult(completion, unambiguous, CompletionResultType.ParameterValue, tooltip);
+            completionResult =  CreateCompletion(completion, unambiguous, CompletionResultType.ParameterValue, tooltip);
             return true;
         }
         return false;
     }
-    public static IEnumerable<CompletionResult> GetEnumCompletions(string wordToComplete)
+
+    /// <summary>
+    /// Generates completion results for JQL date keyword enums and the "today" keyword, matching the input string.
+    /// </summary>
+    public static IEnumerable<CompletionResult> GetEnumCompletions(string wordToComplete, DateMode mode)
     {
         wordToComplete = (wordToComplete ?? "").Trim();
+        if ("today".Contains(wordToComplete, StringComparison.OrdinalIgnoreCase))
+        {
+            (IJqlDate date, string tooltip) datetip = mode switch
+            {
+                DateMode.Current => (new JqlManualDate(DateTimeOffset.Now), "Current time"),
+                DateMode.Start => (JqlKeywordDate.StartOfDay, "Start of today"),
+                DateMode.End => (JqlKeywordDate.EndOfDay, "End of today"),
+                _ => throw new NotImplementedException(),
+            };
+
+            yield return CreateCompletion("Today",
+                "Today",
+                CompletionResultType.ParameterValue,
+                datetip.tooltip
+                );
+        }
+        if ("now".Contains(wordToComplete, StringComparison.OrdinalIgnoreCase))
+        {
+            yield return CreateCompletion("Now",
+                "Now",
+                CompletionResultType.ParameterValue,
+                "Current time"
+                );
+        }
         foreach (var value in _periods)
         {
             string stringValue = value.ToString();
@@ -205,7 +291,7 @@ internal static partial class DateCompletionHelper
                 // the enum value contains the word, yield it.
                 // Empty word is considered contained in every value.
                 string tooltip = Format($"Jira function returning: {GetSpecificDate(value).UnambiguousForm()}");
-                yield return new CompletionResult(stringValue,
+                yield return CreateCompletion(stringValue,
                                                   stringValue,
                                                   CompletionResultType.ParameterValue,
                                                   tooltip);

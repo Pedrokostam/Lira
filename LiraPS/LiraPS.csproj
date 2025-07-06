@@ -49,6 +49,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="TypeData.ps1xml">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Update="UserDetails.ps1xml">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -29,14 +30,14 @@ namespace LiraPS.Cmdlets
         [Parameter(Position = 0, ParameterSetName = "PERIOD")]
         public Period Period { get; set; } = Period.ThisMonth;
         [AllowNull]
-        [DateTransformer(true)]
-        [ArgumentCompleter(typeof(JqlDateArgumentCompletionAttribute))]
+        [DateTransformer(outputIJqlDate: true, mode:DateMode.Start)]
+        [ArgumentCompleter(typeof(JqlDateStartArgumentCompletionAttribute))]
         [Parameter(ParameterSetName = "MANUALDATE")]
         public IJqlDate? StartDate { get; set; } = null;
 
         [AllowNull]
-        [DateTransformer(true)]
-        [ArgumentCompleter(typeof(JqlDateArgumentCompletionAttribute))]
+        [DateTransformer(outputIJqlDate: true, mode: DateMode.Start)]
+        [ArgumentCompleter(typeof(JqlDateEndArgumentCompletionAttribute))]
         [Parameter(ParameterSetName = "MANUALDATE")]
         public IJqlDate? EndDate { get; set; } = null;
 
@@ -53,6 +54,7 @@ namespace LiraPS.Cmdlets
         const int IssuePaginationProgressId = 12;
         private string[] user = ["CurrentUser"];
         private string[] issue = [];
+        private readonly List<Worklog> _worklogs = [];
         // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called
         protected override void ProcessRecord()
         {
@@ -84,7 +86,11 @@ namespace LiraPS.Cmdlets
                 PrintLogs();
                 CommentState(in state);
             }
-            var sorted = state.Worklogs.OrderBy(x=>x.Started).ToList();
+            _worklogs.AddRange(state.Worklogs);
+        }
+        protected override void EndProcessing()
+        {
+            var sorted = _worklogs.OrderBy(x => x.Started).ToList();
             WriteObject(sorted);
             SetGlobal("LiraLastWorklogs", sorted);
         }
@@ -132,7 +138,7 @@ namespace LiraPS.Cmdlets
             var got = currState.PaginationState.Pagination.EndsAt;
             long totalCount = currState.PaginationState.Pagination.Total;
             var totalString = totalCount.ToString();
-            var perc = totalCount == 0 ? -1 :(int)(currState.PaginationState.Progress * 100);
+            var perc = totalCount == 0 ? -1 : (int)(currState.PaginationState.Progress * 100);
             var status = totalCount == 0 ? "Fetching issues..." : $"Paginating results {got}/{totalString} issues ({perc:d2}%)...";
             var record = new ProgressRecord(IssuePaginationProgressId, "Gathering issues", status)
             {

@@ -1,7 +1,7 @@
 ﻿using System;
 using Lira.Jql;
 using LiraPS.Extensions;
-namespace LiraPS.Completers;
+namespace LiraPS.Arguments;
 
 internal readonly record struct TooltipKeywordDate : ITooltipDate, IEquatable<ITooltipDate>
 {

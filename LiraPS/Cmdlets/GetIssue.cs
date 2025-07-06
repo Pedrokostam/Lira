@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
@@ -30,6 +31,8 @@ namespace LiraPS.Cmdlets
 
         public SwitchParameter NoSubtasks { get; set; }
 
+        private readonly List<Issue> _issues = [];
+
         // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called
         protected override void ProcessRecord()
         {
@@ -54,11 +57,15 @@ namespace LiraPS.Cmdlets
                 {
                     continue;
                 }
-                WriteObject(state.Issue);
+                _issues.Add(state.Issue);
                 percentComplete += 100 / Id.Length;
                 WriteProgress(new ProgressRecord(SubActivityId, $"Fetched  subtasks...", "Subtasks fetched") { ParentActivityId = ActivityId, RecordType = ProgressRecordType.Completed });
             }
             WriteProgress(new ProgressRecord(ActivityId, $"Fetched issues...", "All") { RecordType = ProgressRecordType.Completed });
+        }
+        protected override void EndProcessing()
+        {
+            WriteObject(_issues);
         }
 
     }

@@ -1,5 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<Configuration>
+<Configuration
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd">
 	<ViewDefinitions>
 
 		<!-- UserDetails View -->
@@ -329,12 +331,7 @@
 								<PropertyName>Type</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>
-									$active = [LiraPS.LiraSession]::IsActiveASession($_)
-									if($active){
-									"ACTIVE"}else{
-									""}
-								</ScriptBlock>
+								<ScriptBlock>$_.Active</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>ServerAddress</PropertyName>

@@ -1,0 +1,13 @@
+﻿<Types>
+  <Type>
+    <Name>LiraPS.Configuration+Information</Name>
+    <Members>
+      <ScriptProperty>
+        <Name>Active</Name>
+        <GetScriptBlock>
+			[bool][LiraPS.LiraSession]::IsActiveASession($_)
+		</GetScriptBlock>
+      </ScriptProperty>
+    </Members>
+  </Type>
+</Types>

@@ -9,46 +9,100 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using LiraPS.Extensions;
 using Lira.Jql;
 namespace LiraPS.Transformers;
-internal class DateTransformerAttribute(bool wrapInIJqlDate) : ArgumentTransformationAttribute()
+internal enum DateMode
 {
-    public bool WrapInIJqlDate { get; } = wrapInIJqlDate;
+    /// <summary>
+    /// Assumes current day; If time of day is needed - assumes current time of day (even if the day is different)
+    /// </summary>
+    Current,
+    Start,
+    End,
+
+}
+internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : ArgumentTransformationAttribute()
+{
+    public bool OutputIJqlDate { get; } = outputIJqlDate;
+    public DateMode Mode { get; } = mode;
+
+    private object WrapUnwrap(object? dateObj)=>WrapUnwrap(dateObj,OutputIJqlDate);
+    
+    internal static object WrapUnwrap(object? dateObj, bool outputIjqlDate)
+    {
+        return (dateObj, outputIjqlDate) switch
+        {
+            (IJqlDate ijql, true) => ijql,
+            (IJqlDate ijql, false) => ijql.ToAccountDatetime(TimeZoneInfo.Local),
+            (DateTimeOffset dto, true) => new JqlManualDate(dto),
+            (DateTimeOffset dto, false) => dto,
+            (_, _) => throw new InvalidOperationException(),
+        };
+    }
 
     public override object? Transform(EngineIntrinsics engineIntrinsics, object inputData)
     {
+        if (inputData is int i && i <= 0)
+        {
+            IJqlDate? todayo = Mode switch
+            {
+                DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(i)),
+                DateMode.Start => new JqlKeywordDate(JqlKeywordDate.JqlDateKeywords.StartOfDay,i),
+                DateMode.End => new JqlKeywordDate(JqlKeywordDate.JqlDateKeywords.EndOfDay, i),
+                _ => null,
+            };
+            return WrapUnwrap(todayo);
+        }
         if (inputData is PSObject pso)
         {
             inputData = pso.BaseObject;
         }
         if (inputData is IJqlDate jqlDate)
         {
-            if (WrapInIJqlDate)
-            {
-                return jqlDate;
-
-            }
-            else
-            {
-                return jqlDate.ToAccountDatetime(TimeZoneInfo.Local);
-            }
+            return WrapUnwrap(jqlDate);
         }
         if (inputData is string s)
         {
+            if (s.Equals("today", StringComparison.OrdinalIgnoreCase))
+            {
+                IJqlDate? todayo = Mode switch
+                {
+                    DateMode.Current => new JqlManualDate(DateTimeOffset.Now),
+                    DateMode.Start => JqlKeywordDate.StartOfDay,
+                    DateMode.End => JqlKeywordDate.EndOfDay,
+                    _ => null,
+                };
+                return WrapUnwrap(todayo);
+            }
+            if (s.Equals(value: "now", StringComparison.OrdinalIgnoreCase))
+            {
+                return WrapUnwrap(new JqlManualDate(DateTimeOffset.Now));
+            }
             if (string.IsNullOrWhiteSpace(s))
             {
                 return null;
             }
-            if (DateCompletionHelper.GetDateFromNonPositiveInt(s, out var date, out _))
+            if (DateCompletionHelper.GetDateFromNonPositiveInt(s,Mode, out var date, out _))
             {
-                return date;
+                return WrapUnwrap(date);
             }
             if (JqlKeywordDate.TryParse(s.Replace(" ", ""), out var keywordDate))
             {
-                return keywordDate;
+                return WrapUnwrap(keywordDate);
             }
-            if (DateTimeOffset.TryParse(s, null, DateTimeStyles.AssumeLocal, out var parsedDate))
+            if (DateTimeExtensions.TryParseDateTimeOffset(s, out var parsedDate))
             {
+                if (parsedDate.TimeOfDay == TimeSpan.Zero)
+                {
+                    parsedDate = Mode switch
+                    {
+                        DateMode.Current => parsedDate.AddHours(DateTime.Now.TimeOfDay.TotalHours),
+                        DateMode.Start => parsedDate,
+                        DateMode.End => parsedDate.AddDays(1).Subtract(TimeSpan.FromTicks(1)),
+                        _ => throw new NotImplementedException(),
+                    };
+                }
                 inputData = parsedDate;
             }
             else
@@ -68,15 +122,7 @@ internal class DateTransformerAttribute(bool wrapInIJqlDate) : ArgumentTransform
         }
         if (dateTimeOffset != default)
         {
-            if (WrapInIJqlDate)
-            {
-                return new JqlManualDate(dateTimeOffset);
-
-            }
-            else
-            {
-                return dateTimeOffset;
-            }
+            return WrapUnwrap(dateTimeOffset);
         }
 
         throw new ArgumentException($"Could not convert {inputData} to IJqlDate");

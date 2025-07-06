@@ -36,6 +36,7 @@ public record IssueLite : IssueCommon
     }
 
     internal readonly List<IssueStem> _shallowSubtasks;
+    public override string ToString() => Key;
 
     public IReadOnlyList<IssueStem> ShallowSubtasks => _shallowSubtasks.AsReadOnly();
     //public Issue? Parent { get; set; }

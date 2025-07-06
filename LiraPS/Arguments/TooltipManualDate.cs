@@ -1,5 +1,6 @@
 ﻿using System;
 using Lira.Jql;
+using LiraPS.Arguments;
 using LiraPS.Extensions;
 namespace LiraPS.Completers;
 

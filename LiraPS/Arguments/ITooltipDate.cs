@@ -1,5 +1,5 @@
 ﻿using Lira.Jql;
-namespace LiraPS.Completers;
+namespace LiraPS.Arguments;
 
 internal interface ITooltipDate
 {

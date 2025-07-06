@@ -37,6 +37,8 @@ public record Issue : IssueCommon
             return q.AsReadOnly();
         }
     }
+    public override string ToString() => Key;
+
     internal readonly List<Issue> _subtasks = [];
     public IReadOnlyList<IssueStem> Subtasks => _subtasks.AsReadOnly();
     public TimeSpan TotalTimeSpent => TimeSpan.FromMinutes(AllWorklogs.Sum(x => x.TimeSpent.TotalMinutes));

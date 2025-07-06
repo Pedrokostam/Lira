@@ -14,8 +14,8 @@ namespace LiraPS.Cmdlets
         [Parameter]
         public string Issue { get; set; } = string.Empty;
         [Parameter]
-        [DateTransformer(false)]
-        [ArgumentCompleter(typeof(JqlDateArgumentCompletionAttribute))]
+        [DateTransformer(outputIJqlDate:false, mode: DateMode.Current)]
+        [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
         public DateTimeOffset Started { get; set; } = default;
         [Parameter]
         [TimespanTransformer]
