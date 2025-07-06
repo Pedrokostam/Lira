@@ -1,13 +1,19 @@
 ﻿<Types>
   <Type>
-    <Name>LiraPS.Configuration+Information</Name>
+    <Name>LiraPS.Objects.Worklog</Name>
     <Members>
       <ScriptProperty>
-        <Name>Active</Name>
+        <Name>HoursSpent</Name>
         <GetScriptBlock>
-			[bool][LiraPS.LiraSession]::IsActiveASession($_)
+			[double]$_.TimeSpent.TotalHours
 		</GetScriptBlock>
       </ScriptProperty>
+		<ScriptProperty>
+			<Name>TotalHoursSpent</Name>
+			<GetScriptBlock>
+				[double]$_.TotalTimeSpent.TotalHours
+			</GetScriptBlock>
+		</ScriptProperty>
     </Members>
   </Type>
 </Types>

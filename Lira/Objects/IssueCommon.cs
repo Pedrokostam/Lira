@@ -8,6 +8,7 @@ namespace Lira.Objects;
 public abstract record IssueCommon : IssueStem
 {
     protected List<Worklog>? _worklogs=[];
+    public required string Summary { get; init; }
     public required string Description { get; init; }
     public DateTime Fetched { get; init; }
     public required UserDetails Assignee { get; init; }

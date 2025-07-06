@@ -17,6 +17,7 @@ public class IssueFields
     public UserDetails Reporter { get; set; } = default!;
     public UserDetails Creator { get; set; } = default!;
     public string Description { get; set; } = "";
+    public string Summary { get; set; } = "";
     public DateTimeOffset Created { get; set; } = default!;
     public DateTimeOffset Updated { get; set; } = default!;
     public IssueFields()

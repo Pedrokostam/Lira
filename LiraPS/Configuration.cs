@@ -225,6 +225,7 @@ public class Configuration
         public string Type { get; }
         public string ServerAddress { get; }
         public string Location { get; }
+        public bool IsActive => LiraSession.IsActiveSession(this);
         internal Information(string location, string type, string serverAddress, string name)
         {
             Location = location;

@@ -25,6 +25,7 @@ public record IssueLite : IssueCommon
         SelfLink = donor.Self;
         Assignee = donor.Fields.Assignee;
         Reporter = donor.Fields.Reporter;
+        Summary = donor.Fields.Summary;
         Creator = donor.Fields.Creator;
         _worklogs = donor.Fields.Worklog.HasAllWorklogs ? new(donor.Fields.Worklog.InitialWorklogs) : null;
         _shallowSubtasks = new List<IssueStem>(donor.Fields.Subtasks);

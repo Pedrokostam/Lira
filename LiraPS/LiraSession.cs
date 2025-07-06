@@ -18,8 +18,12 @@ public static class LiraSession
 {
     private static Configuration? _config;
 
+    public static string NiceTime(TimeSpan ts)
+    {
+        return $"{(int)ts.TotalHours}h {ts.Minutes}m";
+    }
     public static IEnumerable<Log> LogQueue => (Logger as IEnumerable<Log>) ?? [];
-    public static bool IsActiveASession(Configuration.Information info) => info.Equals(_config?.ToInformation());
+    public static bool IsActiveSession(Configuration.Information info) => info.Equals(_config?.ToInformation());
     public static LoggingLevelSwitch LogSwitch { get; } = new(Serilog.Events.LogEventLevel.Verbose);
     [AllowNull]
     internal static Configuration Config

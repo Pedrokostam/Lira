@@ -9,6 +9,9 @@ namespace Lira.Objects;
 [DebuggerDisplay("STEM: {Key}")]
 public record IssueStem : SelfReferential
 {
+    /// <summary>
+    /// Human-readable key for issue.
+    /// </summary>
     [JsonPropertyName("key")]
     public required string Key { get; init; }
     public override string ToString() => Key;
