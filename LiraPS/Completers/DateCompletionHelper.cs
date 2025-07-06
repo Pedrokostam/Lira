@@ -21,19 +21,9 @@ namespace LiraPS;
 /// </summary>
 internal static partial class DateCompletionHelper
 {
-    private const int Timeout = 250;
     private const string Pattern = @"^((?<year2>\d{2})(?=[-\/\\]|$)|(?<year4>\d{3,4}))(([-\/\\])?(?<month>1[0-2]|0?[1-9])(([-\/\\])?(?<day>3[01]|[12][0-9]|0?[1-9]))?)?";
-#if !NET8_0
-
-    private static readonly Regex _DateStringChecker = new Regex(
-        Pattern,
-        RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Compiled,
-        TimeSpan.FromMilliseconds(Timeout));
-    public static Regex DateStringChecker() => _DateStringChecker;
-#else
-    [GeneratedRegex(Pattern, RegexOptions.ExplicitCapture, Timeout)]
+    [GeneratedRegex(Pattern, RegexOptions.ExplicitCapture, 250)]
     public static partial Regex DateStringChecker();
-#endif
     /// <summary>
     /// Gets a specific date based on a JQL keyword, converted to the local time zone.
     /// </summary>

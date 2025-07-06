@@ -9,12 +9,6 @@ namespace LiraPS;
 internal static class StringFormatter
 {
     private static readonly CultureInfo English = new("en-GB");
-#if !NET8_0
-    public static string Format(FormattableString formattableString)
-    {
-        return formattableString.ToString(English);
-    }
-#else
     [InterpolatedStringHandler]
     public ref struct EnglishInterpolatedStringHandler
     {
@@ -41,5 +35,4 @@ internal static class StringFormatter
     {
         return interpolatedStringHandler.ToStringAndClear();
     }
-#endif
 }

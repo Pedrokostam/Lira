@@ -61,12 +61,6 @@ public static partial class TimeExtensions
         return dto.ToLocalTime().ToString("yyyy-MM-dd HH:mm").PadLeft(pad).PadRight(pad);
     }
     public static string PrettyDate(this DateTimeOffset dto) => PrettyDate(dto, 0);
-    private const int _timeout = 250;
-#if NETSTANDARD2_0
-    private static readonly Regex _dateTimeCorrecter = new Regex(@"[\/\\\.]", RegexOptions.ExplicitCapture | RegexOptions.Compiled, TimeSpan.FromMilliseconds(_timeout));
-    private static Regex DateTimeCorrecter() => _dateTimeCorrecter;
-#else
-    [GeneratedRegex(@"[\/\\\.]", RegexOptions.ExplicitCapture, _timeout)]
+    [GeneratedRegex(@"[\/\\\.]", RegexOptions.ExplicitCapture, 250)]
     private static partial Regex DateTimeCorrecter();
-#endif
 }

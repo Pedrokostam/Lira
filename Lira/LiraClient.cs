@@ -372,16 +372,8 @@ public partial class LiraClient : IDisposable
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
-    private const string UrlRegex = @"^((?<scheme>https?):\/\/)?(?<domain>[A-Z0-9\.\-]+\.[A-Z0-9\-]+)((?<subpath>\/.*))?";
-    private const RegexOptions UrlRegexOptions = RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture;
-    private const int RegexTimeout = 250;
-#if NETSTANDARD2_0
-    private static readonly Regex _urlValidator = new(UrlRegex, UrlRegexOptions, TimeSpan.FromMilliseconds(RegexTimeout));
-    private static Regex UrlValidator() => _urlValidator;
-#else
-    [GeneratedRegex(UrlRegex, UrlRegexOptions, RegexTimeout)]
+    [GeneratedRegex(@"^((?<scheme>https?):\/\/)?(?<domain>[A-Z0-9\.\-]+\.[A-Z0-9\-]+)((?<subpath>\/.*))?", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, 250)]
     private static partial Regex UrlValidator();
-#endif
     //public async Task GetAsync(Uri requestUri)
     //{
     //    await Client.GetAsync(requestUri, GetToken()).ConfigureAwait(false);

@@ -135,16 +135,7 @@ public readonly partial record struct JqlKeywordDate : IJqlDate
         keywordDate = new JqlKeywordDate(keyword, offset);
         return true;
     }
-    private const int Timeout = 250;
-    private const string Pattern = @"(?<keyword>[A-Z]+)(\(?['""]?(?<offset>[\+-]?\d*)['""]?\)?)?";
-#if NETSTANDARD2_0
-    private static readonly Regex _KeywordOffsetDetector = new Regex(
-        Pattern,
-        RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Compiled,
-        TimeSpan.FromMilliseconds(Timeout));
-    private static Regex KeywordOffsetDetector() => _KeywordOffsetDetector;
-#else
-    [GeneratedRegex(Pattern, RegexOptions.IgnoreCase|RegexOptions.ExplicitCapture,Timeout)]
+
+    [GeneratedRegex(@"(?<keyword>[A-Z]+)(\(?['""]?(?<offset>[\+-]?\d*)['""]?\)?)?", RegexOptions.IgnoreCase|RegexOptions.ExplicitCapture,250)]
     private static partial Regex KeywordOffsetDetector();
-#endif
 }

@@ -33,12 +33,6 @@ public partial class JiraDatetimeConverter : JsonConverter<DateTimeOffset>
         datestring = DateTimeCorrecter().Replace(datestring, "$1$2");
         writer.WriteStringValue(datestring);
     }
-    private const int _timeout = 250;
-#if NETSTANDARD2_0
-    private static readonly Regex _dateTimeCorrecter = new Regex(@"(\d{2}):(\d{2})$", RegexOptions.ExplicitCapture|RegexOptions.Compiled, TimeSpan.FromMilliseconds(_timeout));
-    private static Regex DateTimeCorrecter() => _dateTimeCorrecter;
-#else
-    [GeneratedRegex(@"(\d{2}):(\d{2})$", RegexOptions.ExplicitCapture, _timeout)]
+    [GeneratedRegex(@"(\d{2}):(\d{2})$", RegexOptions.ExplicitCapture, 250)]
     private static partial Regex DateTimeCorrecter();
-#endif
 }

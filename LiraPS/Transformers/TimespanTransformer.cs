@@ -27,21 +27,12 @@ public class TimespanTransformer : ArgumentTransformationAttribute
             return Position;
         }
         public void Clear() => Position = 0;
-#if !NET8_0
-        public string GetString()
-        {
-            var span = Buffer[..Position];
-            Clear();
-            return span.ToString();
-        }
-#else
         public ReadOnlySpan<char> GetString()
         {
             var span = Buffer[..Position];
             Clear();
             return span;
         }
-#endif
     }
     private const NumberStyles NumberParseStyle = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.AllowDecimalPoint;
 

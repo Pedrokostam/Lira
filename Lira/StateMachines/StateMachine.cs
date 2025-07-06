@@ -41,11 +41,7 @@ public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMach
     /// </summary>
     /// <param name="state"></param>
     /// <returns></returns>
-#if NETSTANDARD2_0
-    protected TState AdjustState(in TState state)
-#else
     protected TState AdjustState(ref readonly TState state)
-#endif
     {
         Debug.WriteLine($"Executing state {state}");
         if (EqualityComparer<TState>.Default.Equals(state, default!))
@@ -85,11 +81,7 @@ public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMach
     }
     protected Task<string> ReadContentString(HttpResponseMessage response)
     {
-#if NETSTANDARD2_0
-        return response.Content.ReadAsStringAsync();
-#else
         return response.Content.ReadAsStringAsync(LiraClient.GetToken());
-#endif
     }
     protected async Task<bool> HandleErrorResponse(HttpResponseMessage response)
     {

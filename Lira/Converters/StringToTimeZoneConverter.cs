@@ -1,30 +1,12 @@
 ﻿using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-#if NETSTANDARD2_0
-using TimeZoneConverter;
-#endif
 namespace Lira.Converters;
 
 public class StringToTimeZoneConverter : JsonConverter<TimeZoneInfo?>
 {
     private static TimeZoneInfo? FromIanaString(string timeZoneString)
     {
-#if NETSTANDARD2_0
-        try
-        {
-            return TimeZoneConverter.TZConvert.GetTimeZoneInfo(timeZoneString);
-
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return null;
-        }
-#else
-        //if(TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneString, out var initialWindowsTimezone))
-        //{
-        //    return initialWindowsTimezone;
-        //}
         if (TimeZoneInfo.TryConvertIanaIdToWindowsId(timeZoneString, out var windowsId))
         {
             if (TimeZoneInfo.TryFindSystemTimeZoneById(windowsId, out var secondWindowsTimezone))
@@ -34,7 +16,6 @@ public class StringToTimeZoneConverter : JsonConverter<TimeZoneInfo?>
             return null;
         }
         return null;
-#endif
     }
     private static string? ToIanaString(TimeZoneInfo? timeZoneInfo)
     {
@@ -42,27 +23,11 @@ public class StringToTimeZoneConverter : JsonConverter<TimeZoneInfo?>
         {
             return null;
         }
-#if NETSTANDARD2_0
-        try
-        {
-            return TimeZoneConverter.TZConvert.WindowsToIana(timeZoneInfo.Id);
-
-        }
-        catch (InvalidTimeZoneException)
-        {
-            return null;
-        }
-#else
-        //if(TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneString, out var initialWindowsTimezone))
-        //{
-        //    return initialWindowsTimezone;
-        //}
         if (TimeZoneInfo.TryConvertWindowsIdToIanaId(timeZoneInfo.Id, out var ianaId))
         {
             return ianaId;
         }
         return null;
-#endif
     }
     public override TimeZoneInfo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
