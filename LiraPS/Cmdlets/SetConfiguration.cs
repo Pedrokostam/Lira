@@ -52,83 +52,24 @@ public class SetConfiguration : LiraCmdlet
         // don't load anything yet
         //base.BeginProcessing();
     }
-    private int Clamp(int x, int min, int max)
-    {
-        if (x < min)
-        {
-            return min;
-        }
-        if (x > max)
-        {
-            return max;
-        }
-        return x;
-    }
     private void SelectYourCharacter()
     {
         if (Type == ConfigurationType.ManualChoice)
         {
-            if (Console.IsInputRedirected)
-            {
-                Terminate(new ArgumentException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
-            }
-            WriteHost("Choose what kind of authentication you want to use:", ConsoleColor.Green);
-            WriteHost("1 - Personal Access Token", ConsoleColor.Cyan);
-            WriteHost("2 - Username and password", ConsoleColor.Cyan);
-            WriteHost("3 - Atlassian API key", ConsoleColor.Cyan);
-            WriteHost("Use arrow keys or numbers, accept with enter", ConsoleColor.Yellow);
-            int choice = 1;
-            int min = 1;
-            int max = 3;
-            ConsoleKey key;
-            Console.CursorVisible = false;
-            do
-            {
-                string info = choice switch
-                {
-                    1 => "Personal Access Token - use token created via website",
-                    2 => "Username and password - log in with user name and password",
-                    3 => "Atlassian API key - use email and API key",
-                    _ => "",
-                };
-                Console.Write($"\rChoice: \x1b[1m{choice}\x1b[0m | {info}");
-                key = Console.ReadKey(intercept: true).Key;
-                switch (key)
-                {
-                    case ConsoleKey.D1:
-                        choice = 1;
-                        break;
-                    case ConsoleKey.D2:
-                        choice = 2;
-                        break;
-                    case ConsoleKey.D3:
-                        choice = 3;
-                        break;
-                    case ConsoleKey.DownArrow:
-                    case ConsoleKey.LeftArrow:
-                    case ConsoleKey.S:
-                    case ConsoleKey.A:
-                        choice = Clamp(choice - 1, min, max);
-                        break;
-                    case ConsoleKey.UpArrow:
-                    case ConsoleKey.RightArrow:
-                    case ConsoleKey.W:
-                    case ConsoleKey.D:
-                        choice = Clamp(choice + 1, min, max);
-                        break;
-                    default:
-                        break;
-                }
-            } while (key != ConsoleKey.Enter);
-            Console.CursorVisible = true;
-            Console.WriteLine();
-            Type = choice switch
-            {
-                1 => ConfigurationType.PersonalAccessToken,
-                2 => ConfigurationType.Credentials,
-                3 => ConfigurationType.AttlasianApiKey,
-                _ => throw new NotSupportedException($"Choice {choice} is not supported"),
-            };
+            Type = (ConfigurationType)Menu("Choose what kind of authentication you want to use",
+                                           new MenuItem(
+                                               "Personal Access Token",
+                                               ConfigurationType.PersonalAccessToken,
+                                               "You will be asked to provide a Personal Access Token.\nThe token can be created in your account's settings.\nhttps://developer.atlassian.com/server/jira/platform/personal-access-token/"),
+                                           new MenuItem(
+                                               "Username and password",
+                                               ConfigurationType.Credentials,
+                                               "You will be asked to provide your username and password"),
+                                           new MenuItem(
+                                               "Atlassian API key",
+                                               ConfigurationType.AttlasianApiKey,
+                                               "You will be asked to provide your e-mail and an API key.\nThe key can be created in your Atlassian account's settings.\nhttps://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/")
+                                           )!;
         }
     }
     // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called

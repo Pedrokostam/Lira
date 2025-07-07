@@ -173,6 +173,144 @@ namespace LiraPS.Cmdlets
             return replacement;
         }
 
+        protected record MenuItem
+        {
+            private string? tooltip;
+
+            public required string Name { get; init; }
+            public string? Tooltip
+            {
+                get => tooltip; init
+                {
+                    TooltipLines = value?.Split(["\n", "\r\n", "\r"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
+                    TooltipHeight = TooltipLines.Length;
+                    TooltipWidth = TooltipLines.Length == 0 ? 0 : TooltipLines.Max(x => x.Length);
+                    tooltip = string.Join(Environment.NewLine, TooltipLines);
+                }
+            }
+            public string[] TooltipLines { get; private init; } = [];
+            public int TooltipHeight { get; private init; }
+            public int TooltipWidth { get; private init; }
+            public required object? Payload { get; init; }
+            public bool HasTooltip => !string.IsNullOrEmpty(Tooltip);
+            [SetsRequiredMembers]
+            public MenuItem(string name, object? payload, string? tooltip = null)
+            {
+                Name = name;
+                Tooltip = tooltip;
+                Payload = payload;
+            }
+        }
+
+        protected const string Reset = "\u001b[0m";
+        protected const string Invert = "\u001b[7m";
+        protected const string Bold = "\u001b[1m";
+        protected const string Italics = "\u001b[3m";
+        protected object? Menu(string header, params MenuItem[] options)
+        {
+            if (Console.IsInputRedirected)
+            {
+                Terminate(new ArgumentException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
+            }
+            if (options.Length == 0)
+            {
+                return null;
+            }
+
+            try
+            {
+                Console.TreatControlCAsInput = true;
+                Console.CursorVisible = false;
+
+                int maxTooltipHeight = options.Max(x => x.TooltipHeight);
+                int maxTooltipWidth = options.Max(x => x.TooltipWidth);
+                int count = options.Length;
+                int max = count - 1;
+                int choice = 0;
+
+                Console.WriteLine($"{Bold}Cancel{Reset} = Backspace, Ctrl-C || {Bold}Move selection{Reset} = Arrows, Digits || {Bold}Accept{Reset} = Enter ");
+                WriteHost($"{header}:", ConsoleColor.Green);
+                Console.WriteLine();
+                while (true)
+                {
+                    // Print menu options
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (choice == i)
+                        {
+                            Console.WriteLine($"  [{i + 1}] {Invert}{options[i].Name}{Reset}        ");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"   {i + 1}  {options[i].Name}           ");
+                        }
+                    }
+
+                    var selected = options[choice];
+                    Console.WriteLine();
+                    // Print tooltip if available
+                    if (selected.HasTooltip)
+                    {
+                        foreach (var item in selected.TooltipLines)
+                        {
+                            Console.WriteLine("  " + Italics + item.PadRight(maxTooltipWidth + 1) + Reset);
+                        }
+                    }
+                    // Fill remaining tooltip space for consistent redraw
+                    for (int t = selected.TooltipHeight; t < maxTooltipHeight; t++)
+                    {
+                        Console.WriteLine("".PadRight(maxTooltipWidth + 1));
+                    }
+
+                    // Read user input
+                    var info = Console.ReadKey(intercept: true);
+
+                    if (info.Modifiers.HasFlag(ConsoleModifiers.Control) && info.Key == ConsoleKey.C)
+                    {
+                        Console.WriteLine();
+                        Terminate(new PipelineStoppedException("Exited menu"), "MenuCancelled", ErrorCategory.OperationStopped);
+                    }
+
+                    switch (info.Key)
+                    {
+                        case ConsoleKey.DownArrow:
+                        case ConsoleKey.RightArrow:
+                        case ConsoleKey.S:
+                        case ConsoleKey.D:
+                            choice = Math.Clamp(choice + 1, 0, max);
+                            break;
+                        case ConsoleKey.UpArrow:
+                        case ConsoleKey.LeftArrow:
+                        case ConsoleKey.W:
+                        case ConsoleKey.A:
+                            choice = Math.Clamp(choice - 1, 0, max);
+                            break;
+                        case ConsoleKey.Backspace:
+                            Terminate(new PipelineStoppedException("Exited menu"), "MenuCancelled", ErrorCategory.OperationStopped);
+                            break;
+                        case ConsoleKey.Enter:
+                            return selected.Payload;
+                    }
+
+                    // Direct number selection (1-9)
+                    if (info.Key >= ConsoleKey.D1 && info.Key <= ConsoleKey.D9)
+                    {
+                        int val = info.Key - ConsoleKey.D1;
+                        choice = Math.Clamp(val, 0, max);
+                    }
+
+                    // Calculate lines to move cursor up for redraw
+                    int linesToMoveUp = count + maxTooltipHeight + 1; // options + tooltip + 2 newlines (after options and spacing)
+                    Console.SetCursorPosition(0, Console.CursorTop - linesToMoveUp);
+                }
+            }
+            finally
+            {
+                Console.CursorVisible = true;
+                Console.TreatControlCAsInput = false;
+            }
+        }
+
     }
 
 }
