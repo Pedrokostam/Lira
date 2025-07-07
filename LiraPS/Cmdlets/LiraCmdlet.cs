@@ -206,6 +206,14 @@ namespace LiraPS.Cmdlets
         protected const string Invert = "\u001b[7m";
         protected const string Bold = "\u001b[1m";
         protected const string Italics = "\u001b[3m";
+        protected bool MenuYesNo(string header)
+        {
+            return (bool)Menu(header, new MenuItem("Yes", true), new MenuItem("No", false))!;
+        }
+        protected bool MenuNoYes(string header)
+        {
+            return (bool)Menu(header, new MenuItem("No", false), new MenuItem("Yes", true))!;
+        }
         protected object? Menu(string header, params MenuItem[] options)
         {
             if (Console.IsInputRedirected)
@@ -216,6 +224,16 @@ namespace LiraPS.Cmdlets
             {
                 return null;
             }
+            bool isYesNo = options.Length == 2
+                           && options[0].Name.Equals("yes", StringComparison.OrdinalIgnoreCase)
+                           && options[1].Name.Equals("no", StringComparison.OrdinalIgnoreCase)
+                           && options[0].Payload is true
+                           && options[1].Payload is false;
+            bool isNoYes = !isYesNo && options.Length == 2
+                          && options[1].Name.Equals("yes", StringComparison.OrdinalIgnoreCase)
+                          && options[0].Name.Equals("no", StringComparison.OrdinalIgnoreCase)
+                          && options[1].Payload is true
+                          && options[0].Payload is false;
 
             try
             {
@@ -228,8 +246,9 @@ namespace LiraPS.Cmdlets
                 int max = count - 1;
                 int choice = 0;
 
-                Console.WriteLine($"{Bold}Cancel{Reset} = Backspace, Ctrl-C || {Bold}Move selection{Reset} = Arrows, Digits || {Bold}Accept{Reset} = Enter ");
-                WriteHost($"{header}:", ConsoleColor.Green);
+                Console.WriteLine();
+                //Console.WriteLine($"{Bold}Cancel{Reset} = Backspace, Ctrl-C || {Bold}Move selection{Reset} = Arrows, Digits || {Bold}Accept{Reset} = Enter ");
+                WriteHost(header);
                 Console.WriteLine();
                 while (true)
                 {
@@ -273,6 +292,26 @@ namespace LiraPS.Cmdlets
 
                     switch (info.Key)
                     {
+                        case ConsoleKey.Y:
+                            if (isYesNo)
+                            {
+                                choice = 0;
+                            }
+                            else if (isNoYes)
+                            {
+                                choice = 1;
+                            }
+                            break;
+                        case ConsoleKey.N:
+                            if (isYesNo)
+                            {
+                                choice = 1;
+                            }
+                            else if (isNoYes)
+                            {
+                                choice = 0;
+                            }
+                            break;
                         case ConsoleKey.DownArrow:
                         case ConsoleKey.RightArrow:
                         case ConsoleKey.S:

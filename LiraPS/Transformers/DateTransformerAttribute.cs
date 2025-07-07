@@ -40,8 +40,8 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
             (_, _) => throw new ArgumentTransformationMetadataException(),
         };
     }
-
-    public override object? Transform(EngineIntrinsics engineIntrinsics, object inputData)
+    public override object? Transform(EngineIntrinsics engineIntrinsics, object inputData) => Transform(inputData);
+    public object? Transform(object inputData)
     {
         if (inputData is int i && i <= 0)
         {

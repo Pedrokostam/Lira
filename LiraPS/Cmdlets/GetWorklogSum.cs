@@ -12,9 +12,8 @@ using LiraPS.Outputs;
 using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets;
-[Alias("logsum","sum","Get-WorklogSum")]
+[Alias("logsum", "sum", "Get-WorklogSum")]
 [Cmdlet(VerbsCommon.Get, "LiraWorklogSum", DefaultParameterSetName = "STRUCT")]
-[OutputType(typeof(PSObject), ParameterSetName = ["SIMPLE"])]
 [OutputType(typeof(WorklogSum), ParameterSetName = ["STRUCT"])]
 public class GetWorklogSum : LiraCmdlet
 {
@@ -23,9 +22,6 @@ public class GetWorklogSum : LiraCmdlet
 
     [Parameter(Position = 0, ValueFromPipeline = false)]
     public Property[] Groups { get; set; } = [Property.None];
-
-    [Parameter(ParameterSetName = "SIMPLE")]
-    public SwitchParameter Simple { get; set; }
 
     [Parameter()]
     public SwitchParameter PassThru { get; set; }
@@ -65,16 +61,7 @@ public class GetWorklogSum : LiraCmdlet
     protected override void EndProcessing()
     {
         var summedLogs = WorklogSum.Sum(_worklogs, Groups);
-        if (Simple.IsPresent)
-        {
-            
-            WriteObject(summedLogs.Select(x => x.ToPsObject()).ToList());
-        }
-        else
-        {
-            WriteObject(summedLogs);
-
-        }
+        WriteObject(summedLogs);
         SetGlobal("LiraLastWorklogSum", summedLogs);
         base.EndProcessing();
     }
