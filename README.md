@@ -44,4 +44,4 @@ Unless of course you say **JY-ruh**, then feel free to call it **LY-ruh** (/ˈla
 
 But who says **JY-ruh**?
 
-<sup><sub>Did you know that the name of Jira comes from Godzilla (which in Japanese is pronounced Gojira)? The name was chosen as an allusion to another bug tracker tool called Bugzilla.</sub></sup>
+<sup><sub>Did you know that the name of Jira comes from Godzilla (which in Japanese is pronounced Gojira)? The name was chosen as an allusion to another bug-tracking tool called Bugzilla.</sub></sup>
