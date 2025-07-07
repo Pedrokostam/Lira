@@ -14,15 +14,18 @@
 				<TableHeaders>
 					<TableColumnHeader>
 						<Label>Name</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>DisplayName</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Key</Label>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Timezone</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
@@ -60,12 +63,15 @@
 				<TableHeaders>
 					<TableColumnHeader>
 						<Label>Issue</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Started</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Author</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Time</Label>
@@ -127,9 +133,11 @@
 				<TableHeaders>
 					<TableColumnHeader>
 						<Label>Author</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>UpdateAuthor</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Created</Label>
@@ -145,7 +153,6 @@
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Time</Label>
-					
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
@@ -222,15 +229,19 @@
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Assignee</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Reporter</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Creator</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Subtasks</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Created</Label>
@@ -353,20 +364,29 @@
 			<TableControl>
 				<TableHeaders>
 					<TableColumnHeader>
-						<Label>Header</Label>
+						<Label>Grouping</Label>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Issues</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Worklogs</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>TimeSpent</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>Header</PropertyName>
+								<PropertyName>Grouping</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>$_.Issues.Length</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>$_.Worklogs.Length</ScriptBlock>

@@ -14,9 +14,11 @@ using Serilog.Formatting.Display;
 
 namespace LiraPS.Cmdlets
 {
-    [Cmdlet(VerbsCommon.Get, "Issue")]
+    [Cmdlet(VerbsCommon.Get, "LiraIssue")]
     [OutputType(typeof(Issue))]
-    public class GetIssue : LiraCmdlet
+    [Alias("Get-Issue")]
+    public class GetLiraIssue : LiraCmdlet
+
     {
         private const int ActivityId = 1379;
         private const int SubActivityId = 1380;

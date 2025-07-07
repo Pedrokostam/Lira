@@ -6,7 +6,7 @@ using System.Management.Automation;
 using System.Text;
 
 namespace LiraPS.Cmdlets;
-[Cmdlet(VerbsCommon.Get, "AvailableConfigurations")]
+[Cmdlet(VerbsCommon.Get, "LiraAvailableConfigurations")]
 [OutputType(typeof(LiraPS.Configuration.Information))]
 public class GetAvailableConfigurations : LiraCmdlet
 {

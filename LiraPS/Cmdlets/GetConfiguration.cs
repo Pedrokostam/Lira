@@ -4,9 +4,9 @@ using Lira.Objects;
 
 namespace LiraPS.Cmdlets
 {
-    [Cmdlet(VerbsCommon.Get, "Configuration")]
+    [Cmdlet(VerbsCommon.Get, "LiraConfiguration")]
     [OutputType(typeof(LiraPS.Configuration.Information))]
-    public class GetConfiguration : LiraCmdlet
+    public class GetLiraConfiguration : LiraCmdlet
     {
         protected override void ProcessRecord()
         {

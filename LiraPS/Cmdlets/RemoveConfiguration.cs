@@ -8,7 +8,7 @@ using System.Text;
 using LiraPS.Completers;
 
 namespace LiraPS.Cmdlets;
-[Cmdlet(VerbsCommon.Remove, "Configuration", DefaultParameterSetName = "MANUAL")]
+[Cmdlet(VerbsCommon.Remove, "LiraConfiguration", DefaultParameterSetName = "MANUAL")]
 [OutputType(typeof(LiraPS.Configuration.Information))]
 public class RemoveConfiguration : LiraCmdlet
 {

@@ -12,8 +12,8 @@ using LiraPS.Outputs;
 using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets;
-[Alias("logsum")]
-[Cmdlet(VerbsCommon.Get, "WorklogSum", DefaultParameterSetName = "STRUCT")]
+[Alias("logsum","sum","Get-WorklogSum")]
+[Cmdlet(VerbsCommon.Get, "LiraWorklogSum", DefaultParameterSetName = "STRUCT")]
 [OutputType(typeof(PSObject), ParameterSetName = ["SIMPLE"])]
 [OutputType(typeof(WorklogSum), ParameterSetName = ["STRUCT"])]
 public class GetWorklogSum : LiraCmdlet
@@ -22,7 +22,7 @@ public class GetWorklogSum : LiraCmdlet
     public Worklog[] Worklogs { get; set; } = [];
 
     [Parameter(Position = 0, ValueFromPipeline = false)]
-    public Property[] Groups { get; set; } = [Property.Month];
+    public Property[] Groups { get; set; } = [Property.None];
 
     [Parameter(ParameterSetName = "SIMPLE")]
     public SwitchParameter Simple { get; set; }

@@ -11,7 +11,7 @@ using Serilog.Formatting.Display;
 
 namespace LiraPS.Cmdlets
 {
-    [Cmdlet(VerbsCommon.Get, "User")]
+    [Cmdlet(VerbsCommon.Get, "LiraUser")]
     [OutputType(typeof(UserDetails))]
     public class GetUser : LiraCmdlet
     {

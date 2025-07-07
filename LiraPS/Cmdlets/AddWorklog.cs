@@ -7,8 +7,9 @@ using LiraPS.Transformers;
 
 namespace LiraPS.Cmdlets
 {
-    [Cmdlet(VerbsCommon.Add, "Worklog")]
+    [Cmdlet(VerbsCommon.Add, "LiraWorklog")]
     [OutputType(typeof(Worklog))]
+    [Alias("Add-Worklog")]
     public class AddWorklog : PSCmdlet//: LiraCmdlet
     {
         [Parameter]

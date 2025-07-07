@@ -8,7 +8,7 @@ using System.Text;
 using LiraPS.Completers;
 
 namespace LiraPS.Cmdlets;
-[Cmdlet(VerbsCommon.Switch, "Configuration")]
+[Cmdlet(VerbsCommon.Switch, "LiraConfiguration")]
 [OutputType(typeof(LiraPS.Configuration.Information))]
 public class SwitchConfiguration : LiraCmdlet
 {

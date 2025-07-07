@@ -37,7 +37,7 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
             (IJqlDate ijql, false) => ijql.ToAccountDatetime(TimeZoneInfo.Local),
             (DateTimeOffset dto, true) => new JqlManualDate(dto),
             (DateTimeOffset dto, false) => dto,
-            (_, _) => throw new InvalidOperationException(),
+            (_, _) => throw new ArgumentTransformationMetadataException(),
         };
     }
 
@@ -107,7 +107,7 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
             }
             else
             {
-                throw new ArgumentException($"Could not parse string {s} to DateTimeOffset");
+                throw new ArgumentTransformationMetadataException($"Could not parse string {s} to DateTimeOffset");
             }
         }
 
@@ -125,6 +125,6 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
             return WrapUnwrap(dateTimeOffset);
         }
 
-        throw new ArgumentException($"Could not convert {inputData} to IJqlDate");
+        throw new ArgumentTransformationMetadataException($"Could not convert {inputData} to IJqlDate");
     }
 }

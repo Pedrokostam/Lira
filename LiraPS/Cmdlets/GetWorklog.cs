@@ -23,9 +23,11 @@ using AllowNullAttribute = System.Management.Automation.AllowNullAttribute;
 
 namespace LiraPS.Cmdlets
 {
-    [Cmdlet(VerbsCommon.Get, "Worklog", DefaultParameterSetName = "PERIOD")]
+    [Cmdlet(VerbsCommon.Get, "LiraWorklog", DefaultParameterSetName = "PERIOD")]
     [OutputType(typeof(Worklog))]
-    public class GetWorklog : LiraCmdlet
+    [Alias("Get-Worklog")]
+    public class GetLiraWorklog : LiraCmdlet
+
     {
         [Parameter(Position = 0, ParameterSetName = "PERIOD")]
         public Period Period { get; set; } = Period.ThisMonth;
@@ -41,9 +43,9 @@ namespace LiraPS.Cmdlets
         [Parameter(ParameterSetName = "MANUALDATE")]
         public IJqlDate? EndDate { get; set; } = null;
 
-        [Parameter]
-        [AllowNull]
-        [System.Diagnostics.CodeAnalysis.AllowNull]
+        [Parameter(ValueFromPipeline =true)]
+        [UserDetailsToStringTransformer]
+        [ValidateNotNullOrEmpty]
         public string[] User { get => user; set => user = value ?? []; }
         [Parameter]
         [AllowNull]

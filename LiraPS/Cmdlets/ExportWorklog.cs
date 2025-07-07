@@ -31,7 +31,8 @@ public enum Separator
     Semicolon,
     Pipe,
 }
-[Cmdlet(VerbsData.Export, "Worklog")]
+[Alias("Export-Worklog")]
+[Cmdlet(VerbsData.Export, "LiraWorklog")]
 public class ExportWorklog : LiraCmdlet, IDynamicParameters
 {
     [Parameter(Position = 0)]

@@ -21,7 +21,7 @@ public enum ConfigurationType
     AttlasianApiKey,
 }
 
-[Cmdlet(VerbsCommon.Set, "Configuration", DefaultParameterSetName = "MANUAL")]
+[Cmdlet(VerbsCommon.Set, "LiraConfiguration", DefaultParameterSetName = "MANUAL")]
 [OutputType(typeof(UserDetails))]
 public class SetConfiguration : LiraCmdlet
 {

@@ -55,7 +55,7 @@ public class TimespanTransformer : ArgumentTransformationAttribute
         //}
         if (inputData is not string s)
         {
-            throw new ArgumentException($"Could not convert {inputData} to TimeSpan");
+            throw new ArgumentTransformationMetadataException($"Could not convert {inputData.GetType().FullName} to TimeSpan");
         }
         return ParseTime(s);
     }

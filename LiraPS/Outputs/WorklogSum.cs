@@ -11,14 +11,16 @@ namespace LiraPS.Outputs;
 public readonly record struct WorklogSum
 {
     public ImmutableArray<Property> Properties { get; init; }
-    public string Header { get; init; } = "";
+    public string Grouping { get; init; } = "";
     public ImmutableArray<Worklog> Worklogs { get; init; }
     public TimeSpan TimeSpent => TimeSpan.FromTicks(Worklogs.Select(x => x.TimeSpent.Ticks).Sum());
-    private WorklogSum(IEnumerable<Property> groupProps, string header, IEnumerable<Worklog> worklogs)
+    public ImmutableArray<IssueCommon> Issues { get; private init; }
+    private WorklogSum(IEnumerable<Property> groupProps, string grouping, IEnumerable<Worklog> worklogs)
     {
         Worklogs = worklogs.ToImmutableArray();
         Properties = groupProps.ToImmutableArray();
-        Header = header;
+        Grouping = grouping;
+        Issues = [.. Worklogs.Select(x => x.Issue).Distinct().OrderBy(x => x.Key)];
     }
     private static string GetValue(Worklog log, Property prop)
     {
@@ -72,7 +74,8 @@ public readonly record struct WorklogSum
         List<WorklogSum> output = [];
         foreach (IGrouping<string, Worklog> item in grouped)
         {
-            var s = new WorklogSum(props, item.Key, item);
+            var grouping = string.IsNullOrWhiteSpace(item.Key) ? "None" : item.Key;
+            var s = new WorklogSum(props, grouping, item);
             output.Add(s);
         }
         return output;

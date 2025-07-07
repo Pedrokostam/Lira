@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets;
-[Cmdlet(VerbsCommon.Clear, "IssueCache", DefaultParameterSetName = "MANUAL")]
+[Cmdlet(VerbsCommon.Clear, "LiraIssueCache", DefaultParameterSetName = "MANUAL")]
 public class ClearIssueCache : LiraCmdlet
 {
     [Alias("Key")]
