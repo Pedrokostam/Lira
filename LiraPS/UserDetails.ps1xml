@@ -110,10 +110,10 @@
 							<!-- Comment -->
 							<TableColumnItem>
 								<ScriptBlock>
-									if ([string]::IsNullOrWhiteSpace($_.Comment)) {
+									if ([string]::IsNullOrWhiteSpace($_.CommentPlain)) {
 									"`e[2m`e[3mNo comment`e[0m"
 									} else {
-									$_.Comment
+									$_.CommentPlain
 									}
 								</ScriptBlock>
 							</TableColumnItem>
@@ -204,10 +204,10 @@
 							<!-- Comment -->
 							<TableColumnItem>
 								<ScriptBlock>
-									if ([string]::IsNullOrWhiteSpace($_.Comment)) {
+									if ([string]::IsNullOrWhiteSpace($_.CommentPlain)) {
 									"`e[2m`e[3mNo comment`e[0m"
 									} else {
-									$_.Comment
+									$_.CommentPlain
 									}
 								</ScriptBlock>
 							</TableColumnItem>
@@ -300,7 +300,7 @@
 								</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>Summary</PropertyName>
+								<PropertyName>SummaryPlain</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>

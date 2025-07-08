@@ -7,4 +7,5 @@ public abstract record SelfReferential
 {
     [JsonPropertyName("self")]
     public required Uri SelfLink { get; init; }
+    protected string SelfLinkBaseAddress => SelfLink.GetLeftPart(UriPartial.Authority);
 }

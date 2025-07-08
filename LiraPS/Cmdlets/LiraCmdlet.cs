@@ -233,7 +233,7 @@ namespace LiraPS.Cmdlets
             YesToAll = 1 << 3,
             YesNoCancel = YesNo | Cancel,
             YesNoYesToAll = YesNo | YesToAll,
-            AllOptions = YesNo | Cancel| YesToAll,
+            AllOptions = YesNo | Cancel | YesToAll,
         }
         /// <summary>
         /// 
@@ -417,6 +417,15 @@ namespace LiraPS.Cmdlets
             }
         }
 
-    }
+        protected string GetFormattedTableString(object input, string? view = null)
+        {
+            using PowerShell ps = PowerShell.Create(RunspaceMode.CurrentRunspace);
+            ps.AddCommand("Format-Table")
+  .AddParameter("AutoSize");
 
+            ps.AddCommand("Out-String");
+            var results = ps.Invoke(new object[] { input});
+            return string.Join("", results.Select(r => r.ToString()));
+        }
+    }
 }

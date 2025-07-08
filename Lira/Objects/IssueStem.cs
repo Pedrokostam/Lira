@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace Lira.Objects;
@@ -14,5 +15,6 @@ public record IssueStem : SelfReferential
     /// </summary>
     [JsonPropertyName("key")]
     public required string Key { get; init; }
+    public Uri WebLink => new Uri($"{SelfLinkBaseAddress}/browse/{Key}");
     public override string ToString() => Key;
 }

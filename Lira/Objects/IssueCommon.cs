@@ -2,14 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Lira.Extensions;
 
 namespace Lira.Objects;
 
 public abstract record IssueCommon : IssueStem
 {
-    protected List<Worklog>? _worklogs=[];
+    protected List<Worklog>? _worklogs = [];
+    private string? _summaryPlain;
+    private string? _descriptionPlain;
+
     public required string Summary { get; init; }
+    public string SummaryPlain { get => _summaryPlain ??= Summary.StripMarkup(); }
     public required string Description { get; init; }
+    public string DescriptionPlain { get => _descriptionPlain ??= Description.StripMarkup(); }
     public DateTime Fetched { get; init; }
     public required UserDetails Assignee { get; init; }
     public required UserDetails Reporter { get; init; }

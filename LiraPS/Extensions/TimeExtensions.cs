@@ -16,12 +16,22 @@ public static partial class TimeExtensions
     /// </summary>
     /// <param name="date"></param>
     /// <returns></returns>
-    public static string UnambiguousForm(this DateTimeOffset date) => date.ToString(UnambiguousFormat);
-
+    public static string UnambiguousForm(this DateTimeOffset date) => date.UnambiguousForm(false);
+    public static string UnambiguousForm(this DateTimeOffset date, bool withTimeZone)
+    {
+        if (withTimeZone)
+        {
+            return date.ToString(UnambiguousFormat + " zzz");
+        }
+        else
+        {
+            return date.ToLocalTime().ToString(UnambiguousFormat);
+        }
+    }
 
     public static readonly string[] ParseFormatters = [
        // Date only
-       "yyyy-M-d",
+        "yyyy-M-d",
         "d-M-yyyy",
         "d-M-yy",
 

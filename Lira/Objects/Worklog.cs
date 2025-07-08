@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Lira.Extensions;
 using Lira.Objects;
 
 namespace Lira.Objects;
@@ -15,6 +16,8 @@ public record Worklog : SelfReferential
     public required UserDetails Author { get; set; }
     public required UserDetails UpdateAuthor { get; set; }
     public required string Comment { get; set; }
+    public string? _commentPlain;
+    public string CommentPlain { get=>_commentPlain??=Comment.StripMarkup(); }
     public DateTimeOffset Created { get; set; }
     public DateTimeOffset Updated { get; set; }
     public DateTimeOffset Started { get; set; }
