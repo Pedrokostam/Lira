@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Management.Automation;
+using System.Net.Mail;
 using System.Reflection;
 using Lira.Objects;
 using LiraPS.Completers;
@@ -29,6 +30,11 @@ namespace LiraPS.Cmdlets
         [Parameter]
         [AllowNull]
         public string? Comment { get; set; }
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+        private void UserCancel()
+        {
+            Terminate(new InvalidOperationException("User canceled adding worklog"), "WorklogCancel", ErrorCategory.InvalidOperation);
+        }
         protected override void ProcessRecord()
         {
             bool isSomewhatManual = string.IsNullOrWhiteSpace(Issue) || Duration == default;
@@ -58,10 +64,15 @@ namespace LiraPS.Cmdlets
                     try
                     {
                         var dto = string.IsNullOrWhiteSpace(tstring) ? now : (DateTimeOffset)dataTrans.Transform(tstring)!;
-                        if (MenuYesNo($"Is the following date correct? {Bold}{dto.UnambiguousForm()}{Reset}"))
+                        var choice = ChoiceYesNo($"Is the following date correct? {Bold}{dto.UnambiguousForm()}{Reset}", ChoiceOptions.Yes, ChoiceSettings.YesNoCancel);
+                        if(choice == ChoiceOptions.Yes)
                         {
                             Started = dto;
                             break;
+                        }
+                        if (choice == ChoiceOptions.Cancel)
+                        {
+                            UserCancel();
                         }
 
                     }
@@ -91,16 +102,27 @@ namespace LiraPS.Cmdlets
             if (string.IsNullOrWhiteSpace(Comment))
             {
                 Comment = ReadInput("Enter optional comment");
+                if (string.IsNullOrWhiteSpace(Comment))
+                {
+                    Comment = null;
+                }
             }
             var wta = new WorklogToAdd(Started, Duration, Comment);
             if (isSomewhatManual)
             {
                 WriteHost("");
-                WriteHost($"The following worklog will be added to issue {Issue}", ConsoleColor.Cyan);
-                WriteHost(wta.ToString());
-                if (!MenuYesNo("Is thw worklog correct?"))
+                WriteHost($"The following worklog will be added", ConsoleColor.Cyan);
+                WriteHost("");
+                WriteHost($"     Issue: {Bold}{Issue}{Reset}");
+                WriteHost($"   Started: {Bold}{wta.Started.UnambiguousForm()}{Reset}");
+                WriteHost($" TimeSpent: {Bold}{wta.TimeSpent.PrettyTime()}{Reset}");
+                string com = wta.Comment ?? $"{Dim}None{Reset}";
+                WriteHost($"   Comment: {Bold}{com}{Reset}");
+                WriteHost("");
+                var choice = ChoiceYesNo($"Is the worklog correct?", null, ChoiceSettings.YesNo);
+                if (choice == ChoiceOptions.No)
                 {
-                    Terminate(new InvalidOperationException("User canceled adding worklog"), "WorklogCancel", ErrorCategory.InvalidOperation);
+                    UserCancel();
                 }
             }
             //var dll = Assembly.LoadFile(@"C:\Users\Pedro\source\repos\Lira\Lira.Prototyper\bin\Debug\net462\Serilog.dll");

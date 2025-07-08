@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Host;
 using System.Management.Automation.Runspaces;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -18,6 +19,7 @@ using Lira.StateMachines;
 using LiraPS.Cmdlets;
 using LiraPS.Transformers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 
@@ -205,6 +207,7 @@ namespace LiraPS.Cmdlets
         protected const string Reset = "\u001b[0m";
         protected const string Invert = "\u001b[7m";
         protected const string Bold = "\u001b[1m";
+        protected const string Dim = "\u001b[2m";
         protected const string Italics = "\u001b[3m";
         protected bool MenuYesNo(string header)
         {
@@ -214,12 +217,76 @@ namespace LiraPS.Cmdlets
         {
             return (bool)Menu(header, new MenuItem("No", false), new MenuItem("Yes", true))!;
         }
+        protected enum ChoiceOptions
+        {
+            No,
+            Yes,
+            Cancel,
+            YesToAll,
+        }
+        [Flags]
+        protected enum ChoiceSettings
+        {
+            None = 0,
+            YesNo = 1 << 1,
+            Cancel = 1 << 2,
+            YesToAll = 1 << 3,
+            YesNoCancel = YesNo | Cancel,
+            YesNoYesToAll = YesNo | YesToAll,
+            AllOptions = YesNo | Cancel| YesToAll,
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="header"></param>
+        /// <param name="preselection"></param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        protected ChoiceOptions ChoiceYesNo(string header, ChoiceOptions? preselection = null, ChoiceSettings settings = ChoiceSettings.YesNo, string? message = null)
+        {
+            if (settings == ChoiceSettings.None)
+            {
+                settings = ChoiceSettings.YesNo;
+            }
+            var yes = new ChoiceDescription("&Yes");
+            var no = new ChoiceDescription("&No");
+            var yesAll = new ChoiceDescription("Yes to &All");
+            var cancel = new ChoiceDescription("&Cancel");
+            List<ChoiceOptions> outputs = [ChoiceOptions.Yes];
+            var options = new System.Collections.ObjectModel.Collection<ChoiceDescription>() {
+                yes,
+            };
+            if (settings.HasFlag(ChoiceSettings.YesToAll))
+            {
+                outputs.Add(ChoiceOptions.YesToAll);
+                options.Add(yesAll);
+            }
+            outputs.Add(ChoiceOptions.No);
+            options.Add(no);
+            if (settings.HasFlag(ChoiceSettings.Cancel))
+            {
+                outputs.Add(ChoiceOptions.Cancel);
+                options.Add(cancel);
+            }
+            int startIndex = preselection switch
+            {
+                ChoiceOptions.No => options.IndexOf(no),
+                ChoiceOptions.Yes => 0,
+                ChoiceOptions.Cancel => options.IndexOf(cancel),
+                ChoiceOptions.YesToAll => options.IndexOf(yesAll),
+                _ => -1,
+            };
+            var ch = Host.UI.PromptForChoice(header, message ?? "\n", options, startIndex);
+            return outputs[ch];
+
+        }
         protected object? Menu(string header, params MenuItem[] options)
         {
             if (Console.IsInputRedirected)
             {
                 Terminate(new ArgumentException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
             }
+
             if (options.Length == 0)
             {
                 return null;
