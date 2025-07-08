@@ -26,7 +26,7 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
         LoadWorklogs,
         End,
     }
-    public readonly record struct State : IState<Steps>
+    public readonly record struct State : IState<Steps,State>
     {
         public Steps FinishedStep { get; init; }
         public PaginationMachine<IssueLite>.State PaginationState { get; init; }
@@ -42,6 +42,10 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
         public bool IsFinished => NextStep == Steps.End;
         public bool ShouldContinue => !IsFinished;
         public double QueryProgress => PaginationState.Progress;
+        public State Advance()
+        {
+            return this with { FinishedStep = NextStep };
+        }
 
         public Steps NextStep
         {
@@ -84,36 +88,35 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
     {
         state.PaginationState.Query.Add(HttpQuery.MaxResults(QueryLimit));
         var pagiState = await _pagination.Process(state.PaginationState).ConfigureAwait(false);
-        return state with
+        return state.Advance() with
         {
             PaginationState = pagiState,
-            FinishedStep = Steps.QueryForIssues,
         };
     }
     private async Task<List<Worklog>> LoadWorklogsImpl(IEnumerable<IssueLite> issueLites)
     {
-        List<IssueLite> unchachedLites = [];
+        List<IssueLite> uncachedLites = [];
         List<Worklog> worklogs = [];
         foreach (var potentiallyUncached in issueLites)
         {
-            if (Cache.TryGetValue(potentiallyUncached.Key, out var issue))
+            if (TryGetValue(potentiallyUncached.Key, out Issue? issue))
             {
                 worklogs.AddRange(issue.Worklogs);
             }
-            else if (CacheLite.TryGetValue(potentiallyUncached.Key, out var cachedLite))
+            else if (TryGetValue(potentiallyUncached.Key, out IssueLite? cachedLite))
             {
                 worklogs.AddRange(cachedLite.Worklogs);
             }
             else
             {
-                unchachedLites.Add(potentiallyUncached);
+                uncachedLites.Add(potentiallyUncached);
             }
         }
-        await unchachedLites.LoadWorklogs(LiraClient).ConfigureAwait(false);
-        foreach (var issue in unchachedLites)
+        await uncachedLites.LoadWorklogs(LiraClient).ConfigureAwait(false);
+        foreach (var issue in uncachedLites)
         {
             worklogs.AddRange(issue.Worklogs);
-            CacheLite.Add(issue);
+            AddToCache(issue);
         }
         return worklogs;
     }
@@ -124,10 +127,9 @@ public class WorklogMachine : StateMachine<WorklogMachine.State, WorklogMachine.
         var allWorklogs = state.PaginationState.Values.SelectMany(x => x.Worklogs);
         // Log.Information("Filtering worklogs");
         var worklogs = state.Query.FilterItems(loadedLogs, LiraClient).ToImmutableList();
-        return state with
+        return state.Advance() with
         {
             Worklogs = worklogs,
-            FinishedStep = Steps.LoadWorklogs,
         };
     }
 

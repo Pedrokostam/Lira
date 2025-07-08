@@ -16,7 +16,7 @@ public class UsersMachine(LiraClient client) : StateMachine<UsersMachine.State,U
         GetUsers,
         End,
     }
-    public readonly record struct State(string UserName, ImmutableArray<UserDetails> Users,Steps FinishedStep = Steps.None) : IState<Steps>
+    public readonly record struct State(string UserName, ImmutableArray<UserDetails> Users,Steps FinishedStep = Steps.None) : IState<Steps,State>
     {
         public State(string userName) : this(userName, [])
         {
@@ -37,6 +37,10 @@ public class UsersMachine(LiraClient client) : StateMachine<UsersMachine.State,U
         }
         public bool IsFinished => NextStep == Steps.End;
         public bool ShouldContinue => !IsFinished;
+        public State Advance()
+        {
+            return this with { FinishedStep = NextStep };
+        }
     }
     private async Task<State> GetUsers(State state)
     {
@@ -46,9 +50,8 @@ public class UsersMachine(LiraClient client) : StateMachine<UsersMachine.State,U
         await HandleErrorResponse(response).ConfigureAwait(false);
         var stringContent = await ReadContentString(response).ConfigureAwait(false);
         var users = JsonHelper.Deserialize<IList<UserDetails>>(stringContent) ?? [];
-        return state with
+        return state.Advance() with
         {
-            FinishedStep=Steps.GetUsers,
             Users = [.. users],
         };
     }

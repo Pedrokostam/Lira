@@ -45,9 +45,12 @@ public partial class LiraClient : IDisposable
     private readonly UsersMachine _usersMachine;
     private readonly WorklogMachine _worklogMachine;
     private readonly PaginationMachine<Issue> _issuePaginationMachine;
-    private readonly IssueMachine _issueMachine;
+    private readonly GetIssueMachine _issueMachine;
+    private readonly GetIssueLiteMachine _issueLiteMachine;
     private readonly AddWorklogMachine _addWorklogMachine;
     private readonly CurrentUserMachine _currentUserMachine;
+    private readonly RemoveWorklogMachine _removeWorklogMachine;
+    private readonly UpdateWorklogMachine _updateWorklogMachine;
 
     internal IssueCache<Issue> Cache { get; } = new();
     internal IssueCache<IssueLite> CacheLite { get; } = new();
@@ -55,9 +58,12 @@ public partial class LiraClient : IDisposable
     public UsersMachine GetUsersStateMachine() => _usersMachine;
     public WorklogMachine GetWorklogStateMachine() => _worklogMachine;
     internal PaginationMachine<Issue> GetIssuePaginationStateMachine() => _issuePaginationMachine;
-    public IssueMachine GetIssueStateMachine() => _issueMachine;
+    public GetIssueMachine GetIssueStateMachine() => _issueMachine;
+    public GetIssueLiteMachine GetIssueLiteStateMachine() => _issueLiteMachine;
     public AddWorklogMachine GetAddWorklogMachine() => _addWorklogMachine;
     public CurrentUserMachine GetCurrentUserMachine() => _currentUserMachine;
+    public RemoveWorklogMachine GetRemoveWorklogMachine() => _removeWorklogMachine;
+    public UpdateWorklogMachine GetUpdateWorklogMachine() => _updateWorklogMachine;
     #endregion StateMachines
 
     internal LiraClient(Uri baseAddress, ILogger logger)
@@ -75,8 +81,11 @@ public partial class LiraClient : IDisposable
         _worklogMachine = new(this);
         _issuePaginationMachine = new(this, SearchEndpoint, "issues");
         _issueMachine = new(this);
+        _issueLiteMachine = new(this);
         _addWorklogMachine = new(this);
         _currentUserMachine = new(this);
+        _removeWorklogMachine = new(this);
+        _updateWorklogMachine = new(this);
     }
 
     #region Properties
@@ -135,15 +144,18 @@ public partial class LiraClient : IDisposable
         return state.Users;
     }
     /// <summary>
-    /// I am...
+    /// We all danced in fire
     /// <para/>
-    /// ALL OF ME
+    /// TRAPPED IN THIS MACHINE
     /// </summary>
+    /// <remarks>
+    /// Don't know how long we've waited
+    /// </remarks>
     /// <typeparam name="TState"></typeparam>
     /// <param name="machine"></param>
     /// <param name="state"></param>
     /// <returns></returns>
-    private async Task<TState> ThisMachine<TState>(IStateMachine<TState> machine, TState state) where TState : IState
+    private static async Task<TState> ThisMachine<TState>(IStateMachine<TState> machine, TState state) where TState : IState
     {
         while (state.ShouldContinue)
         {
@@ -158,6 +170,13 @@ public partial class LiraClient : IDisposable
         state = await ThisMachine(machine, state).ConfigureAwait(false);
         return state.Issue;
     }
+    public async Task<IssueLite?> GetIssueLite(string issueId)
+    {
+        var machine = GetIssueLiteStateMachine();
+        var state = machine.GetStartState(issueId);
+        state = await ThisMachine(machine, state).ConfigureAwait(false);
+        return state.Issue;
+    }
     public async Task<IList<Worklog>> GetWorklogs(JqlQuery query)
     {
         var machine = GetWorklogStateMachine();
@@ -165,13 +184,20 @@ public partial class LiraClient : IDisposable
         state = await ThisMachine(machine, state).ConfigureAwait(false);
         return state.Worklogs;
     }
-    public Task<Worklog?> AddWorklog(string issueId, DateTimeOffset started, TimeSpan timeSpent, string? comment) => AddWorklog(issueId, new(started, timeSpent, comment));
-    public async Task<Worklog?> AddWorklog(string issueId, WorklogToAdd worklogToAdd)
+    public Task<Worklog?> AddWorklog(string issueKey, DateTimeOffset started, TimeSpan timeSpent, string? comment) => AddWorklog(issueKey, new(started, timeSpent, comment));
+    public async Task<Worklog?> AddWorklog(string issueKey, WorklogToAdd worklogToAdd)
     {
         var machine = GetAddWorklogMachine();
-        var state = machine.GetStartState(issueId, worklogToAdd);
+        var state = machine.GetStartState(issueKey, worklogToAdd);
         state = await ThisMachine(machine, state).ConfigureAwait(false);
         return state.AddedWorklog;
+    }
+    public async Task<bool> RemoveWorklog(Worklog worklogToRemove)
+    {
+        var machine = GetRemoveWorklogMachine();
+        var state = machine.GetStartState(worklogToRemove);
+        state = await ThisMachine(machine, state).ConfigureAwait(false);
+        return state.RemovalSuccess;
     }
     #endregion Main methods
     //var log = new WorklogToAdd(comment, timeSpent, started);

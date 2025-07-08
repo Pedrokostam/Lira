@@ -2,10 +2,12 @@
 using System.Management.Automation;
 using System.Net.Mail;
 using System.Reflection;
+using System.Threading;
 using Lira.Objects;
 using LiraPS.Completers;
 using LiraPS.Extensions;
 using LiraPS.Transformers;
+using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets
 {
@@ -22,7 +24,7 @@ namespace LiraPS.Cmdlets
         [Alias("Date")]
         [DateTransformer(outputIJqlDate: false, mode: DateMode.Current)]
         [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
-        public DateTimeOffset Started { get; set; } = default;
+        public DateTimeOffset Started { get; set; } =default;
         [Parameter]
         [Alias("Time", "TimeSpan")]
         [TimespanTransformer]
@@ -30,14 +32,10 @@ namespace LiraPS.Cmdlets
         [Parameter]
         [AllowNull]
         public string? Comment { get; set; }
-        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-        private void UserCancel()
-        {
-            Terminate(new InvalidOperationException("User canceled adding worklog"), "WorklogCancel", ErrorCategory.InvalidOperation);
-        }
+
         protected override void ProcessRecord()
         {
-            bool isSomewhatManual = string.IsNullOrWhiteSpace(Issue) || Duration == default;
+            bool isSomewhatManual = string.IsNullOrWhiteSpace(Issue) || TestBoundParameter(nameof(Started));
             if (string.IsNullOrWhiteSpace(Issue))
             {
                 while (true)
@@ -54,32 +52,40 @@ namespace LiraPS.Cmdlets
                     }
                 }
             }
-            if (isSomewhatManual && Started == default)
+            if (Started == default)
             {
-                while (true)
+                if (isSomewhatManual)
                 {
-                    var now = DateTimeOffset.Now;
-                    var dataTrans = new DateTransformerAttribute(outputIJqlDate: false, mode: DateMode.Current);
-                    var tstring = ReadInput($"Enter date of work, leave empty to use {now.NumericalForm()}");
-                    try
-                    {
-                        var dto = string.IsNullOrWhiteSpace(tstring) ? now : (DateTimeOffset)dataTrans.Transform(tstring)!;
-                        var choice = ChoiceYesNo($"Is the following date correct? {Bold}{dto.UnambiguousForm()}{Reset}", ChoiceOptions.Yes, ChoiceSettings.YesNoCancel);
-                        if(choice == ChoiceOptions.Yes)
-                        {
-                            Started = dto;
-                            break;
-                        }
-                        if (choice == ChoiceOptions.Cancel)
-                        {
-                            UserCancel();
-                        }
 
-                    }
-                    catch
+                    while (true)
                     {
-                        WriteWarning("Invalid date");
+                        var now = DateTimeOffset.Now;
+                        var dataTrans = new DateTransformerAttribute(outputIJqlDate: false, mode: DateMode.Current);
+                        var tstring = ReadInput($"Enter date of work, leave empty to use {now.NumericalForm()}");
+                        try
+                        {
+                            var dto = string.IsNullOrWhiteSpace(tstring) ? now : (DateTimeOffset)dataTrans.Transform(tstring)!;
+                            var choice = ChoiceYesNo($"Is the following date correct? {Bold}{dto.UnambiguousForm()}{Reset}", ChoiceOptions.Yes, ChoiceSettings.YesNoCancel);
+                            if (choice == ChoiceOptions.Yes)
+                            {
+                                Started = dto;
+                                break;
+                            }
+                            if (choice == ChoiceOptions.Cancel)
+                            {
+                                UserCancel("worklog adding");
+                            }
+
+                        }
+                        catch
+                        {
+                            WriteWarning("Invalid date");
+                        }
                     }
+                }
+                else
+                {
+                    Started = DateTimeOffset.Now;
                 }
             }
             if (Duration == default)
@@ -107,39 +113,45 @@ namespace LiraPS.Cmdlets
                     Comment = null;
                 }
             }
-            var wta = new WorklogToAdd(Started, Duration, Comment);
+            var worklogToAdd = new WorklogToAdd(Started, Duration, Comment);
             if (isSomewhatManual)
             {
                 WriteHost("");
                 WriteHost($"The following worklog will be added", ConsoleColor.Cyan);
                 WriteHost("");
                 WriteHost($"     Issue: {Bold}{Issue}{Reset}");
-                WriteHost($"   Started: {Bold}{wta.Started.UnambiguousForm()}{Reset}");
-                WriteHost($" TimeSpent: {Bold}{wta.TimeSpent.PrettyTime()}{Reset}");
-                string com = wta.Comment ?? $"{Dim}None{Reset}";
+                WriteHost($"   Started: {Bold}{worklogToAdd.Started.UnambiguousForm()}{Reset}");
+                WriteHost($" TimeSpent: {Bold}{worklogToAdd.TimeSpent.PrettyTime()}{Reset}");
+                string com = worklogToAdd.Comment ?? $"{Dim}None{Reset}";
                 WriteHost($"   Comment: {Bold}{com}{Reset}");
                 WriteHost("");
                 var choice = ChoiceYesNo($"Is the worklog correct?", null, ChoiceSettings.YesNo);
                 if (choice == ChoiceOptions.No)
                 {
-                    UserCancel();
+                    UserCancel("worklog adding");
                 }
             }
-            //var dll = Assembly.LoadFile(@"C:\Users\Pedro\source\repos\Lira\Lira.Prototyper\bin\Debug\net462\Serilog.dll");
-            //var type = dll.GetType("LiraPS.LiraSession");
-            //var prop = type.GetProperty("LogSWitch").GetValue(null);
-            //var worklog = new Worklog()
-            //{
-            //    Author = LiraSession.Client.Myself,
-            //    Comment = Comment ?? "none",
-            //    ID = "1",
-            //    IssueId = "2",
-            //    SelfLink = new Uri("http://google.com"),
-            //    UpdateAuthor = LiraSession.Client.Myself,
-            //    Started = Started,
-            //    TimeSpent = Duration,
-            //};
-            //WriteObject(worklog);
+            ENSURE_TESTING(Issue);
+
+            LiraSession.Logger.LogInformation("Adding worklog to {issue}", Issue);
+            var machine = LiraSession.Client.GetAddWorklogMachine();
+            var state = machine.GetStartState(Issue, worklogToAdd);
+            while (!state.IsFinished)
+            {
+                var t = machine.Process(state).GetAwaiter();
+                state = t.GetResult();
+                PrintLogs();
+            }
+
+            if (state.AddedWorklog is Worklog added)
+            {
+                LiraSession.Logger.LogInformation("Added worklog {id}", added.ID);
+                WriteObject(added);
+            }
+            else
+            {
+                LiraSession.Logger.LogError("Failed adding worklog");
+            }
         }
     }
 }

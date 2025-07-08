@@ -22,6 +22,8 @@ internal static partial class LogMessages
         GotIssueFromQuery,
         LoadingWorklogs,
         UsingCachedWorklogs,
+        UsingCachedIssue,
+        UsingCachedIssueLite,
         CachingWorklogs,
         LoadingWorklogsSubtask,
         UpliftingShallowIssue,
@@ -78,9 +80,9 @@ internal static partial class LogMessages
     [LoggerMessage(
            EventId = (int)Events.UpliftingShallowIssue,
            Level = LogLevel.Debug,
-           Message = "Converting IssueStem {issue} to Issue."
+           Message = "Converting IssueLite {issue} to Issue."
            )]
-    public static partial void UpliftingShallowIssue(this ILogger logger, IssueStem issue);
+    public static partial void UpliftingIssueLite(this ILogger logger, IssueLite issue);
 
     [LoggerMessage(
            EventId = (int)Events.LoadingWorklogs,
@@ -94,7 +96,21 @@ internal static partial class LogMessages
            Level = LogLevel.Debug,
            Message = "Using cached worklogs of {Issue}."
            )]
-    public static partial void UsingCachedWorklogs(this ILogger logger, Issue issue);
+    public static partial void UsingCachedWorklogs(this ILogger logger, IssueCommon issue);
+
+    [LoggerMessage(
+           EventId = (int)Events.UsingCachedIssue,
+           Level = LogLevel.Debug,
+           Message = "Using cached Issue {Issue}."
+           )]
+    public static partial void UsingCachedIssue(this ILogger logger, Issue issue);
+
+    [LoggerMessage(
+           EventId = (int)Events.UsingCachedIssueLite,
+           Level = LogLevel.Debug,
+           Message = "Using cached IssueLite {Issue}."
+           )]
+    public static partial void UsingCachedIssueLite(this ILogger logger, IssueLite issue);
 
     [LoggerMessage(
            EventId = (int)Events.CachingWorklogs,

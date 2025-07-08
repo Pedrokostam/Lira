@@ -427,5 +427,24 @@ namespace LiraPS.Cmdlets
             var results = ps.Invoke(new object[] { input});
             return string.Join("", results.Select(r => r.ToString()));
         }
+
+        /// <summary>
+        /// YOU CAN ONLY TOUCH AVP-425
+        /// </summary>
+        /// <param name="issue"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        protected void ENSURE_TESTING(string issue)
+        {
+            if (!"AVP-425".Equals(issue, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("DO NOT TEST ON ANYTHING BUT AVP-425!!!!");
+            }
+        }
+    [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+    protected void UserCancel(string operation)
+    {
+        var pascalCase = string.Join("", operation.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries).Select(x => char.ToUpperInvariant(x[0]) + x[1..]));
+        Terminate(new InvalidOperationException($"User cancelled {operation}"), $"{pascalCase}Cancelled", ErrorCategory.InvalidOperation);
+    }
     }
 }

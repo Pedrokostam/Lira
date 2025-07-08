@@ -28,7 +28,7 @@ public class PaginationMachine<TPaginatedElement> : StateMachine<PaginationMachi
     public readonly record struct State(Steps FinishedStep,
                                         PaginationParams Pagination,
                                         ImmutableList<TPaginatedElement> Values,
-                                        HttpQuery Query) : IState<Steps>
+                                        HttpQuery Query) : IState<Steps,State>
     {
         internal State(HttpQuery query) : this(Steps.None, default, [],query)
         {
@@ -50,6 +50,10 @@ public class PaginationMachine<TPaginatedElement> : StateMachine<PaginationMachi
                     _ => Steps.End,
                 };
             }
+        }
+        public State Advance()
+        {
+            return this with { FinishedStep = NextStep };
         }
         public bool IsFinished => NextStep == Steps.End;
         public double Progress
@@ -85,8 +89,7 @@ public class PaginationMachine<TPaginatedElement> : StateMachine<PaginationMachi
         LiraClient.Logger.PaginatedResponse(Uri.UnescapeDataString(queryAddress), pagination);
         var pageValues = JsonHelper.Deserialize<IList<TPaginatedElement>>(responseString, PropertyName);
         PaginationParams.RemoveFromQuery(state.Query);
-        return state with {
-            FinishedStep= Steps.Paginate,
+        return state.Advance() with {
             Pagination= pagination,
             Values= state.Values.AddRangeNotNull(pageValues),
         };

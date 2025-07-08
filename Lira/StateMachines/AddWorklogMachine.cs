@@ -18,12 +18,10 @@ public class AddWorklogMachine(LiraClient client) : StateMachine<AddWorklogMachi
         AddWorklog,
         End,
     }
-    public readonly record struct State(string IssueId, WorklogToAdd Worklog, Worklog? AddedWorklog=null, Steps FinishedStep = Steps.None) : IState<Steps>
+    public readonly record struct State(string IssueKey, WorklogToAdd Worklog, Worklog? AddedWorklog = null, Steps FinishedStep = Steps.None) : IState<Steps, State>
     {
         public Steps NextStep
         {
-
-
             get
             {
                 return FinishedStep switch
@@ -37,15 +35,41 @@ public class AddWorklogMachine(LiraClient client) : StateMachine<AddWorklogMachi
         }
         public bool IsFinished => NextStep == Steps.End;
         public bool ShouldContinue => !IsFinished;
+        public State Advance()
+        {
+            return this with { FinishedStep = NextStep };
+        }
     }
     private async Task<State> AddWorklog(State state)
     {
-        var address = $"{LiraClient.GetIssueEndpoint(state.IssueId)}/worklog";
+        // ugly >_<
+        System.Runtime.CompilerServices.ConfiguredTaskAwaitable<IssueLite?> fallbackIssueLiteTask;
+        Issue? issueFull = null;
+        if (TryGetValue(state.IssueKey, out issueFull))
+        {
+            fallbackIssueLiteTask = Task.FromResult<IssueLite?>(null).ConfigureAwait(false);
+        }
+        else
+        {
+            fallbackIssueLiteTask = LiraClient.GetIssueLite(state.IssueKey).ConfigureAwait(false);
+        }
+        System.Runtime.CompilerServices.ConfiguredTaskAwaitable<IssueLite?> issueLiteTask = LiraClient.GetIssueLite(state.IssueKey).ConfigureAwait(false)!;
+        var address = $"{LiraClient.GetIssueEndpoint(state.IssueKey)}/worklog";
         var response = await PostAsync(address, state.Worklog).ConfigureAwait(false);
         await LiraClient.HandleErrorResponse(response).ConfigureAwait(false);
         var responseContent = await ReadContentString(response).ConfigureAwait(false);
         var addedWorklog = JsonHelper.Deserialize<Worklog>(responseContent);
-        return state with
+        
+        var issueLite = await issueLiteTask; // should return immediately if FromResult is used
+        if (addedWorklog is not null && issueFull is not null)
+        {
+            addedWorklog.Issue = issueFull;
+        }
+        else if (addedWorklog is not null && issueLite is not null)
+        {
+            addedWorklog.Issue = issueLite;
+        }
+        return state.Advance() with
         {
             AddedWorklog = addedWorklog,
         };
@@ -60,11 +84,11 @@ public class AddWorklogMachine(LiraClient client) : StateMachine<AddWorklogMachi
             _ => Task.FromResult(state),
         };
     }
-    public State GetStartState(string issueId,in WorklogToAdd worklogToAdd)
+    public State GetStartState(string issueKey, in WorklogToAdd worklogToAdd)
     {
-        return new State(issueId, worklogToAdd);
+        return new State(issueKey, worklogToAdd);
     }
-    public State GetStartState(string issueId, DateTimeOffset started, TimeSpan timeSpent, string? comment) => GetStartState(issueId, new(started, timeSpent, comment));
+    public State GetStartState(string issueKey, DateTimeOffset started, TimeSpan timeSpent, string? comment) => GetStartState(issueKey, new(started, timeSpent, comment));
 }
 
 

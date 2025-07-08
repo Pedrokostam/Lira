@@ -11,8 +11,13 @@ public interface IState
     bool ShouldContinue { get; }
 }
 
-public interface IState<TStep> : IState where TStep : Enum
+public interface IState<TStep,TState> : IState where TStep : Enum
 {
     TStep FinishedStep { get; init; }
     TStep NextStep { get; }
+    /// <summary>
+    /// Returns <see cref="TStep"/> advance by one.
+    /// </summary>
+    /// <returns></returns>
+    TState Advance();
 }

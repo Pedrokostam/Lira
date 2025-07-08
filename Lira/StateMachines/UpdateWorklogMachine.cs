@@ -1,20 +1,24 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
-
-public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMachine.State, CurrentUserMachine.Steps>(client)
+public class UpdateWorklogMachine(LiraClient client) : StateMachine<UpdateWorklogMachine.State, UpdateWorklogMachine.Steps>(client)
 {
 
     public enum Steps
     {
         None,
         EnsureAuthorization,
-        GetUser,
+        UpdateWorklog,
         End,
     }
-    public readonly record struct State(UserDetails? User, Steps FinishedStep = Steps.None) : IState<Steps,State>
+    public readonly record struct State(WorklogUpdatePackage Package, Worklog OldWorklog, Worklog? UpdateWorklog=null, Steps FinishedStep = Steps.None) : IState<Steps,State>
     {
         public Steps NextStep
         {
@@ -23,8 +27,8 @@ public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMac
                 return FinishedStep switch
                 {
                     Steps.None => Steps.EnsureAuthorization,
-                    Steps.EnsureAuthorization => Steps.GetUser,
-                    Steps.GetUser => Steps.End,
+                    Steps.EnsureAuthorization => Steps.UpdateWorklog,
+                    Steps.UpdateWorklog => Steps.End,
                     _ => Steps.End,
                 };
             }
@@ -36,13 +40,21 @@ public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMac
             return this with { FinishedStep = NextStep };
         }
     }
-    private async Task<State> GetUser(State state)
+    private async Task<State> UpdateWorklog(State state)
     {
-        HttpResponseMessage myselfResponse = await HttpClient.GetAsync(LiraClient.MyselfEndpoint).ConfigureAwait(false);
-        await HandleErrorResponse(myselfResponse).ConfigureAwait(false);
-        var content = await ReadContentString(myselfResponse).ConfigureAwait(false);
-        var userDetails = JsonHelper.Deserialize<UserDetails>(content)!;
-        return state.Advance() with { User = userDetails };
+        if (!state.Package.HasContent)
+        {
+            throw new ArgumentException("Update payload must contain some changes", nameof(state));
+        }
+        var address = $"{LiraClient.GetIssueEndpoint(state.OldWorklog.Issue.Key)}/worklog/{state.OldWorklog.ID}";
+        var response = await PutAsync(address, state.Package).ConfigureAwait(false);
+        await LiraClient.HandleErrorResponse(response).ConfigureAwait(false);
+        var responseContent = await ReadContentString(response).ConfigureAwait(false);
+        var updateWorklog = JsonHelper.Deserialize<Worklog>(responseContent);
+        return state.Advance() with
+        {
+            UpdateWorklog = updateWorklog,
+        };
     }
     public override Task<State> Process(State state)
     {
@@ -50,13 +62,13 @@ public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMac
         return state.NextStep switch
         {
             Steps.EnsureAuthorization => EnsureAuthorization(state),
-            Steps.GetUser => GetUser(state),
+            Steps.UpdateWorklog => UpdateWorklog(state),
             _ => Task.FromResult(state),
         };
     }
-    public State GetStartState()
+    public State GetStartState(Worklog oldWorklog,in WorklogUpdatePackage updatePayload)
     {
-        return new State();
+        return new State(updatePayload, oldWorklog);
     }
 }
 

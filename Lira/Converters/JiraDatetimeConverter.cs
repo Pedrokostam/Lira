@@ -9,6 +9,8 @@ namespace Lira.Converters;
 // https://learn.microsoft.com/dotnet/standard/base-types/standard-date-and-time-format-strings#the-rfc1123-r-r-format-specifier.
 public partial class JiraDatetimeConverter : JsonConverter<DateTimeOffset>
 {
+    private const string FormatString = "yyyy-MM-ddTHH:mm:ss.fffzzz";
+
     public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         string? datetimeString = reader.GetString();
@@ -17,11 +19,8 @@ public partial class JiraDatetimeConverter : JsonConverter<DateTimeOffset>
             return DateTimeOffset.MinValue;
         }
 
-        // Define the exact format of the datetime string
-        string format = "yyyy-MM-ddTHH:mm:ss.fffzzz";
-
         // Parse the string using DateTimeOffset.ParseExact with the specified format
-        return DateTimeOffset.ParseExact(datetimeString, format, CultureInfo.InvariantCulture);
+        return DateTimeOffset.ParseExact(datetimeString, FormatString, CultureInfo.InvariantCulture);
     }
 
     public override void Write(Utf8JsonWriter writer, DateTimeOffset value, JsonSerializerOptions options)
@@ -29,10 +28,10 @@ public partial class JiraDatetimeConverter : JsonConverter<DateTimeOffset>
         // $DateStarted.ToString("o") -replace "\.(\d{3})\d*([\+\-]\d{2}):", ".`$1`$2"
         // Serialize back to the ISO 8601 string
         // Jira really does not like the colon in timezone, giving error 500
-        var datestring = value.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz", CultureInfo.InvariantCulture);
-        datestring = DateTimeCorrecter().Replace(datestring, "$1$2");
+        var datestring = value.ToString(FormatString, CultureInfo.InvariantCulture);
+        datestring = DateTimeCorrecter().Replace(datestring, "${tzh}${tzm}");
         writer.WriteStringValue(datestring);
     }
-    [GeneratedRegex(@"(\d{2}):(\d{2})$", RegexOptions.ExplicitCapture, 250)]
+    [GeneratedRegex(@"(?<tzh>\d{2}):(?<tzm>\d{2})$", RegexOptions.ExplicitCapture, 250)]
     private static partial Regex DateTimeCorrecter();
 }

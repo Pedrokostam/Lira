@@ -4,6 +4,7 @@ using System.Linq;
 using System.Management.Automation;
 using System.Text;
 using System.Threading.Tasks;
+using Lira.Extensions;
 using Lira.Objects;
 using LiraPS.Completers;
 using LiraPS.Extensions;
@@ -20,56 +21,64 @@ public class UpdateWorklog : LiraCmdlet
     public Worklog Worklog { get; set; } = default!;
 
     [Parameter()]
-    [Alias("Date")]
+    [Alias("Date","NewDate")]
     [DateTransformer(outputIJqlDate: false, mode: DateMode.Current)]
     [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
     public DateTimeOffset NewStarted { get; set; } = default;
     [Parameter]
-    [Alias("Time", "TimeSpan")]
+    [Alias("Time", "TimeSpan","NewTime")]
     [TimespanTransformer]
     public TimeSpan NewDuration { get; set; } = default!;
     [Parameter()]
     [AllowNull]
     [AllowEmptyString]
+    [Alias("Comment")]
     public string? NewComment { get; set; }
     [Parameter]
     public SwitchParameter Force { get; set; }
     protected override void ProcessRecord()
     {
-        bool dateChanged = TestBoundParameter(nameof(NewStarted)) && NewStarted != Worklog.Started;
-        bool timeChanged = TestBoundParameter(nameof(NewDuration)) && NewDuration != Worklog.TimeSpent;
-        NewComment ??= "";
-        bool commentChanged = TestBoundParameter(nameof(NewComment)) && !NewComment.Equals(Worklog.Comment, StringComparison.OrdinalIgnoreCase);
-        bool changedAtAll = dateChanged || timeChanged || commentChanged;
-        if (!changedAtAll)
+        DateTimeOffset? date = TestBoundParameter(nameof(NewStarted)) ? NewStarted : null;
+        TimeSpan? time = TestBoundParameter(nameof(NewDuration)) ? NewDuration : null;
+        string? comment = TestBoundParameter(nameof(NewComment)) ? NewComment : null;
+        
+        if (!Worklog.GetUpdatePackage(out var payload,date,time,comment))
         {
             Terminate(new PSInvalidOperationException("There is no change in the worklog to commit"), "NoChangeEditWorklog", ErrorCategory.InvalidOperation);
         }
-        if (dateChanged)
+        if (payload.Started is DateTimeOffset payloadDate)
         {
             WriteHost("Date change", ConsoleColor.Cyan);
-            bool showTimezones = Worklog.Started.Offset != TimeZoneInfo.Local.BaseUtcOffset || NewStarted.Offset != TimeZoneInfo.Local.BaseUtcOffset;
-            WriteHost($"{Worklog.Started.UnambiguousForm(showTimezones)} => {Bold}{NewStarted.UnambiguousForm(showTimezones)}{Reset}");
+            bool showTimezones = Worklog.Started.Offset != TimeZoneInfo.Local.BaseUtcOffset || payloadDate.Offset != TimeZoneInfo.Local.BaseUtcOffset;
+            WriteHost($"{Worklog.Started.UnambiguousForm(showTimezones)} => {Bold}{payloadDate.UnambiguousForm(showTimezones)}{Reset}");
             WriteHost("");
         }
-        if (timeChanged)
+        if (payload.TimeSpent is TimeSpan payloadTs)
         {
             WriteHost("Duration change", ConsoleColor.Cyan);
-            WriteHost($"{Worklog.TimeSpent.PrettyTime()} => {Bold}{NewDuration.PrettyTime()}{Reset}");
+            WriteHost($"{Worklog.TimeSpent.PrettyTime()} => {Bold}{payloadTs.PrettyTime()}{Reset}");
             WriteHost("");
         }
-        if (timeChanged)
+        if (payload.Comment is string payloadString)
         {
             WriteHost("Comment change", ConsoleColor.Cyan);
             WriteHost(Worklog.Comment);
             WriteHost("to");
-            WriteHost(NewComment);
+            WriteHost(payloadString);
             WriteHost("");
         }
-        if (Force.IsPresent || ShouldContinue($"Updating worklog", $"Do you want to update the worklog?"))
+        if (!(Force.IsPresent || ShouldContinue($"Updating worklog", $"Do you want to update the worklog?")))
         {
-
+            UserCancel("worklog update");
         }
-        base.ProcessRecord();
+            ENSURE_TESTING(Worklog.Issue.Key);
+        var machine = LiraSession.Client.GetUpdateWorklogMachine();
+        var state = machine.GetStartState(Worklog, payload);
+        while (!state.IsFinished)
+        {
+            var t = machine.Process(state).GetAwaiter();
+            state = t.GetResult();
+            PrintLogs();
+        }
     }
 }

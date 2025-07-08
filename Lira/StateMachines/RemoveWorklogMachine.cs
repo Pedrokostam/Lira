@@ -1,20 +1,24 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
-
-public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMachine.State, CurrentUserMachine.Steps>(client)
+public class RemoveWorklogMachine(LiraClient client) : StateMachine<RemoveWorklogMachine.State, RemoveWorklogMachine.Steps>(client)
 {
 
     public enum Steps
     {
         None,
         EnsureAuthorization,
-        GetUser,
+        RemoveWorklog,
         End,
     }
-    public readonly record struct State(UserDetails? User, Steps FinishedStep = Steps.None) : IState<Steps,State>
+    public readonly record struct State(Worklog WorklogToRemove, bool RemovalSuccess = false, Steps FinishedStep = Steps.None) : IState<Steps, State>
     {
         public Steps NextStep
         {
@@ -23,26 +27,28 @@ public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMac
                 return FinishedStep switch
                 {
                     Steps.None => Steps.EnsureAuthorization,
-                    Steps.EnsureAuthorization => Steps.GetUser,
-                    Steps.GetUser => Steps.End,
+                    Steps.EnsureAuthorization => Steps.RemoveWorklog,
+                    Steps.RemoveWorklog => Steps.End,
                     _ => Steps.End,
                 };
             }
         }
+        public string IssueKey => WorklogToRemove.Issue.Key;
         public bool IsFinished => NextStep == Steps.End;
         public bool ShouldContinue => !IsFinished;
+
         public State Advance()
         {
             return this with { FinishedStep = NextStep };
         }
     }
-    private async Task<State> GetUser(State state)
+    private async Task<State> RemoveWorklog(State state)
     {
-        HttpResponseMessage myselfResponse = await HttpClient.GetAsync(LiraClient.MyselfEndpoint).ConfigureAwait(false);
-        await HandleErrorResponse(myselfResponse).ConfigureAwait(false);
-        var content = await ReadContentString(myselfResponse).ConfigureAwait(false);
-        var userDetails = JsonHelper.Deserialize<UserDetails>(content)!;
-        return state.Advance() with { User = userDetails };
+        var address = $"{LiraClient.GetIssueEndpoint(state.IssueKey)}/worklog/{state.WorklogToRemove.ID}";
+        var response = await DeleteAsync(address).ConfigureAwait(false);
+        await LiraClient.HandleErrorResponse(response).ConfigureAwait(false);
+
+        return state.Advance() with { RemovalSuccess = response.IsSuccessStatusCode };
     }
     public override Task<State> Process(State state)
     {
@@ -50,13 +56,13 @@ public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMac
         return state.NextStep switch
         {
             Steps.EnsureAuthorization => EnsureAuthorization(state),
-            Steps.GetUser => GetUser(state),
+            Steps.RemoveWorklog => RemoveWorklog(state),
             _ => Task.FromResult(state),
         };
     }
-    public State GetStartState()
+    public State GetStartState(Worklog worklogToRemove)
     {
-        return new State();
+        return new State(worklogToRemove);
     }
 }
 

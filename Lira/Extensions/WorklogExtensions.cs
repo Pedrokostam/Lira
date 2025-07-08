@@ -44,7 +44,7 @@ public static class WorklogExtensions
     {
         return string.Join(separator, GetCsvColumns());
     }
-    public static string GetCsvLine(this Worklog log,string separator = ",")
+    public static string GetCsvLine(this Worklog log, string separator = ",")
     {
         var keys = GetCsvColumns();
         var dict = GetDict(log);
@@ -64,5 +64,37 @@ public static class WorklogExtensions
             d[kv.Key] = func(log);
         }
         return d;
+    }
+
+    /// <summary>
+    /// Compares new values with the old ones and create a <see cref="WorklogUpdatePackage"/> with only actual changes.
+    /// </summary>
+    /// <param name="worklog"></param>
+    /// <param name="worklogToUpdate"></param>
+    /// <param name="newDate"></param>
+    /// <param name="newDuration"></param>
+    /// <param name="newComment"></param>
+    /// <returns></returns>
+    public static bool GetUpdatePackage(this Worklog worklog, out WorklogUpdatePackage worklogToUpdate, DateTimeOffset? newDate = null, TimeSpan? newDuration = null, string? newComment = null)
+    {
+        worklogToUpdate = default;
+        if (newDate is DateTimeOffset dto && dto == worklog.Started)
+        {
+            newDate = null;
+        }
+        if (newDuration is TimeSpan ts && ts == worklog.TimeSpent)
+        {
+            newDuration = null;
+        }
+        if (newComment is string com && com.Equals(worklog.Comment, StringComparison.Ordinal))
+        {
+            newComment = null;
+        }
+        if (newDate is not null || newDuration is not null || newComment is not null)
+        {
+            worklogToUpdate = new(newDate, newDuration, newComment);
+            return true;
+        }
+        return false;
     }
 }

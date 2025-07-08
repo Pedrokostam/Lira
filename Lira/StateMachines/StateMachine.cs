@@ -1,24 +1,56 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Lira.Exceptions;
 using Lira.Objects;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Lira.StateMachines;
 
 public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMachine<TState>
-    where TState : struct,IState<TStep>
+    where TState : struct,IState<TStep,TState>
     where TStep : Enum
 {
     private readonly LiraClient _liraClient = client;
 
-    protected IssueCache<Issue> Cache => LiraClient.Cache;
-    protected IssueCache<IssueLite> CacheLite => LiraClient.CacheLite;
+    private IssueCache<Issue> Cache => LiraClient.Cache;
+    private IssueCache<IssueLite> CacheLite => LiraClient.CacheLite;
+    protected bool TryGetValue<T>(string key, [NotNullWhen(true)] out T? issue) where T : IssueCommon
+    {
+        if(typeof(T) == typeof(Issue))
+        {
+            bool res =  Cache.TryGetValue(key, out var full);
+            issue = full as T;
+            LiraClient.Logger.UsingCachedIssue(full!);
+            return res && issue is not null;
+        }
+        if (typeof(T) == typeof(IssueLite))
+        {
+            bool res = CacheLite.TryGetValue(key, out var lite);
+            issue = lite as T;
+            LiraClient.Logger.UsingCachedIssueLite(lite!);
+            return res && issue is not null;
+        }
+        issue = null;
+        return false;
+    }
+    protected void AddToCache(IssueCommon issue)
+    {
+        if (issue is Issue full)
+        {
+            Cache.Add(full);
+        }
+        if (issue is IssueLite lite)
+        {
+            CacheLite.Add(lite);
+        }
+    }
     protected LiraClient LiraClient
     {
         get
@@ -68,6 +100,16 @@ public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMach
     protected Task<HttpResponseMessage> GetAsync(string requestAddress)
     {
         return HttpClient.GetAsync(requestAddress, LiraClient.GetToken());
+    }
+    protected Task<HttpResponseMessage> DeleteAsync(string requestAddress)
+    {
+        return HttpClient.DeleteAsync(requestAddress, LiraClient.GetToken());
+    }
+    protected Task<HttpResponseMessage> PutAsync<T>(string requestAddress, T contentToJsonify)
+    {
+        var json = JsonHelper.Serialize<T>(contentToJsonify);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        return HttpClient.PutAsync(requestAddress, content, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> PostAsync(string requestAddress, HttpContent content)
     {
