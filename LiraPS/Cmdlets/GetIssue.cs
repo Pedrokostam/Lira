@@ -49,7 +49,7 @@ namespace LiraPS.Cmdlets
                     var t = machine.Process(state).GetAwaiter();
                     state = t.GetResult();
                     var subtaskCount = state.IssueLite?.ShallowSubtasks.Count ?? 0;
-                    if (state.NextStep == GetIssueMachine.Steps.LoadWorklogs && subtaskCount > 0)
+                    if (state.NextStep == GetIssueStateMachine.Steps.LoadWorklogs && subtaskCount > 0)
                     {
                         WriteProgress(new ProgressRecord(SubActivityId, $"Fetching subtasks of {issueId}...", $"{subtaskCount} subtasks") { ParentActivityId = ActivityId });
                     }

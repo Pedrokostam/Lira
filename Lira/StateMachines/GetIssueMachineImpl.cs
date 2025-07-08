@@ -13,8 +13,8 @@ using Serilog.Filters;
 
 namespace Lira.StateMachines;
 
-public class GetIssueMachine(LiraClient client) : GetIssueMachineImpl<Issue>(client) { }
-public class GetIssueLiteMachine(LiraClient client) : GetIssueMachineImpl<IssueLite>(client) { }
+public class GetIssueStateMachine(LiraClient client) : GetIssueMachineImpl<Issue>(client) { }
+public class GetIssueLiteStateMachine(LiraClient client) : GetIssueMachineImpl<IssueLite>(client) { }
 public class GetIssueMachineImpl<T>(LiraClient client) : StateMachine<GetIssueMachineImpl<T>.State, GetIssueMachineImpl<T>.Steps>(client)
     where T : IssueCommon
 {

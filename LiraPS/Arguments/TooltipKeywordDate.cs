@@ -10,7 +10,7 @@ internal readonly record struct TooltipKeywordDate : ITooltipDate, IEquatable<IT
         Date = date;
         Tooltip = tooltip;
     }
-    public TooltipKeywordDate(JqlKeywordDate.JqlDateKeywords keyword, string tooltip) : this(new JqlKeywordDate(keyword), tooltip)
+    public TooltipKeywordDate(JqlKeywordDate.Keywords keyword, string tooltip) : this(new JqlKeywordDate(keyword), tooltip)
     {
 
     }
@@ -21,6 +21,6 @@ internal readonly record struct TooltipKeywordDate : ITooltipDate, IEquatable<IT
     public string Tooltip { get; init; }
     public string NumericalForm() => Date.ToAccountDatetime(TimeZoneInfo.Local).NumericalForm();
 
-    public static implicit operator TooltipKeywordDate((JqlKeywordDate.JqlDateKeywords keyword, string tooltip) tuple)
+    public static implicit operator TooltipKeywordDate((JqlKeywordDate.Keywords keyword, string tooltip) tuple)
         => new(tuple.keyword, tuple.tooltip);
 }

@@ -4,7 +4,7 @@ using Lira.Objects;
 
 namespace Lira.StateMachines;
 
-public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMachine.State, CurrentUserMachine.Steps>(client)
+public class CurrentUserStateMachine(LiraClient client) : StateMachine<CurrentUserStateMachine.State, CurrentUserStateMachine.Steps>(client)
 {
 
     public enum Steps
@@ -38,7 +38,7 @@ public class CurrentUserMachine(LiraClient client) : StateMachine<CurrentUserMac
     }
     private async Task<State> GetUser(State state)
     {
-        HttpResponseMessage myselfResponse = await HttpClient.GetAsync(LiraClient.MyselfEndpoint).ConfigureAwait(false);
+        HttpResponseMessage myselfResponse = await HttpClient.GetAsync(LiraClient.MyselfEndpoint, LiraClient.CancellationTokenSource.Token).ConfigureAwait(false);
         await HandleErrorResponse(myselfResponse).ConfigureAwait(false);
         var content = await ReadContentString(myselfResponse).ConfigureAwait(false);
         var userDetails = JsonHelper.Deserialize<UserDetails>(content)!;

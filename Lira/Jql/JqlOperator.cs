@@ -7,78 +7,96 @@ namespace Lira.Jql;
 [DebuggerDisplay("{Name}")]
 public readonly record struct JqlOperator
 {
+    public enum Operators
+    {
+        Equals,
+        NotEquals,
+        LessThan, LessThanEquals,
+        GreaterThan, GreaterThanEquals,
+        In,
+        NotIn,
+        Contains,
+        DoesNotContain,
+        Is,
+        IsNot,
+        Was,
+        WasNot,
+        WasIn,
+        WasNotIn,
+        Changed,
+    }
     public string? Symbol { get; }
     public string Name { get; }
-    public JqlOperators Operator { get; }
+    public Operators Operator { get; }
     public static bool TryGetFromString(string symbol, [NotNullWhen(true)] out JqlOperator? jqlOperator)
     {
         jqlOperator = symbol.ToUpperInvariant().AsSpan().Trim() switch
         {
-            "=" => new(JqlOperators.Equals),
-            "!=" => new(JqlOperators.NotEquals),
-            "<" => new(JqlOperators.LessThan),
-            "<=" => new(JqlOperators.LessThanEquals),
-            ">" => new(JqlOperators.GreaterThan),
-            ">=" => new(JqlOperators.GreaterThanEquals),
-            "~" => new(JqlOperators.Contains),
-            "!~" => new(JqlOperators.DoesNotContains),
+            "=" => new(Operators.Equals),
+            "!=" => new(Operators.NotEquals),
+            "<" => new(Operators.LessThan),
+            "<=" => new(Operators.LessThanEquals),
+            ">" => new(Operators.GreaterThan),
+            ">=" => new(Operators.GreaterThanEquals),
+            "~" => new(Operators.Contains),
+            "!~" => new(Operators.DoesNotContain),
 
-            "EQUALS" => new(JqlOperators.Equals),
-            "NOT EQUALS" => new(JqlOperators.NotEquals),
-            "LESS THAN" => new(JqlOperators.LessThan),
-            "LESS THAN OR EQUALS" => new(JqlOperators.LessThanEquals),
-            "GREATER THAN" => new(JqlOperators.GreaterThan),
-            "GREATER THAN OR EQUALS" => new(JqlOperators.GreaterThanEquals),
-            "IN" => new(JqlOperators.In),
-            "NOT IN" => new(JqlOperators.NotIn),
-            "CONTAINS" => new(JqlOperators.Contains),
-            "DOES NOT CONTAIN" => new(JqlOperators.DoesNotContains),
-            "IS" => new(JqlOperators.Is),
-            "IS NOT" => new(JqlOperators.IsNot),
-            "WAS" => new(JqlOperators.Was),
-            "WAS NOT" => new(JqlOperators.WasNot),
-            "WAS IN" => new(JqlOperators.WasIn),
-            "WAS NOT IN" => new(JqlOperators.WasNotIn),
-            "CHANGED" => new(JqlOperators.Changed),
+            "EQUALS" => new(Operators.Equals),
+            "NOT EQUALS" => new(Operators.NotEquals),
+            "LESS THAN" => new(Operators.LessThan),
+            "LESS THAN OR EQUALS" => new(Operators.LessThanEquals),
+            "GREATER THAN" => new(Operators.GreaterThan),
+            "GREATER THAN OR EQUALS" => new(Operators.GreaterThanEquals),
+            "IN" => new(Operators.In),
+            "NOT IN" => new(Operators.NotIn),
+            "CONTAINS" => new(Operators.Contains),
+            "DOES NOT CONTAIN" => new(Operators.DoesNotContain),
+            "IS" => new(Operators.Is),
+            "IS NOT" => new(Operators.IsNot),
+            "WAS" => new(Operators.Was),
+            "WAS NOT" => new(Operators.WasNot),
+            "WAS IN" => new(Operators.WasIn),
+            "WAS NOT IN" => new(Operators.WasNotIn),
+            "CHANGED" => new(Operators.Changed),
 
-            _ => null
+            _ => null,
         };
         return jqlOperator is not null;
     }
-    public JqlOperator(JqlOperators operatorName)
+    public JqlOperator(Operators operatorName)
     {
         Operator = operatorName;
         Symbol = Operator switch
         {
-            JqlOperators.Equals => "=",
-            JqlOperators.NotEquals => "!=",
-            JqlOperators.LessThan => "<",
-            JqlOperators.LessThanEquals => "<=",
-            JqlOperators.GreaterThan => ">",
-            JqlOperators.GreaterThanEquals => ">=",
-            JqlOperators.Contains => "~",
-            JqlOperators.DoesNotContains => "!~",
+            Operators.Equals => "=",
+            Operators.NotEquals => "!=",
+            Operators.LessThan => "<",
+            Operators.LessThanEquals => "<=",
+            Operators.GreaterThan => ">",
+            Operators.GreaterThanEquals => ">=",
+            Operators.Contains => "~",
+            Operators.DoesNotContain => "!~",
             _ => null,
         };
         Name = Operator switch
         {
-            JqlOperators.Equals => "Equals",
-            JqlOperators.NotEquals => "Not equals",
-            JqlOperators.LessThan => "Less than",
-            JqlOperators.LessThanEquals => "Less than or equals",
-            JqlOperators.GreaterThan => "Greater than",
-            JqlOperators.GreaterThanEquals => "Greater than or equals",
-            JqlOperators.In => "IN",
-            JqlOperators.NotIn => "NOT IN",
-            JqlOperators.Contains => "CONTAINS",
-            JqlOperators.DoesNotContains => "DOES NOT CONTAIN",
-            JqlOperators.Is => "IS",
-            JqlOperators.IsNot => "IS NOT",
-            JqlOperators.Was => "WAS",
-            JqlOperators.WasNot => "WAS NOT",
-            JqlOperators.WasIn => "WAS IN",
-            JqlOperators.WasNotIn => "WAS NOT IN",
-            JqlOperators.Changed => "CHANGED",
+            Operators.Equals => "Equals",
+            Operators.NotEquals => "Not equals",
+            Operators.LessThan => "Less than",
+            Operators.LessThanEquals => "Less than or equals",
+            Operators.GreaterThan => "Greater than",
+            Operators.GreaterThanEquals => "Greater than or equals",
+            Operators.In => "IN",
+            Operators.NotIn => "NOT IN",
+            Operators.Contains => "CONTAINS",
+            Operators.DoesNotContain => "DOES NOT CONTAIN",
+            Operators.Is => "IS",
+            Operators.IsNot => "IS NOT",
+            Operators.Was => "WAS",
+            Operators.WasNot => "WAS NOT",
+            Operators.WasIn => "WAS IN",
+            Operators.WasNotIn => "WAS NOT IN",
+            Operators.Changed => "CHANGED",
             _ => throw new NotSupportedException(),
         };
     }

@@ -27,7 +27,7 @@ internal static partial class DateCompletionHelper
     /// <summary>
     /// Gets a specific date based on a JQL keyword, converted to the local time zone.
     /// </summary>
-    private static DateTimeOffset GetSpecificDate(JqlKeywordDate.JqlDateKeywords keyword)
+    private static DateTimeOffset GetSpecificDate(JqlKeywordDate.Keywords keyword)
     {
         return new JqlKeywordDate(keyword).ToAccountDatetime(TimeZoneInfo.Local);
     }
@@ -45,16 +45,16 @@ internal static partial class DateCompletionHelper
     {
         string baseString = baseDate.UnambiguousForm();
         int weekNumber = GetWeekNumber(baseDate);
-        (JqlKeywordDate.JqlDateKeywords keyword, string tooltip) = (isStart, unit) switch
+        (JqlKeywordDate.Keywords keyword, string tooltip) = (isStart, unit) switch
         {
-            (true, TimeUnit.Day) => (JqlKeywordDate.JqlDateKeywords.StartOfDay, Format($"Start of day {baseString}")),
-            (false, TimeUnit.Day) => (JqlKeywordDate.JqlDateKeywords.EndOfDay, Format($"End of day {baseString}")),
-            (true, TimeUnit.Week) => (JqlKeywordDate.JqlDateKeywords.StartOfWeek, Format($"First day of week number {weekNumber}")),
-            (false, TimeUnit.Week) => (JqlKeywordDate.JqlDateKeywords.EndOfWeek, Format($"Last day of week number {weekNumber}")),
-            (true, TimeUnit.Month) => (JqlKeywordDate.JqlDateKeywords.StartOfMonth, Format($"First day of month {baseDate:MMMM}/{baseDate:yyyy}")),
-            (false, TimeUnit.Month) => (JqlKeywordDate.JqlDateKeywords.EndOfMonth, Format($"Last day of month {baseDate:MMMM}/{baseDate:yyyy}")),
-            (true, TimeUnit.Year) => (JqlKeywordDate.JqlDateKeywords.StartOfYear, Format($"First day of year {baseDate:yyyy}")),
-            (false, TimeUnit.Year) => (JqlKeywordDate.JqlDateKeywords.EndOfYear, Format($"Last day of year {baseDate:yyyy}")),
+            (true, TimeUnit.Day) => (JqlKeywordDate.Keywords.StartOfDay, Format($"Start of day {baseString}")),
+            (false, TimeUnit.Day) => (JqlKeywordDate.Keywords.EndOfDay, Format($"End of day {baseString}")),
+            (true, TimeUnit.Week) => (JqlKeywordDate.Keywords.StartOfWeek, Format($"First day of week number {weekNumber}")),
+            (false, TimeUnit.Week) => (JqlKeywordDate.Keywords.EndOfWeek, Format($"Last day of week number {weekNumber}")),
+            (true, TimeUnit.Month) => (JqlKeywordDate.Keywords.StartOfMonth, Format($"First day of month {baseDate:MMMM}/{baseDate:yyyy}")),
+            (false, TimeUnit.Month) => (JqlKeywordDate.Keywords.EndOfMonth, Format($"Last day of month {baseDate:MMMM}/{baseDate:yyyy}")),
+            (true, TimeUnit.Year) => (JqlKeywordDate.Keywords.StartOfYear, Format($"First day of year {baseDate:yyyy}")),
+            (false, TimeUnit.Year) => (JqlKeywordDate.Keywords.EndOfYear, Format($"Last day of year {baseDate:yyyy}")),
             _ => throw new NotSupportedException(),
         };
         dates.Add(new TooltipManualDate(keyword.ToDateTimeOffset(baseDate), tooltip));
@@ -128,7 +128,7 @@ internal static partial class DateCompletionHelper
         return string.IsNullOrWhiteSpace(s) ? null : s;
     }
 
-    private static readonly JqlKeywordDate.JqlDateKeywords[] _periods = Enum.GetValues(typeof(JqlKeywordDate.JqlDateKeywords)).Cast<JqlKeywordDate.JqlDateKeywords>().ToArray();
+    private static readonly JqlKeywordDate.Keywords[] _periods = Enum.GetValues(typeof(JqlKeywordDate.Keywords)).Cast<JqlKeywordDate.Keywords>().ToArray();
     /// <summary>
     /// Matches a partial or complete date string and generates completion results for possible date values.
     /// </summary>
@@ -215,8 +215,8 @@ internal static partial class DateCompletionHelper
             IJqlDate? todayo = mode switch
             {
                 DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(number)),
-                DateMode.Start => new JqlKeywordDate(JqlKeywordDate.JqlDateKeywords.StartOfDay, number),
-                DateMode.End => new JqlKeywordDate(JqlKeywordDate.JqlDateKeywords.EndOfDay, number),
+                DateMode.Start => new JqlKeywordDate(JqlKeywordDate.Keywords.StartOfDay, number),
+                DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, number),
                 _ =>null,
             };
             date = todayo?.ToAccountDatetime(TimeZoneInfo.Local) ?? default;

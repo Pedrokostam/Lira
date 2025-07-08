@@ -8,7 +8,7 @@ using System.Xml.Linq;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
-public class AddWorklogMachine(LiraClient client) : StateMachine<AddWorklogMachine.State, AddWorklogMachine.Steps>(client)
+public class AddWorklogStateMachine(LiraClient client) : StateMachine<AddWorklogStateMachine.State, AddWorklogStateMachine.Steps>(client)
 {
 
     public enum Steps

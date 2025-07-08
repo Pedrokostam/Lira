@@ -52,22 +52,22 @@ public static class DateTimeExtensions
         return baseDate.AddYears(1).StartOfYear() - OneTick;
     }
 
-    public static DateTimeOffset ToDateTimeOffset(this JqlKeywordDate.JqlDateKeywords keyword, DateTimeOffset baseDate)
+    public static DateTimeOffset ToDateTimeOffset(this JqlKeywordDate.Keywords keyword, DateTimeOffset baseDate)
     {
         return FromKeyword(baseDate, keyword);
     }
-    public static DateTimeOffset FromKeyword(DateTimeOffset baseDate, JqlKeywordDate.JqlDateKeywords keyword)
+    public static DateTimeOffset FromKeyword(DateTimeOffset baseDate, JqlKeywordDate.Keywords keyword)
     {
         return keyword switch
         {
-            JqlKeywordDate.JqlDateKeywords.StartOfDay => StartOfDay(baseDate),
-            JqlKeywordDate.JqlDateKeywords.EndOfDay => EndOfDay(baseDate),
-            JqlKeywordDate.JqlDateKeywords.StartOfWeek => StartOfWeek(baseDate),
-            JqlKeywordDate.JqlDateKeywords.EndOfWeek => EndOfWeek(baseDate),
-            JqlKeywordDate.JqlDateKeywords.StartOfMonth => StartOfMonth(baseDate),
-            JqlKeywordDate.JqlDateKeywords.EndOfMonth => EndOfMonth(baseDate),
-            JqlKeywordDate.JqlDateKeywords.StartOfYear => StartOfYear(baseDate),
-            JqlKeywordDate.JqlDateKeywords.EndOfYear => EndOfYear(baseDate),
+            JqlKeywordDate.Keywords.StartOfDay => StartOfDay(baseDate),
+            JqlKeywordDate.Keywords.EndOfDay => EndOfDay(baseDate),
+            JqlKeywordDate.Keywords.StartOfWeek => StartOfWeek(baseDate),
+            JqlKeywordDate.Keywords.EndOfWeek => EndOfWeek(baseDate),
+            JqlKeywordDate.Keywords.StartOfMonth => StartOfMonth(baseDate),
+            JqlKeywordDate.Keywords.EndOfMonth => EndOfMonth(baseDate),
+            JqlKeywordDate.Keywords.StartOfYear => StartOfYear(baseDate),
+            JqlKeywordDate.Keywords.EndOfYear => EndOfYear(baseDate),
             _ => throw new NotSupportedException(),
         };
     }

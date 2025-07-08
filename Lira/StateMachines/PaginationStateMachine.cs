@@ -7,15 +7,15 @@ using Lira.Extensions;
 namespace Lira.StateMachines;
 
 
-public class PaginationMachine<TPaginatedElement> : StateMachine<PaginationMachine<TPaginatedElement>.State, PaginationMachine<TPaginatedElement>.Steps>
+public class PaginationStateMachine<TPaginatedElement> : StateMachine<PaginationStateMachine<TPaginatedElement>.State, PaginationStateMachine<TPaginatedElement>.Steps>
 {
-    internal PaginationMachine(LiraClient client, Uri endpoint, string propertyName) : base(client)
+    internal PaginationStateMachine(LiraClient client, Uri endpoint, string propertyName) : base(client)
     {
         Endpoint = endpoint;
         PropertyName = propertyName;
     }
 
-    internal PaginationMachine(LiraClient client, string endpoint, string propertyName)
+    internal PaginationStateMachine(LiraClient client, string endpoint, string propertyName)
         : this(client, new Uri(endpoint, UriKind.Relative), propertyName) { }
 
     public enum Steps

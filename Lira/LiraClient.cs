@@ -41,29 +41,28 @@ public partial class LiraClient : IDisposable
     public const string IssueEndpoint = "rest/api/2/issue";
     public const string UserSearchEndpoint = "rest/api/2/user/search";
 
-    #region StateMachines
-    private readonly UsersMachine _usersMachine;
-    private readonly WorklogMachine _worklogMachine;
-    private readonly PaginationMachine<Issue> _issuePaginationMachine;
-    private readonly GetIssueMachine _issueMachine;
-    private readonly GetIssueLiteMachine _issueLiteMachine;
-    private readonly AddWorklogMachine _addWorklogMachine;
-    private readonly CurrentUserMachine _currentUserMachine;
-    private readonly RemoveWorklogMachine _removeWorklogMachine;
-    private readonly UpdateWorklogMachine _updateWorklogMachine;
-
     internal IssueCache<Issue> Cache { get; } = new();
     internal IssueCache<IssueLite> CacheLite { get; } = new();
 
-    public UsersMachine GetUsersStateMachine() => _usersMachine;
-    public WorklogMachine GetWorklogStateMachine() => _worklogMachine;
-    internal PaginationMachine<Issue> GetIssuePaginationStateMachine() => _issuePaginationMachine;
-    public GetIssueMachine GetIssueStateMachine() => _issueMachine;
-    public GetIssueLiteMachine GetIssueLiteStateMachine() => _issueLiteMachine;
-    public AddWorklogMachine GetAddWorklogMachine() => _addWorklogMachine;
-    public CurrentUserMachine GetCurrentUserMachine() => _currentUserMachine;
-    public RemoveWorklogMachine GetRemoveWorklogMachine() => _removeWorklogMachine;
-    public UpdateWorklogMachine GetUpdateWorklogMachine() => _updateWorklogMachine;
+    #region StateMachines
+    private readonly UsersStateMachine _usersMachine;
+    private readonly WorklogStateMachine _worklogMachine;
+    private readonly PaginationStateMachine<Issue> _issuePaginationMachine;
+    private readonly GetIssueStateMachine _issueMachine;
+    private readonly GetIssueLiteStateMachine _issueLiteMachine;
+    private readonly AddWorklogStateMachine _addWorklogMachine;
+    private readonly CurrentUserStateMachine _currentUserMachine;
+    private readonly RemoveWorklogStateMachine _removeWorklogMachine;
+    private readonly UpdateWorklogStateMachine _updateWorklogMachine;
+    public UsersStateMachine GetUsersStateMachine() => _usersMachine;
+    public WorklogStateMachine GetWorklogStateMachine() => _worklogMachine;
+    internal PaginationStateMachine<Issue> GetIssuePaginationStateMachine() => _issuePaginationMachine;
+    public GetIssueStateMachine GetIssueStateMachine() => _issueMachine;
+    public GetIssueLiteStateMachine GetIssueLiteStateMachine() => _issueLiteMachine;
+    public AddWorklogStateMachine GetAddWorklogMachine() => _addWorklogMachine;
+    public CurrentUserStateMachine GetCurrentUserMachine() => _currentUserMachine;
+    public RemoveWorklogStateMachine GetRemoveWorklogMachine() => _removeWorklogMachine;
+    public UpdateWorklogStateMachine GetUpdateWorklogMachine() => _updateWorklogMachine;
     #endregion StateMachines
 
     internal LiraClient(Uri baseAddress, ILogger logger)
@@ -77,9 +76,9 @@ public partial class LiraClient : IDisposable
             },
         };
         HttpClient.DefaultRequestHeaders.Add("User-Agent", ApplicationAgentName);
+        _issuePaginationMachine = new(this, SearchEndpoint, "issues");
         _usersMachine = new(this);
         _worklogMachine = new(this);
-        _issuePaginationMachine = new(this, SearchEndpoint, "issues");
         _issueMachine = new(this);
         _issueLiteMachine = new(this);
         _addWorklogMachine = new(this);
@@ -272,7 +271,7 @@ public partial class LiraClient : IDisposable
     /// Return all worklogs that match the <paramref name="query"/>
     /// </summary>
     /// <remarks>
-    /// This method is a wrapper along <see cref="WorklogMachine"/>. If you want to inject additional work between steps of the workflow, use the machine.</remarks>
+    /// This method is a wrapper along <see cref="WorklogStateMachine"/>. If you want to inject additional work between steps of the workflow, use the machine.</remarks>
     /// <param name="query"></param>
     /// <returns></returns>
 

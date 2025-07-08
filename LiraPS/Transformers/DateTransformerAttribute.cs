@@ -48,8 +48,8 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
             IJqlDate? todayo = Mode switch
             {
                 DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(i)),
-                DateMode.Start => new JqlKeywordDate(JqlKeywordDate.JqlDateKeywords.StartOfDay,i),
-                DateMode.End => new JqlKeywordDate(JqlKeywordDate.JqlDateKeywords.EndOfDay, i),
+                DateMode.Start => new JqlKeywordDate(JqlKeywordDate.Keywords.StartOfDay,i),
+                DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, i),
                 _ => null,
             };
             return WrapUnwrap(todayo);

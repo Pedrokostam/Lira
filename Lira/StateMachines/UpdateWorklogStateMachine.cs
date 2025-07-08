@@ -8,17 +8,17 @@ using System.Xml.Linq;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
-public class RemoveWorklogMachine(LiraClient client) : StateMachine<RemoveWorklogMachine.State, RemoveWorklogMachine.Steps>(client)
+public class UpdateWorklogStateMachine(LiraClient client) : StateMachine<UpdateWorklogStateMachine.State, UpdateWorklogStateMachine.Steps>(client)
 {
 
     public enum Steps
     {
         None,
         EnsureAuthorization,
-        RemoveWorklog,
+        UpdateWorklog,
         End,
     }
-    public readonly record struct State(Worklog WorklogToRemove, bool RemovalSuccess = false, Steps FinishedStep = Steps.None) : IState<Steps, State>
+    public readonly record struct State(WorklogUpdatePackage Package, Worklog OldWorklog, Worklog? UpdateWorklog=null, Steps FinishedStep = Steps.None) : IState<Steps,State>
     {
         public Steps NextStep
         {
@@ -27,28 +27,34 @@ public class RemoveWorklogMachine(LiraClient client) : StateMachine<RemoveWorklo
                 return FinishedStep switch
                 {
                     Steps.None => Steps.EnsureAuthorization,
-                    Steps.EnsureAuthorization => Steps.RemoveWorklog,
-                    Steps.RemoveWorklog => Steps.End,
+                    Steps.EnsureAuthorization => Steps.UpdateWorklog,
+                    Steps.UpdateWorklog => Steps.End,
                     _ => Steps.End,
                 };
             }
         }
-        public string IssueKey => WorklogToRemove.Issue.Key;
         public bool IsFinished => NextStep == Steps.End;
         public bool ShouldContinue => !IsFinished;
-
         public State Advance()
         {
             return this with { FinishedStep = NextStep };
         }
     }
-    private async Task<State> RemoveWorklog(State state)
+    private async Task<State> UpdateWorklog(State state)
     {
-        var address = $"{LiraClient.GetIssueEndpoint(state.IssueKey)}/worklog/{state.WorklogToRemove.ID}";
-        var response = await DeleteAsync(address).ConfigureAwait(false);
+        if (!state.Package.HasContent)
+        {
+            throw new ArgumentException("Update payload must contain some changes", nameof(state));
+        }
+        var address = $"{LiraClient.GetIssueEndpoint(state.OldWorklog.Issue.Key)}/worklog/{state.OldWorklog.ID}";
+        var response = await PutAsync(address, state.Package).ConfigureAwait(false);
         await LiraClient.HandleErrorResponse(response).ConfigureAwait(false);
-
-        return state.Advance() with { RemovalSuccess = response.IsSuccessStatusCode };
+        var responseContent = await ReadContentString(response).ConfigureAwait(false);
+        var updateWorklog = JsonHelper.Deserialize<Worklog>(responseContent);
+        return state.Advance() with
+        {
+            UpdateWorklog = updateWorklog,
+        };
     }
     public override Task<State> Process(State state)
     {
@@ -56,13 +62,13 @@ public class RemoveWorklogMachine(LiraClient client) : StateMachine<RemoveWorklo
         return state.NextStep switch
         {
             Steps.EnsureAuthorization => EnsureAuthorization(state),
-            Steps.RemoveWorklog => RemoveWorklog(state),
+            Steps.UpdateWorklog => UpdateWorklog(state),
             _ => Task.FromResult(state),
         };
     }
-    public State GetStartState(Worklog worklogToRemove)
+    public State GetStartState(Worklog oldWorklog,in WorklogUpdatePackage updatePayload)
     {
-        return new State(worklogToRemove);
+        return new State(updatePayload, oldWorklog);
     }
 }
 

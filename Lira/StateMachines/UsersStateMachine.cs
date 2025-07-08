@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
-public class UsersMachine(LiraClient client) : StateMachine<UsersMachine.State,UsersMachine.Steps>(client) 
+public class UsersStateMachine(LiraClient client) : StateMachine<UsersStateMachine.State,UsersStateMachine.Steps>(client) 
 {
     public enum Steps
     {

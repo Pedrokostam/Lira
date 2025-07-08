@@ -79,7 +79,7 @@ namespace LiraPS.Cmdlets
                 .WhereWorklogAuthorIs(uniqueUsers.ToArray())
                 .WhereIssueIs(Issue);
             WriteVerbose($"Running query: {query.BuildQueryString(LiraSession.Client)}");
-            var machine = new WorklogMachine(LiraSession.Client) { QueryLimit = Chunk };
+            var machine = new WorklogStateMachine(LiraSession.Client) { QueryLimit = Chunk };
             var state = machine.GetStartState(query);
             while (!state.IsFinished)
             {
@@ -116,26 +116,26 @@ namespace LiraPS.Cmdlets
         }
 
 
-        private void CommentState(in WorklogMachine.State currState)
+        private void CommentState(in WorklogStateMachine.State currState)
         {
             WriteVerbose($"{currState.FinishedStep} => {currState.NextStep}");
-            if (currState.FinishedStep < WorklogMachine.Steps.QueryForIssues && currState.FinishedStep == WorklogMachine.Steps.QueryForIssues)
+            if (currState.FinishedStep < WorklogStateMachine.Steps.QueryForIssues && currState.FinishedStep == WorklogStateMachine.Steps.QueryForIssues)
             {
                 long issueCount = currState.PaginationState.Pagination.Total;
                 string issuePlural = issueCount == 1 ? "issue" : "issues";
                 WriteVerbose($"Received query response. Found {issueCount} {issuePlural} matching query.");
             }
-            if (currState.NextStep == WorklogMachine.Steps.QueryForIssues)
+            if (currState.NextStep == WorklogStateMachine.Steps.QueryForIssues)
             {
                 WritePaginationProgress(in currState, false);
             }
-            if (currState.NextStep > WorklogMachine.Steps.QueryForIssues)
+            if (currState.NextStep > WorklogStateMachine.Steps.QueryForIssues)
             {
                 WritePaginationProgress(in currState, true);
             }
         }
 
-        private void WritePaginationProgress(in WorklogMachine.State currState, bool finished)
+        private void WritePaginationProgress(in WorklogStateMachine.State currState, bool finished)
         {
             var got = currState.PaginationState.Pagination.EndsAt;
             long totalCount = currState.PaginationState.Pagination.Total;

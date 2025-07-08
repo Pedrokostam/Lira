@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -12,7 +13,7 @@ namespace Lira.Jql;
 [StructLayout(LayoutKind.Auto)]
 public readonly partial record struct JqlKeywordDate : IJqlDate
 {
-    public enum JqlDateKeywords
+    public enum Keywords
     {
         StartOfDay,
         EndOfDay,
@@ -29,25 +30,25 @@ public readonly partial record struct JqlKeywordDate : IJqlDate
         StartOfYear,
         EndOfYear,
     }
-    public static readonly JqlKeywordDate StartOfDay = new(JqlDateKeywords.StartOfDay);
-    public static readonly JqlKeywordDate EndOfDay = new(JqlDateKeywords.EndOfDay);
-    public static readonly JqlKeywordDate StartOfWeek = new(JqlDateKeywords.StartOfWeek);
-    public static readonly JqlKeywordDate EndOfWeek = new(JqlDateKeywords.EndOfWeek);
-    public static readonly JqlKeywordDate StartOfMonth = new(JqlDateKeywords.StartOfMonth);
-    public static readonly JqlKeywordDate EndOfMonth = new(JqlDateKeywords.EndOfMonth);
-    public static readonly JqlKeywordDate StartOfYear = new(JqlDateKeywords.StartOfYear);
-    public static readonly JqlKeywordDate EndOfYear = new(JqlDateKeywords.EndOfYear);
-    public JqlDateKeywords Keyword { get; }
+    public static readonly JqlKeywordDate StartOfDay = new(Keywords.StartOfDay);
+    public static readonly JqlKeywordDate EndOfDay = new(Keywords.EndOfDay);
+    public static readonly JqlKeywordDate StartOfWeek = new(Keywords.StartOfWeek);
+    public static readonly JqlKeywordDate EndOfWeek = new(Keywords.EndOfWeek);
+    public static readonly JqlKeywordDate StartOfMonth = new(Keywords.StartOfMonth);
+    public static readonly JqlKeywordDate EndOfMonth = new(Keywords.EndOfMonth);
+    public static readonly JqlKeywordDate StartOfYear = new(Keywords.StartOfYear);
+    public static readonly JqlKeywordDate EndOfYear = new(Keywords.EndOfYear);
+    public Keywords Keyword { get; }
     /// <summary>
-    /// Offset expressed in the default unit represented by the <paramref name="keyword"/> (so, weeks for <see cref="JqlDateKeywords.EndOfWeek"/>, years for <see cref="JqlDateKeywords.StartOfYear"/>).
+    /// Offset expressed in the default unit represented by the <paramref name="keyword"/> (so, weeks for <see cref="Keywords.EndOfWeek"/>, years for <see cref="Keywords.StartOfYear"/>).
     /// </summary>
     public int Offset { get; } = 0;
     /// <summary>
     /// 
     /// </summary>
     /// <param name="keyword">One of the JQL date keywords.</param>
-    /// <param name="offset">Offset expressed in the default unit represented by the <paramref name="keyword"/> (so, weeks for <see cref="JqlDateKeywords.EndOfWeek"/>, years for <see cref="JqlDateKeywords.StartOfYear"/>).</param>
-    public JqlKeywordDate(JqlDateKeywords keyword, int offset)
+    /// <param name="offset">Offset expressed in the default unit represented by the <paramref name="keyword"/> (so, weeks for <see cref="Keywords.EndOfWeek"/>, years for <see cref="Keywords.StartOfYear"/>).</param>
+    public JqlKeywordDate(Keywords keyword, int offset)
     {
         Keyword = keyword;
         Offset = offset;
@@ -55,20 +56,21 @@ public readonly partial record struct JqlKeywordDate : IJqlDate
     /// <summary>
     /// 
     /// </summary>
-    /// <inheritdoc cref="JqlKeywordDate(JqlDateKeywords, int)"/>
-    public JqlKeywordDate(JqlDateKeywords keyword) : this(keyword, 0)
+    /// <inheritdoc cref="JqlKeywordDate(Keywords, int)"/>
+    public JqlKeywordDate(Keywords keyword) : this(keyword, 0)
     {
     }
     /// <summary>
     /// Return a new item with the given <paramref name="offset"/>.
     /// </summary>
-    /// <inheritdoc cref="JqlKeywordDate(JqlDateKeywords, int)"/>
+    /// <inheritdoc cref="JqlKeywordDate(Keywords, int)"/>
     /// <returns>New item with given <paramref name="offset"/>.</returns>
-    public JqlKeywordDate WithOffset(int offset) => new JqlKeywordDate(Keyword, offset);
+    public JqlKeywordDate WithOffset(int offset) => new(Keyword, offset);
 
     public string GetJqlValue(TimeZoneInfo accountTimezone)
     {
-        return $"{Keyword}({Offset})";
+        string offsetString = Offset.ToString(CultureInfo.InvariantCulture);
+        return $"{Keyword}({offsetString})";
     }
     private DateTimeOffset ApplyOffset(DateTimeOffset baseDate)
     {
@@ -76,15 +78,15 @@ public readonly partial record struct JqlKeywordDate : IJqlDate
             return baseDate;
         return Keyword switch
         {
-            JqlDateKeywords.StartOfDay => baseDate.AddDays(Offset),
-            JqlDateKeywords.EndOfDay => baseDate.AddDays(Offset),
-            JqlDateKeywords.StartOfWeek => baseDate.AddDays(Offset * 7),
-            JqlDateKeywords.EndOfWeek => baseDate.AddDays(Offset * 7),
-            JqlDateKeywords.StartOfMonth => baseDate.AddMonths(Offset),
-            JqlDateKeywords.EndOfMonth => baseDate.AddMonths(Offset),
-            JqlDateKeywords.StartOfYear => baseDate.AddYears(Offset),
-            JqlDateKeywords.EndOfYear => baseDate.AddYears(Offset),
-            _ => throw new NotSupportedException()
+            Keywords.StartOfDay => baseDate.AddDays(Offset),
+            Keywords.EndOfDay => baseDate.AddDays(Offset),
+            Keywords.StartOfWeek => baseDate.AddDays(Offset * 7),
+            Keywords.EndOfWeek => baseDate.AddDays(Offset * 7),
+            Keywords.StartOfMonth => baseDate.AddMonths(Offset),
+            Keywords.EndOfMonth => baseDate.AddMonths(Offset),
+            Keywords.StartOfYear => baseDate.AddYears(Offset),
+            Keywords.EndOfYear => baseDate.AddYears(Offset),
+            _ => throw new NotSupportedException(),
         };
     }
     public DateTimeOffset ToAccountDatetime(TimeZoneInfo accountTimezone)
@@ -94,21 +96,16 @@ public readonly partial record struct JqlKeywordDate : IJqlDate
         accountTime = ApplyOffset(accountTime);
         return Keyword switch
         {
-            JqlDateKeywords.StartOfDay => accountTime.StartOfDay(),
-            JqlDateKeywords.EndOfDay => accountTime.EndOfDay(),
-            JqlDateKeywords.StartOfWeek => accountTime.StartOfWeek(),
-            JqlDateKeywords.EndOfWeek => accountTime.EndOfWeek(),
-            JqlDateKeywords.StartOfMonth => accountTime.StartOfMonth(),
-            JqlDateKeywords.EndOfMonth => accountTime.EndOfMonth(),
-            JqlDateKeywords.StartOfYear => accountTime.StartOfYear(),
-            JqlDateKeywords.EndOfYear => accountTime.EndOfYear(),
+            Keywords.StartOfDay => accountTime.StartOfDay(),
+            Keywords.EndOfDay => accountTime.EndOfDay(),
+            Keywords.StartOfWeek => accountTime.StartOfWeek(),
+            Keywords.EndOfWeek => accountTime.EndOfWeek(),
+            Keywords.StartOfMonth => accountTime.StartOfMonth(),
+            Keywords.EndOfMonth => accountTime.EndOfMonth(),
+            Keywords.StartOfYear => accountTime.StartOfYear(),
+            Keywords.EndOfYear => accountTime.EndOfYear(),
             _ => throw new NotSupportedException(),
         };
-    }
-
-    public JqlManualDate ToManualDate(TimeZoneInfo timezone)
-    {
-        return new JqlManualDate(ToAccountDatetime(timezone));
     }
 
     public static bool TryParse(string value, out JqlKeywordDate keywordDate)
@@ -120,7 +117,7 @@ public readonly partial record struct JqlKeywordDate : IJqlDate
             return false;
         }
         var keywordPart = match.Groups["keyword"].Value;
-        if (!Enum.TryParse<JqlDateKeywords>(keywordPart, ignoreCase: true, out var keyword))
+        if (!Enum.TryParse<Keywords>(keywordPart, ignoreCase: true, out var keyword))
         {
             return false;
         }

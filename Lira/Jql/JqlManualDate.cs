@@ -16,7 +16,7 @@ public record JqlManualDate : IJqlDate
 
     public string GetJqlValue(TimeZoneInfo accountTimezone)
     {
-        return ToAccountDatetime(accountTimezone).ToString(@"yyyy-MM-dd",formatProvider:null);
+        return ToAccountDatetime(accountTimezone).ToString(@"yyyy-MM-dd",formatProvider:System.Globalization.CultureInfo.InvariantCulture);
     }
 
     public DateTimeOffset ToAccountDatetime(TimeZoneInfo accountTimezone)
@@ -24,7 +24,7 @@ public record JqlManualDate : IJqlDate
         return TimeZoneInfo.ConvertTime(Date, accountTimezone);
     }
 
-    public static implicit operator JqlManualDate(DateTimeOffset date) => new JqlManualDate(date:date);
+    public static implicit operator JqlManualDate(DateTimeOffset date) => new(date);
 
 
 }

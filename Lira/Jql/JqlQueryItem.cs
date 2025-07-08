@@ -7,16 +7,13 @@
 /// </summary>
 /// <typeparam name="TObject">Type of object this query applies to.</typeparam>
 /// <typeparam name="TObject">Type of the property of <typeparamref name="TObject"/> it applies to.</typeparam>
-public abstract class JqlQueryItem<TObject,TProperty> : IJqlQueryItem<TObject>
+public abstract class JqlQueryItem<TObject,TProperty>(string fieldName) : IJqlQueryItem<TObject>
 {
     /// <summary>
     /// Name of property of <typeparamref name="TObject"/> that the query applies to.
     /// </summary>
-    public string FieldName { get; }
-    protected JqlQueryItem(string fieldName)
-    {
-        FieldName = fieldName;
-    }
+    public string FieldName { get; } = fieldName;
+
     public abstract string? GetJqlQuery(LiraClient client);
     public bool Filter(object? item, LiraClient client)
     {

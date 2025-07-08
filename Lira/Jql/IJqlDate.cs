@@ -11,12 +11,12 @@ public interface IJqlDate
     /// Gets the text representation of the date, understood by the JQL parser.
     /// </summary>
     /// <param name="accountTimezone">Timezone associated with the currently logged in account. JQL assumes all date are in account's timezone.</param>
-    /// <returns>Text represnetaiton of the date</returns>
+    /// <returns>Text representaiton of the date</returns>
     string GetJqlValue(TimeZoneInfo accountTimezone);
     /// <summary>
     /// Gets the <see cref="DateTimeOffset"/> representation of this date.
     /// </summary>
     /// <param name="accountTimezone">Timezone associated with the currently logged in account. JQL assumes all date are in account's timezone.</param>
-    /// <returns></returns>
+    /// <returns>DateTime equivalent expressed in the given time zone</returns>
     DateTimeOffset ToAccountDatetime(TimeZoneInfo accountTimezone);
 }
