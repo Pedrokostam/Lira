@@ -43,15 +43,7 @@ public class HttpQuery:IEnumerable<HttpQuery.QueryPart>
     public string AddQueryToEndpoint(Uri endpoint) => AddQueryToEndpoint(endpoint.OriginalString);
     public string AddQueryToEndpoint(string endpoint)
     {
-#if NETSTANDARD2_0
-        Dictionary<string, string> enumeration = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var part in _parts.Values)
-        {
-            enumeration.Add(part.Name, part.ValueString);
-        }
-#else
         var enumeration = _parts.Values.Select(x => x.ToKeyValuePair());
-#endif
         return QueryHelpers.AddQueryString(endpoint, enumeration);
     }
 

@@ -3,6 +3,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd">
 	<ViewDefinitions>
+		<!--TABLE DEFAULT-->
 		<View>
 			<Name>Default</Name>
 			<ViewSelectedBy>
@@ -34,7 +35,7 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<ScriptBlock>$_.Issue.Key</ScriptBlock>
+								<ScriptBlock>$_.Issue.KeySummaryTrimmed</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started,1)</ScriptBlock>
@@ -61,6 +62,7 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		<!--TABLE FULL-->
 		<View>
 			<Name>Full</Name>
 			<ViewSelectedBy>
@@ -68,6 +70,10 @@
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
+					<TableColumnHeader>
+						<Label>Issue</Label>
+					<Alignment>Center</Alignment>
+					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Author</Label>
 						<Alignment>Center</Alignment>
@@ -93,9 +99,6 @@
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>Issue</Label>
-					</TableColumnHeader>
-					<TableColumnHeader>
 						<Label>Comment</Label>
 					</TableColumnHeader>
 				</TableHeaders>
@@ -103,7 +106,13 @@
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<ScriptBlock>$_.Issue.Key</ScriptBlock>
+								<ScriptBlock>$_.Issue.KeySummaryTrimmed</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>$_.Author.Name</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>$_.UpdateAuthor.Name</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Created,1)</ScriptBlock>
@@ -113,12 +122,6 @@
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started,1)</ScriptBlock>
-							</TableColumnItem>
-							<TableColumnItem>
-								<ScriptBlock>$_.UpdateAuthor.Name</ScriptBlock>
-							</TableColumnItem>
-							<TableColumnItem>
-								<ScriptBlock>$_.Author.Name</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent,1)</ScriptBlock>
@@ -136,6 +139,63 @@
 					</TableRowEntry>
 				</TableRowEntries>
 			</TableControl>
+		</View>
+		<!--LIST-->
+		<View>
+			<Name>List</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Objects.Worklog</TypeName>
+			</ViewSelectedBy>
+			<ListControl>
+				<ListEntries>
+					<ListEntry>
+						<ListItems>
+							<ListItem>
+								<Label>ID</Label>
+								<PropertyName>ID</PropertyName>
+							</ListItem>
+							<ListItem>
+								<Label>Issue</Label>
+								<ScriptBlock>$_.Issue.KeySummary</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Issue Link</Label>
+								<ScriptBlock>$_.Issue.WebLink</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Author</Label>
+								<ScriptBlock>[LiraPS.Extensions.FormattingExtensions]::OnelineUserDetails($_.Author)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Started</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::UnambiguousForm($_.Started)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Created</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::UnambiguousForm($_.Created)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Updated</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::UnambiguousForm($_.Updated)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Time Spent</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Comment</Label>
+								<ScriptBlock>
+									if ([string]::IsNullOrWhiteSpace($_.CommentPlain)) {
+									"`e[2m`e[3mNo comment`e[0m"
+									} else {
+									$_.CommentPlain
+									}
+								</ScriptBlock>
+							</ListItem>
+						</ListItems>
+					</ListEntry>
+				</ListEntries>
+			</ListControl>
 		</View>
 	</ViewDefinitions>
 </Configuration>

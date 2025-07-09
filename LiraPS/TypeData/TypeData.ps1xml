@@ -7,8 +7,31 @@
 				<Name>Time</Name>
 				<ReferencedMemberName>TimeSpent</ReferencedMemberName>
 			</AliasProperty>
+			<AliasProperty>
+				<Name>Link</Name>
+				<ReferencedMemberName>WebLink</ReferencedMemberName>
+			</AliasProperty>
+			<ScriptMethod>
+				<Name>TrimTitle</Name>
+				<Script>
+					[LiraPS.Extensions.FormattingExtensions]::TrimString($this.SummaryPlain)
+				</Script>
+			</ScriptMethod>
+			<ScriptProperty>
+				<Name>KeySummaryTrimmed</Name>
+				<GetScriptBlock>
+					"$($this.Key) $($this.TrimTitle())"
+				</GetScriptBlock>
+			</ScriptProperty>
+			<ScriptProperty>
+				<Name>KeySummary</Name>
+				<GetScriptBlock>
+					"$($this.Key) $($this.SummaryPlain)"
+				</GetScriptBlock>
+			</ScriptProperty>
 		</Members>
 	</Type>
+	
 	<Type>
 		<Name>Lira.Objects.IssueLite</Name>
 		<Members>
@@ -19,6 +42,10 @@
 			<AliasProperty>
 				<Name>TotalTime</Name>
 				<ReferencedMemberName>TotalTimeSpent</ReferencedMemberName>
+			</AliasProperty>
+			<AliasProperty>
+				<Name>Name</Name>
+				<ReferencedMemberName>SummaryPlain</ReferencedMemberName>
 			</AliasProperty>
 		</Members>
 	</Type>
@@ -46,6 +73,10 @@
 			<AliasProperty>
 				<Name>TotalTime</Name>
 				<ReferencedMemberName>TotalTimeSpent</ReferencedMemberName>
+			</AliasProperty>
+			<AliasProperty>
+				<Name>Name</Name>
+				<ReferencedMemberName>SummaryPlain</ReferencedMemberName>
 			</AliasProperty>
 		</Members>
 	</Type>

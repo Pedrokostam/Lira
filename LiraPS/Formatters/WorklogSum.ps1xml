@@ -46,5 +46,42 @@
 				</TableRowEntries>
 			</TableControl>
 		</View>
+		<!--LIST-->
+		<View>
+			<Name>Default</Name>
+			<ViewSelectedBy>
+				<TypeName>LiraPS.Outputs.WorklogSum</TypeName>
+			</ViewSelectedBy>
+			<ListControl>
+				<ListEntries>
+					<ListEntry>
+						<ListItems>
+							<ListItem>
+								<Label>Properties</Label>
+								<ScriptBlock>
+									$_.Properties -join " => "
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Grouping</Label>
+								<PropertyName>Grouping</PropertyName>
+							</ListItem>
+							<ListItem>
+								<Label>Worklogs</Label>
+								<ScriptBlock>$_.Worklogs.Count</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Issues</Label>
+								<ScriptBlock>($_.Issues | % KeySummary) -join "; "</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Time</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
+							</ListItem>
+						</ListItems>
+					</ListEntry>
+				</ListEntries>
+			</ListControl>
+		</View>
 	</ViewDefinitions>
 </Configuration>

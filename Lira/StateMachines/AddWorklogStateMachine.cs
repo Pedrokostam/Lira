@@ -64,6 +64,7 @@ public class AddWorklogStateMachine(LiraClient client) : StateMachine<AddWorklog
         if (addedWorklog is not null && issueFull is not null)
         {
             addedWorklog.Issue = issueFull;
+            issueFull.AppendNewWorklog(addedWorklog);
         }
         else if (addedWorklog is not null && issueLite is not null)
         {

@@ -8,6 +8,7 @@ using System.Management.Automation;
 using System.Text;
 using Lira.Objects;
 using LiraPS.Arguments;
+using LiraPS.Extensions;
 using LiraPS.Outputs;
 using Microsoft.Extensions.Logging;
 
@@ -22,9 +23,6 @@ public class GetWorklogSum : LiraCmdlet
 
     [Parameter(Position = 0, ValueFromPipeline = false)]
     public Property[] Groups { get; set; } = [Property.None];
-
-    [Parameter()]
-    public SwitchParameter PassThru { get; set; }
 
     private readonly List<Worklog> _worklogs = [];
 
@@ -51,18 +49,43 @@ public class GetWorklogSum : LiraCmdlet
         foreach (var worklog in Worklogs)
         {
             _worklogs.Add(worklog);
-            if (PassThru.IsPresent)
-            {
-                WriteObject(worklog);
-            }
         }
         base.ProcessRecord();
+    }
+    private IEnumerable<WorklogSum> CorrectIssues(IEnumerable<WorklogSum> worklogSums)
+    {
+        foreach (var worklog in worklogSums)
+        {
+            if (!worklog.Properties.Contains(Property.Issue))
+            {
+                yield return worklog;
+                continue;
+            }
+            var splits = worklog.Grouping.Split(WorklogSum.PropertySeparator, StringSplitOptions.TrimEntries);
+            IssueCommon? issue = default!;
+            string? key = default!;
+            foreach (var line in splits)
+            {
+                if (LiraSession.Client.TryGetCachedIssue(line, out var cache))
+                {
+                    key = line;
+                    issue = cache;
+                    break;
+                }
+            }
+            if (issue is not null && key is not null)
+            {
+                var newKey = $"{issue.Key} {issue.SummaryPlain}".TrimString(30);
+                yield return worklog with { Grouping = worklog.Grouping.Replace(key, newKey) };
+            }
+        }
     }
     protected override void EndProcessing()
     {
         var summedLogs = WorklogSum.Sum(_worklogs, Groups);
-        WriteObject(summedLogs,enumerateCollection:true);
-        SetGlobal("LiraLastWorklogSum", summedLogs);
+        var corrected =CorrectIssues(summedLogs);
+        WriteObject(corrected, enumerateCollection: true);
+        SetGlobal("LiraLastSum", summedLogs);
         base.EndProcessing();
     }
 }

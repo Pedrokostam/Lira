@@ -21,11 +21,11 @@ public static partial class TimeExtensions
     {
         if (withTimeZone)
         {
-            return date.ToString(UnambiguousFormat + " zzz");
+            return date.ToString(UnambiguousFormat + " zzz", CultureInfo.InvariantCulture);
         }
         else
         {
-            return date.ToLocalTime().ToString(UnambiguousFormat);
+            return date.ToLocalTime().ToString(UnambiguousFormat,CultureInfo.InvariantCulture);
         }
     }
 

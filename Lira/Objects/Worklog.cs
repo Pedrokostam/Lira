@@ -13,12 +13,11 @@ namespace Lira.Objects;
 /// </summary>
 public record Worklog : SelfReferential
 {
+    private string? _commentPlain;
+    private string _comment = string.Empty;
     public required UserDetails Author { get; set; }
     public required UserDetails UpdateAuthor { get; set; }
     public string Comment { get => _comment; set => _comment = value; }
-    public string? _commentPlain;
-    private string _comment = string.Empty;
-
     public string CommentPlain { get => _commentPlain ??= Comment.StripMarkup(); }
     public DateTimeOffset Created { get; set; }
     public DateTimeOffset Updated { get; set; }

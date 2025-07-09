@@ -32,7 +32,7 @@ public record IssueLite : IssueCommon
         Created = donor.Fields.Created;
         Updated = donor.Fields.Updated;
         Description = donor.Fields.Description;
-        Fetched = DateTime.UtcNow;
+        Fetched = DateTimeOffset.UtcNow;
 
     }
 

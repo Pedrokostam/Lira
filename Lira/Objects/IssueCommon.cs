@@ -8,7 +8,8 @@ namespace Lira.Objects;
 
 public abstract record IssueCommon : IssueStem
 {
-    protected List<Worklog>? _worklogs = [];
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "MA0016:Prefer using collection abstraction instead of implementation", Justification = "AddRange is needed")]
+    protected List<Worklog> _worklogs = [];
     private string? _summaryPlain;
     private string? _descriptionPlain;
 
@@ -16,14 +17,18 @@ public abstract record IssueCommon : IssueStem
     public string SummaryPlain { get => _summaryPlain ??= Summary.StripMarkup(); }
     public required string Description { get; init; }
     public string DescriptionPlain { get => _descriptionPlain ??= Description.StripMarkup(); }
-    public DateTime Fetched { get; init; }
-    public required UserDetails Assignee { get; init; }
+    public DateTimeOffset Fetched { get; init; }
+    public UserDetails? Assignee { get; init; }
     public required UserDetails Reporter { get; init; }
     public required UserDetails Creator { get; init; }
 
     public DateTimeOffset Created { get; init; }
     public DateTimeOffset Updated { get; init; }
-
+    internal void AppendNewWorklog(Worklog worklog)
+    {
+        worklog.Issue = this;
+        _worklogs.Add(worklog);
+    }
     public IReadOnlyList<Worklog> Worklogs => _worklogs is null ? [] : _worklogs.AsReadOnly();
 
     /// <summary>
@@ -48,7 +53,7 @@ public abstract record IssueCommon : IssueStem
         var address = $"{SelfLink}/worklog";
         var response = await lira.HttpClient.GetAsync(address, lira.CancellationTokenSource.Token).ConfigureAwait(false);
         await lira.HandleErrorResponse(response).ConfigureAwait(false);
-        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var content = await response.Content.ReadAsStringAsync(lira.CancellationTokenSource.Token).ConfigureAwait(false);
         _worklogs = JsonHelper.Deserialize<List<Worklog>>(content, "worklogs") ?? [];
         foreach (var log in _worklogs)
         {

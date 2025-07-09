@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Lira.Exceptions;
 using Lira.Objects;
@@ -13,19 +14,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Lira.StateMachines;
 
-public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMachine<TState>
-    where TState : struct,IState<TStep,TState>
+public abstract class StateMachine<TState, TStep>(LiraClient client) : IStateMachine<TState>
+    where TState : struct, IState<TStep, TState>
     where TStep : Enum
 {
     private readonly LiraClient _liraClient = client;
 
-    private IssueCache<Issue> Cache => LiraClient.Cache;
+    private IssueCache<Issue> CacheFull => LiraClient.Cache;
     private IssueCache<IssueLite> CacheLite => LiraClient.CacheLite;
     protected bool TryGetValue<T>(string key, [NotNullWhen(true)] out T? issue) where T : IssueCommon
     {
-        if(typeof(T) == typeof(Issue))
+        if (typeof(T) == typeof(Issue))
         {
-            bool res =  Cache.TryGetValue(key, out var full);
+            bool res = CacheFull.TryGetValue(key, out var full);
             issue = full as T;
             LiraClient.Logger.UsingCachedIssue(full!);
             return res && issue is not null;
@@ -44,11 +45,19 @@ public abstract class StateMachine<TState,TStep>(LiraClient client) : IStateMach
     {
         if (issue is Issue full)
         {
-            Cache.Add(full);
+            CacheFull.Add(full);
+            // When fetching a full issue, the lite version should be removed
+            CacheLite.Remove(full.Key);
         }
         if (issue is IssueLite lite)
         {
             CacheLite.Add(lite);
+            // One scenario where we add a lite issue is when adding a worklog to a cached issue
+            // in that case the lite has newer information than the full
+            if (CacheFull.TryGetValue(lite.Key, out var cachedFull) && cachedFull.Fetched < lite.Fetched)
+            {
+                CacheFull.Remove(lite.Key);
+            }
         }
     }
     protected LiraClient LiraClient

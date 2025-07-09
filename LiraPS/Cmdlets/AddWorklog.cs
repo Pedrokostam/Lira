@@ -16,7 +16,7 @@ namespace LiraPS.Cmdlets
     [Alias("Add-Worklog")]
     public class AddWorklog : LiraCmdlet
     {
-        [Parameter(ValueFromPipelineByPropertyName =true)]
+        [Parameter(ValueFromPipelineByPropertyName = true)]
         [AllowEmptyString]
         [AllowNull]
         [Alias("Key")]
@@ -25,7 +25,7 @@ namespace LiraPS.Cmdlets
         [Alias("Date")]
         [DateTransformer(outputIJqlDate: false, mode: DateMode.Current)]
         [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
-        public DateTimeOffset Started { get; set; } =default;
+        public DateTimeOffset Started { get; set; } = default;
         [Parameter]
         [Alias("Time", "TimeSpan")]
         [TimespanTransformer]
@@ -36,7 +36,7 @@ namespace LiraPS.Cmdlets
 
         protected override void ProcessRecord()
         {
-            bool isSomewhatManual = string.IsNullOrWhiteSpace(Issue) || TestBoundParameter(nameof(Started));
+            bool isManual = false;
             if (string.IsNullOrWhiteSpace(Issue))
             {
                 while (true)
@@ -55,45 +55,39 @@ namespace LiraPS.Cmdlets
             }
             if (Started == default)
             {
-                if (isSomewhatManual)
+                isManual = true;
+                while (true)
                 {
-
-                    while (true)
+                    var now = DateTimeOffset.Now;
+                    var dataTrans = new DateTransformerAttribute(outputIJqlDate: false, mode: DateMode.Current);
+                    var tstring = ReadInput($"\nEnter date of work, leave empty to use {now.NumericalForm()}");
+                    try
                     {
-                        var now = DateTimeOffset.Now;
-                        var dataTrans = new DateTransformerAttribute(outputIJqlDate: false, mode: DateMode.Current);
-                        var tstring = ReadInput($"Enter date of work, leave empty to use {now.NumericalForm()}");
-                        try
+                        var dto = string.IsNullOrWhiteSpace(tstring) ? now : (DateTimeOffset)dataTrans.Transform(tstring)!;
+                        var choice = ChoiceYesNo($"Is the following date correct? {Bold}{dto.UnambiguousForm()}{Reset}", ChoiceOptions.Yes, ChoiceSettings.YesNoCancel);
+                        if (choice == ChoiceOptions.Yes)
                         {
-                            var dto = string.IsNullOrWhiteSpace(tstring) ? now : (DateTimeOffset)dataTrans.Transform(tstring)!;
-                            var choice = ChoiceYesNo($"Is the following date correct? {Bold}{dto.UnambiguousForm()}{Reset}", ChoiceOptions.Yes, ChoiceSettings.YesNoCancel);
-                            if (choice == ChoiceOptions.Yes)
-                            {
-                                Started = dto;
-                                break;
-                            }
-                            if (choice == ChoiceOptions.Cancel)
-                            {
-                                UserCancel("worklog adding");
-                            }
+                            Started = dto;
+                            break;
+                        }
+                        if (choice == ChoiceOptions.Cancel)
+                        {
+                            UserCancel("worklog adding");
+                        }
 
-                        }
-                        catch
-                        {
-                            WriteWarning("Invalid date");
-                        }
                     }
-                }
-                else
-                {
-                    Started = DateTimeOffset.Now;
+                    catch
+                    {
+                        WriteWarning("Invalid date");
+                    }
                 }
             }
             if (Duration == default)
             {
+                isManual = true;
                 while (true)
                 {
-                    var tstring = ReadInput("Enter time spent (e.g. 2h 15m)");
+                    var tstring = ReadInput("\nEnter time spent (e.g. 2h 15m)");
                     var ts = TimespanTransformer.ParseTime(tstring);
                     if (ts == TimeSpan.Zero)
                     {
@@ -108,14 +102,15 @@ namespace LiraPS.Cmdlets
             }
             if (string.IsNullOrWhiteSpace(Comment))
             {
-                Comment = ReadInput("Enter optional comment");
+                isManual = true;
+                Comment = ReadInput("\nEnter optional comment");
                 if (string.IsNullOrWhiteSpace(Comment))
                 {
-                    Comment = null ;
+                    Comment = null;
                 }
             }
             var worklogToAdd = new WorklogToAdd(Started, Duration, Comment);
-            if (isSomewhatManual)
+            if (isManual)
             {
                 WriteHost("");
                 WriteHost($"The following worklog will be added", ConsoleColor.Cyan);

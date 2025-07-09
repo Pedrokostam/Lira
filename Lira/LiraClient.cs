@@ -44,6 +44,23 @@ public partial class LiraClient : IDisposable
     internal IssueCache<Issue> Cache { get; } = new();
     internal IssueCache<IssueLite> CacheLite { get; } = new();
 
+    public bool TryGetCachedIssue(string key, [NotNullWhen(true)] out IssueCommon? issue)
+    {
+        if (Cache.TryGetValue(key, out var full))
+        {
+            issue = full;
+            return true;
+
+        }
+        if (CacheLite.TryGetValue(key, out var lite))
+        {
+            issue = lite;
+            return true;
+        }
+        issue = null;
+        return false;
+    }
+
     #region StateMachines
     private readonly UsersStateMachine _usersMachine;
     private readonly WorklogStateMachine _worklogMachine;

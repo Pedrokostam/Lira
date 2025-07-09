@@ -13,7 +13,7 @@ public class IssueFields
     public WorklogResponse Worklog { get; set; }
     [JsonPropertyName("subtasks")]
     public IList<IssueStem> Subtasks { get; set; }
-    public UserDetails Assignee { get; set; } = default!;
+    public UserDetails? Assignee { get; set; } = default!;
     public UserDetails Reporter { get; set; } = default!;
     public UserDetails Creator { get; set; } = default!;
     public string Description { get; set; } = "";

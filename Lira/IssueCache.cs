@@ -27,7 +27,7 @@ public class IssueCache<T> where T : IssueCommon
 
     private readonly Dictionary<string, T> _dict = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _lock = new();
-    private DateTime _oldestItemDate = DateTime.MaxValue;
+    private DateTimeOffset _oldestItemDate = DateTimeOffset.MaxValue;
     public T this[string key]
     {
         get
@@ -152,7 +152,7 @@ public class IssueCache<T> where T : IssueCommon
         {
             if (now - issue.Fetched > InvalidationPeriod)
             {
-                Debug.WriteLine($"Cache removed {issue}");
+                Debug.WriteLine($"CacheFull removed {issue}");
                 _dict.Remove(issue.Key);
             }
         }

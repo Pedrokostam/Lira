@@ -19,7 +19,7 @@ public record Issue : IssueCommon
     public Issue(IssueLite issueLite, IEnumerable<Issue> substasks) : base(issueLite)
     {
         _subtasks = [.. substasks.OrderBy(x => x.Created)];
-        Fetched = DateTime.UtcNow;
+        Fetched = DateTimeOffset.UtcNow;
         foreach (var log in Worklogs)
         {
             log.Issue = this;

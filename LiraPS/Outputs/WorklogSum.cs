@@ -10,6 +10,7 @@ namespace LiraPS.Outputs;
 
 public readonly record struct WorklogSum
 {
+    public const string PropertySeparator = " => ";
     public ImmutableArray<Property> Properties { get; init; }
     public string Grouping { get; init; } = "";
     public ImmutableArray<Worklog> Worklogs { get; init; }
@@ -58,7 +59,7 @@ public readonly record struct WorklogSum
                 return "";
             }
             var parts = GetProps(log, props);
-            return string.Join("->", parts);
+            return string.Join(PropertySeparator, parts);
         };
     }
     public static List<WorklogSum> Sum(IEnumerable<Worklog> worklogs, params Property[] groups)

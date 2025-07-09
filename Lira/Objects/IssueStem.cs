@@ -15,6 +15,6 @@ public record IssueStem : SelfReferential
     /// </summary>
     [JsonPropertyName("key")]
     public required string Key { get; init; }
-    public Uri WebLink => new Uri($"{SelfLinkBaseAddress}/browse/{Key}");
+    public Uri WebLink => new($"{SelfLinkBaseAddress}/browse/{Key}");
     public override string ToString() => Key;
 }

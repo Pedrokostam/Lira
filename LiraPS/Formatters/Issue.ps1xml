@@ -3,6 +3,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd">
 	<ViewDefinitions>
+		<!--TABLE DEFAULT-->
 		<View>
 			<Name>Default</Name>
 			<ViewSelectedBy>
@@ -56,13 +57,19 @@
 								<PropertyName>Key</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>$_.Assignee?.Name</ScriptBlock>
+								<ScriptBlock>
+									if($_.Assignee -eq $null){
+									"`e[2m`e[3mUnassigned`e[0m"
+									} else {
+									$_.Assignee.Name
+									}
+								</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>$_.Reporter?.Name</ScriptBlock>
+								<ScriptBlock>$_.Reporter.Name</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>$_.Creator?.Name</ScriptBlock>
+								<ScriptBlock>$_.Creator.Name</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>
@@ -92,6 +99,93 @@
 					</TableRowEntry>
 				</TableRowEntries>
 			</TableControl>
+		</View>
+		<!--LIST-->
+		<View>
+			<Name>Default</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Objects.Issue</TypeName>
+			</ViewSelectedBy>
+			<ListControl>
+				<ListEntries>
+					<ListEntry>
+						<ListItems>
+							<ListItem>
+								<Label>Key</Label>
+								<PropertyName>Key</PropertyName>
+							</ListItem>
+							<ListItem>
+								<Label>Summary</Label>
+								<PropertyName>SummaryPlain</PropertyName>
+							</ListItem>
+							<ListItem>
+								<Label>Link</Label>
+								<PropertyName>WebLink</PropertyName>
+							</ListItem>
+							<ListItem>
+								<Label>Assignee</Label>
+								<ScriptBlock>
+									if($_.Assignee -eq $null){
+									"`e[2m`e[3mUnassigned`e[0m"
+									} else {
+									[LiraPS.Extensions.FormattingExtensions]::OnelineUserDetails($_.Assignee)
+									}
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Reporter</Label>
+								<ScriptBlock>[LiraPS.Extensions.FormattingExtensions]::OnelineUserDetails($_.Reporter)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Creator</Label>
+								<ScriptBlock>[LiraPS.Extensions.FormattingExtensions]::OnelineUserDetails($_.Creator)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Created</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::UnambiguousForm($_.Created)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Updated</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::UnambiguousForm($_.Updated)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Time</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Total Time</Label>
+								<ItemSelectionCondition>
+									<ScriptBlock>
+										$_.Subtasks.Count -gt 0
+									</ScriptBlock>
+								</ItemSelectionCondition>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TotalTimeSpent)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Subtasks</Label>
+								<ItemSelectionCondition>
+									<ScriptBlock>
+										$_.Subtasks.Count -gt 0
+									</ScriptBlock>
+								</ItemSelectionCondition>
+								<ScriptBlock>
+									($_.Subtasks | % Key) -join ", "
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Description</Label>
+								<ScriptBlock>
+									if([String]::IsNullOrWhitespace($_.DescriptionPlain)){
+									"`e[2m`e[3mEmpty description`e[0m"
+									} else {
+									$_.DescriptionPlain
+									}
+								</ScriptBlock>
+							</ListItem>
+						</ListItems>
+					</ListEntry>
+				</ListEntries>
+			</ListControl>
 		</View>
 	</ViewDefinitions>
 </Configuration>

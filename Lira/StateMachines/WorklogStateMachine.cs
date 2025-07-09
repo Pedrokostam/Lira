@@ -99,11 +99,12 @@ public class WorklogStateMachine : StateMachine<WorklogStateMachine.State, Workl
         List<Worklog> worklogs = [];
         foreach (var potentiallyUncached in issueLites)
         {
-            if (TryGetValue(potentiallyUncached.Key, out Issue? issue))
+            var updatedOn = potentiallyUncached.Updated;
+            if (TryGetValue(potentiallyUncached.Key, out Issue? issue) && issue.Fetched > updatedOn)
             {
                 worklogs.AddRange(issue.Worklogs);
             }
-            else if (TryGetValue(potentiallyUncached.Key, out IssueLite? cachedLite))
+            else if (TryGetValue(potentiallyUncached.Key, out IssueLite? cachedLite) && cachedLite.Fetched > updatedOn)
             {
                 worklogs.AddRange(cachedLite.Worklogs);
             }
