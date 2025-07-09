@@ -61,7 +61,7 @@ public class GetWorklogSum : LiraCmdlet
     protected override void EndProcessing()
     {
         var summedLogs = WorklogSum.Sum(_worklogs, Groups);
-        WriteObject(summedLogs);
+        WriteObject(summedLogs,enumerateCollection:true);
         SetGlobal("LiraLastWorklogSum", summedLogs);
         base.EndProcessing();
     }

@@ -103,11 +103,11 @@ public class ExportWorklog : LiraCmdlet, IDynamicParameters
             {
                 if (!_jsonDynamicParameters!.AsArray.IsPresent)
                 {
-                    WriteObject(JsonSerializer.Serialize(_allWorklogs[0].GetDict(), opt));
+                    WriteObject(JsonSerializer.Serialize(_allWorklogs[0].GetDict(), opt), enumerateCollection: true);
                     return;
                 }
             }
-            WriteObject(JsonSerializer.Serialize(_allWorklogs.Select(x => x.GetDict()), opt));
+            WriteObject(JsonSerializer.Serialize(_allWorklogs.Select(x => x.GetDict()), opt), enumerateCollection: true);
         }
     }
 

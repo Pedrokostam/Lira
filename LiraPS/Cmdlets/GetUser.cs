@@ -40,7 +40,7 @@ namespace LiraPS.Cmdlets
                 //var task = LiraSession.Client.GetUsers(userName).GetAwaiter();
                 //var user = task.GetResult();
                 //PrintLogs();
-                WriteObject(state.Users);
+                WriteObject(state.Users,enumerateCollection:true);
             }
         }
 

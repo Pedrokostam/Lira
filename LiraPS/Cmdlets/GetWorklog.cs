@@ -25,7 +25,7 @@ namespace LiraPS.Cmdlets
 {
     [Cmdlet(VerbsCommon.Get, "LiraWorklog", DefaultParameterSetName = "PERIOD")]
     [OutputType(typeof(Worklog))]
-    [Alias("Get-Worklog")]
+    [Alias("Get-Worklog", "Get-Worklogs", "Get-LiraWorklogs")]
     public class GetLiraWorklog : LiraCmdlet
 
     {
@@ -53,6 +53,7 @@ namespace LiraPS.Cmdlets
         public string[] Issue { get => issue; set => issue = value ?? []; }
         [Parameter]
         public int Chunk { get; set; } = -1;
+
         const int IssuePaginationProgressId = 12;
         private string[] user = ["CurrentUser"];
         private string[] issue = [];
@@ -93,7 +94,7 @@ namespace LiraPS.Cmdlets
         protected override void EndProcessing()
         {
             var sorted = _worklogs.OrderBy(x => x.Started).ToList();
-            WriteObject(sorted);
+            WriteObject(sorted,enumerateCollection:true);
             SetGlobal("LiraLastWorklogs", sorted);
         }
 

@@ -15,9 +15,11 @@ public record Worklog : SelfReferential
 {
     public required UserDetails Author { get; set; }
     public required UserDetails UpdateAuthor { get; set; }
-    public required string Comment { get; set; }
+    public string Comment { get => _comment; set => _comment = value; }
     public string? _commentPlain;
-    public string CommentPlain { get=>_commentPlain??=Comment.StripMarkup(); }
+    private string _comment = string.Empty;
+
+    public string CommentPlain { get => _commentPlain ??= Comment.StripMarkup(); }
     public DateTimeOffset Created { get; set; }
     public DateTimeOffset Updated { get; set; }
     public DateTimeOffset Started { get; set; }

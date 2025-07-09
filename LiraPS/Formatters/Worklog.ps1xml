@@ -50,7 +50,8 @@
 							<TableColumnItem>
 								<ScriptBlock>
 									if ([string]::IsNullOrWhiteSpace($_.CommentPlain)) {
-									"e[2me[3mNo commente[0m"									} else {
+									"`e[2m`e[3mNo comment`e[0m"
+									} else {
 									$_.CommentPlain
 									}
 								</ScriptBlock>

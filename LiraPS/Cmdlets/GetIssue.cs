@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Lira;
 using Lira.Objects;
 using Lira.StateMachines;
 using Serilog.Events;
@@ -30,10 +31,16 @@ namespace LiraPS.Cmdlets
             ValueFromPipeline = true,
             ValueFromPipelineByPropertyName = true)]
         public string[] Id { get; set; } = default!;
+        //[Parameter]
+        //public SwitchParameter NoSubtasks { get; set; }
 
-        public SwitchParameter NoSubtasks { get; set; }
+        [Parameter]
+        [Alias("Refresh", "Force")]
+        public SwitchParameter ForceRefresh { get; set; }
 
         private readonly List<Issue> _issues = [];
+
+
 
         // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called
         protected override void ProcessRecord()
@@ -42,6 +49,10 @@ namespace LiraPS.Cmdlets
             var machine = LiraSession.Client.GetIssueStateMachine();
             foreach (var issueId in Id)
             {
+                if (ForceRefresh.IsPresent)
+                {
+                    LiraSession.Client.InvalidateCacheEntry(issueId);
+                }
                 WriteProgress(new ProgressRecord(ActivityId, $"Fetching issues...", issueId) { PercentComplete = percentComplete });
                 var state = machine.GetStartState(issueId);
                 while (!state.IsFinished)
@@ -67,7 +78,7 @@ namespace LiraPS.Cmdlets
         }
         protected override void EndProcessing()
         {
-            WriteObject(_issues);
+            WriteObject(_issues, enumerateCollection: true);
         }
 
     }

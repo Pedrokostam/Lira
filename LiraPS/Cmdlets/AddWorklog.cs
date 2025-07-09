@@ -16,9 +16,10 @@ namespace LiraPS.Cmdlets
     [Alias("Add-Worklog")]
     public class AddWorklog : LiraCmdlet
     {
-        [Parameter]
+        [Parameter(ValueFromPipelineByPropertyName =true)]
         [AllowEmptyString]
         [AllowNull]
+        [Alias("Key")]
         public string Issue { get; set; } = string.Empty;
         [Parameter]
         [Alias("Date")]
@@ -110,7 +111,7 @@ namespace LiraPS.Cmdlets
                 Comment = ReadInput("Enter optional comment");
                 if (string.IsNullOrWhiteSpace(Comment))
                 {
-                    Comment = null;
+                    Comment = null ;
                 }
             }
             var worklogToAdd = new WorklogToAdd(Started, Duration, Comment);
