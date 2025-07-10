@@ -68,7 +68,7 @@ public readonly record struct WorklogSum
         var datePropsCount = props.Sum(x => x == Property.Day || x == Property.Month || x == Property.Year ? 1 : 0);
         if (datePropsCount > 1)
         {
-            throw new ArgumentException("Cannot use more than one date-based property for grouping");
+            throw new PSArgumentException("Cannot use more than one date-based property for grouping");
         }
         var selector = GetSelector(props);
         var grouped = worklogs.GroupBy(selector);

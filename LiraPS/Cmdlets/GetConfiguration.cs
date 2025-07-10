@@ -14,7 +14,7 @@ namespace LiraPS.Cmdlets
             if (LiraSession.Config is null)
             {
                 Terminate(
-                        new InvalidOperationException("No active configuration found. Please run Set-Configuration first."),
+                        new PSInvalidOperationException("No active configuration found. Please run Set-Configuration first."),
                         "NoActiveConfiguration",
                         ErrorCategory.ResourceUnavailable
                 );

@@ -32,6 +32,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Lira;
 
+public enum ClientMode
+{
+    Online,
+    ReadOnly,
+    Offline,
+}
 public partial class LiraClient : IDisposable
 {
     private const string ApplicationAgentName = "Lira_";
@@ -40,7 +46,7 @@ public partial class LiraClient : IDisposable
     public const string SearchEndpoint = "rest/api/2/search";
     public const string IssueEndpoint = "rest/api/2/issue";
     public const string UserSearchEndpoint = "rest/api/2/user/search";
-
+    public ClientMode ConnectionMode { get; }
     internal IssueCache<Issue> Cache { get; } = new();
     internal IssueCache<IssueLite> CacheLite { get; } = new();
 
@@ -82,7 +88,7 @@ public partial class LiraClient : IDisposable
     public UpdateWorklogStateMachine GetUpdateWorklogMachine() => _updateWorklogMachine;
     #endregion StateMachines
 
-    internal LiraClient(Uri baseAddress, ILogger logger)
+    internal LiraClient(Uri baseAddress, ILogger logger,ClientMode mode)
     {
         Logger = logger;
         HttpClient = new HttpClient()
@@ -92,6 +98,7 @@ public partial class LiraClient : IDisposable
                 Accept={ new MediaTypeWithQualityHeaderValue("application/json") { CharSet = Encoding.UTF8.WebName } },
             },
         };
+        ConnectionMode = mode;
         HttpClient.DefaultRequestHeaders.Add("User-Agent", ApplicationAgentName);
         _issuePaginationMachine = new(this, SearchEndpoint, "issues");
         _usersMachine = new(this);

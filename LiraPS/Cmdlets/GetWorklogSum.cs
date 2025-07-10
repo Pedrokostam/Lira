@@ -42,7 +42,7 @@ public class GetWorklogSum : LiraCmdlet
             }
             else
             {
-                Terminate(new ArgumentException("No worklogs provided"), "NoWorklogs", ErrorCategory.InvalidArgument);
+                Terminate(new PSArgumentException("No worklogs provided"), "NoWorklogs", ErrorCategory.InvalidArgument);
             }
         }
         PrintLogs();

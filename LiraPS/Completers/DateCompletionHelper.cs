@@ -55,7 +55,7 @@ internal static partial class DateCompletionHelper
             (false, TimeUnit.Month) => (JqlKeywordDate.Keywords.EndOfMonth, Format($"Last day of month {baseDate:MMMM}/{baseDate:yyyy}")),
             (true, TimeUnit.Year) => (JqlKeywordDate.Keywords.StartOfYear, Format($"First day of year {baseDate:yyyy}")),
             (false, TimeUnit.Year) => (JqlKeywordDate.Keywords.EndOfYear, Format($"Last day of year {baseDate:yyyy}")),
-            _ => throw new NotSupportedException(),
+            _ => throw new PSNotSupportedException(),
         };
         dates.Add(new TooltipManualDate(keyword.ToDateTimeOffset(baseDate), tooltip));
     }
@@ -163,7 +163,7 @@ internal static partial class DateCompletionHelper
             DateMode.Current => now.TimeOfDay,
             DateMode.Start => TimeSpan.Zero,
             DateMode.End =>TimeSpan.FromHours(24).Subtract(TimeSpan.FromTicks(1)),
-            _ => throw new NotImplementedException(),
+            _ => throw new PSNotImplementedException(),
         };
         List<ITooltipDate> variants = [];
         var isStart = mode != DateMode.End;
@@ -256,7 +256,7 @@ internal static partial class DateCompletionHelper
                 DateMode.Current => (new JqlManualDate(DateTimeOffset.Now), "Current time"),
                 DateMode.Start => (JqlKeywordDate.StartOfDay, "Start of today"),
                 DateMode.End => (JqlKeywordDate.EndOfDay, "End of today"),
-                _ => throw new NotImplementedException(),
+                _ => throw new PSNotImplementedException(),
             };
 
             yield return CreateCompletion("Today",

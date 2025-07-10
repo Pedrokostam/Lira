@@ -31,7 +31,7 @@ namespace LiraPS.Cmdlets
         {
             if (string.IsNullOrWhiteSpace(text))
             {
-                Terminate(new ArgumentException($"{name} cannot be empty"), $"Empty{name}");
+                Terminate(new PSArgumentException($"{name} cannot be empty"), $"Empty{name}");
             }
         }
         protected LiraCmdlet() : base()
@@ -106,7 +106,7 @@ namespace LiraPS.Cmdlets
         {
             if (!LiraSession.TestSessionDateAvailable())
             {
-                throw new InvalidOperationException("You have to configure jira session parameters first. Call Set-Configuration.");
+                throw new PSInvalidOperationException("You have to configure jira session parameters first. Call Set-Configuration.");
             }
             LiraSession.StartSession().Wait();
             PrintLogs();
@@ -284,24 +284,13 @@ namespace LiraPS.Cmdlets
         {
             if (Console.IsInputRedirected)
             {
-                Terminate(new ArgumentException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
+                Terminate(new PSArgumentException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
             }
 
             if (options.Length == 0)
             {
                 return null;
             }
-            bool isYesNo = options.Length == 2
-                           && options[0].Name.Equals("yes", StringComparison.OrdinalIgnoreCase)
-                           && options[1].Name.Equals("no", StringComparison.OrdinalIgnoreCase)
-                           && options[0].Payload is true
-                           && options[1].Payload is false;
-            bool isNoYes = !isYesNo && options.Length == 2
-                          && options[1].Name.Equals("yes", StringComparison.OrdinalIgnoreCase)
-                          && options[0].Name.Equals("no", StringComparison.OrdinalIgnoreCase)
-                          && options[1].Payload is true
-                          && options[0].Payload is false;
-
             try
             {
                 Console.TreatControlCAsInput = true;
@@ -359,26 +348,6 @@ namespace LiraPS.Cmdlets
 
                     switch (info.Key)
                     {
-                        case ConsoleKey.Y:
-                            if (isYesNo)
-                            {
-                                choice = 0;
-                            }
-                            else if (isNoYes)
-                            {
-                                choice = 1;
-                            }
-                            break;
-                        case ConsoleKey.N:
-                            if (isYesNo)
-                            {
-                                choice = 1;
-                            }
-                            else if (isNoYes)
-                            {
-                                choice = 0;
-                            }
-                            break;
                         case ConsoleKey.DownArrow:
                         case ConsoleKey.RightArrow:
                         case ConsoleKey.S:
@@ -437,14 +406,14 @@ namespace LiraPS.Cmdlets
         {
             if (!"AVP-425".Equals(issue, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("DO NOT TEST ON ANYTHING BUT AVP-425!!!!");
+                throw new PSInvalidOperationException("DO NOT TEST ON ANYTHING BUT AVP-425!!!!");
             }
         }
     [System.Diagnostics.CodeAnalysis.DoesNotReturn]
     protected void UserCancel(string operation)
     {
         var pascalCase = string.Join("", operation.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries).Select(x => char.ToUpperInvariant(x[0]) + x[1..]));
-        Terminate(new InvalidOperationException($"User cancelled {operation}"), $"{pascalCase}Cancelled", ErrorCategory.InvalidOperation);
+        Terminate(new PSInvalidOperationException($"User cancelled {operation}"), $"{pascalCase}Cancelled", ErrorCategory.InvalidOperation);
     }
     }
 }

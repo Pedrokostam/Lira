@@ -17,6 +17,7 @@ public class LiraSessionFactory
         BaseAddress = baseAddress;
     }
     public Uri BaseAddress { get; }
+    public ClientMode ClientMode { get; set; }
     public ILogger<LiraClient> Logger { get; private set; } = NullLogger<LiraClient>.Instance;
     [AllowNull]
     public IAuthorization Authorization { get; private set; } = NoAuthorization.Instance;
@@ -28,7 +29,7 @@ public class LiraSessionFactory
     }
     public async Task<LiraClient> Initialize()
     {
-        var lira = new LiraClient(BaseAddress, Logger);
+        var lira = new LiraClient(BaseAddress, Logger, ClientMode);
         Logger.CreatedNewInstance(BaseAddress);
         await Authorize(lira).ConfigureAwait(false);
         await lira.GetCurrentUser().ConfigureAwait(false);
@@ -51,6 +52,16 @@ public class LiraSessionFactory
 
     public LiraSessionFactory AuthorizedByAtlassianApiKey(string userEmail, string atlassianApiKey)
         => AuthorizedBy(new AtlassianApiKey(userEmail, atlassianApiKey));
+
+    public LiraSessionFactory WithMode(ClientMode mode)
+    {
+        ClientMode = mode;
+        return this;
+    }
+    public LiraSessionFactory Online() => WithMode(ClientMode.Online);
+    public LiraSessionFactory Offline() => WithMode(ClientMode.Offline);
+    public LiraSessionFactory ReadOnly() => WithMode(ClientMode.ReadOnly);
+
     public static LiraSessionFactory Create(Uri baseAddress)
     {
         return new LiraSessionFactory(baseAddress);

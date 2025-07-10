@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Threading.Tasks;
+using Lira.Exceptions;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
@@ -38,7 +39,7 @@ public class CurrentUserStateMachine(LiraClient client) : StateMachine<CurrentUs
     }
     private async Task<State> GetUser(State state)
     {
-        HttpResponseMessage myselfResponse = await HttpClient.GetAsync(LiraClient.MyselfEndpoint, LiraClient.CancellationTokenSource.Token).ConfigureAwait(false);
+        HttpResponseMessage myselfResponse = await GetAsync(LiraClient.MyselfEndpoint).ConfigureAwait(false);
         await HandleErrorResponse(myselfResponse).ConfigureAwait(false);
         var content = await ReadContentString(myselfResponse).ConfigureAwait(false);
         var userDetails = JsonHelper.Deserialize<UserDetails>(content)!;

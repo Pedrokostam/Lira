@@ -108,24 +108,29 @@ public abstract class StateMachine<TState, TStep>(LiraClient client) : IStateMac
 
     protected Task<HttpResponseMessage> GetAsync(string requestAddress)
     {
+        InvalidClientModeException.CheckGet(LiraClient);
         return HttpClient.GetAsync(requestAddress, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> DeleteAsync(string requestAddress)
     {
+        InvalidClientModeException.CheckDelete(LiraClient);
         return HttpClient.DeleteAsync(requestAddress, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> PutAsync<T>(string requestAddress, T contentToJsonify)
     {
+        InvalidClientModeException.CheckPut(LiraClient);
         var json = JsonHelper.Serialize<T>(contentToJsonify);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         return HttpClient.PutAsync(requestAddress, content, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> PostAsync(string requestAddress, HttpContent content)
     {
+        InvalidClientModeException.CheckPost(LiraClient);
         return HttpClient.PostAsync(requestAddress, content, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> PostAsync<T>(string requestAddress, T contentToJsonify)
     {
+        InvalidClientModeException.CheckPost(LiraClient);
         var json = JsonHelper.Serialize<T>(contentToJsonify);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         return HttpClient.PostAsync(requestAddress, content, LiraClient.GetToken());

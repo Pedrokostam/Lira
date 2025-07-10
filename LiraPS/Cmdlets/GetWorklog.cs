@@ -110,7 +110,7 @@ namespace LiraPS.Cmdlets
                 Period.LastWeek => (JqlKeywordDate.StartOfWeek.WithOffset(-1), JqlKeywordDate.EndOfWeek.WithOffset(-1)),
                 Period.LastMonth => (JqlKeywordDate.StartOfMonth.WithOffset(-1), JqlKeywordDate.EndOfMonth.WithOffset(-1)),
                 Period.LastYear => (JqlKeywordDate.StartOfYear.WithOffset(-1), JqlKeywordDate.EndOfYear.WithOffset(-1)),
-                _ => throw new NotSupportedException(),
+                _ => throw new PSNotSupportedException(),
             };
             StartDate = start;
             EndDate = end;

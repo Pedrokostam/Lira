@@ -88,7 +88,7 @@ public class ExportWorklog : LiraCmdlet, IDynamicParameters
                 Separator.Comma => ",",
                 Separator.Semicolon => ";",
                 Separator.Pipe => "|",
-                _ => throw new InvalidOperationException(),
+                _ => throw new PSInvalidOperationException(),
             };
             if (!_csvDynamicParameters!.NoHeader.IsPresent)
             {

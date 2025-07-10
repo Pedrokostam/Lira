@@ -83,7 +83,7 @@ public class SetConfiguration : LiraCmdlet
             switch (Type)
             {
                 case ConfigurationType.ManualChoice:
-                    throw new InvalidOperationException("You were not supposed to get here");
+                    throw new PSInvalidOperationException("You were not supposed to get here");
                 case ConfigurationType.Pat:
                     var pat = ReadInput("Personal access token", asSecure: true);
                     EnsureNotEmpty(pat, "Token");

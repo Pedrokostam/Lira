@@ -22,7 +22,7 @@ public class TimespanTransformer : ArgumentTransformationAttribute
             Position++;
             if (Position >= Buffer.Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(Position));
+                throw new PSArgumentOutOfRangeException(nameof(Position));
             }
             return Position;
         }
@@ -89,7 +89,7 @@ public class TimespanTransformer : ArgumentTransformationAttribute
                     TimeUnit.Seconds => TimeSpan.FromSeconds(number),
                     TimeUnit.Minutes => TimeSpan.FromMinutes(number),
                     TimeUnit.Hours => TimeSpan.FromHours(number),
-                    _ => throw new InvalidOperationException()
+                    _ => throw new PSInvalidOperationException()
                 };
             }
 

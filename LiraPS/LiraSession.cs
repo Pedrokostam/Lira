@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Management.Automation;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -80,11 +81,12 @@ public static class LiraSession
         Config ??= Configuration.Load();
         if (!Config.IsInitialized)
         {
-            throw new InvalidOperationException("Attempted to load unitialized configuration. Call Set-Configuration to initialize it.");
+            throw new PSInvalidOperationException("Attempted to load unitialized configuration. Call Set-Configuration to initialize it.");
         }
         Client = await LiraSessionFactory.Create(Config.ServerAddress)
              .WithLogger(Logger)
              .AuthorizedBy(Config.Authorization)
+             .Online()
              .Initialize();
         if (Client.Authorization is NoAuthorization)
         {

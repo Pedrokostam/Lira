@@ -100,7 +100,7 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
                         DateMode.Current => parsedDate.AddHours(DateTime.Now.TimeOfDay.TotalHours),
                         DateMode.Start => parsedDate,
                         DateMode.End => parsedDate.AddDays(1).Subtract(TimeSpan.FromTicks(1)),
-                        _ => throw new NotImplementedException(),
+                        _ => throw new PSNotImplementedException(),
                     };
                 }
                 inputData = parsedDate;

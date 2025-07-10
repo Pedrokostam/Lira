@@ -159,7 +159,7 @@
 								<Label>Total Time</Label>
 								<ItemSelectionCondition>
 									<ScriptBlock>
-										$_.Subtasks.Count -gt 0
+										$_.ShallowSubtasks.Count -gt 0
 									</ScriptBlock>
 								</ItemSelectionCondition>
 								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TotalTimeSpent)</ScriptBlock>
@@ -168,11 +168,11 @@
 								<Label>Subtasks</Label>
 								<ItemSelectionCondition>
 									<ScriptBlock>
-										$_.Subtasks.Count -gt 0
+										$_.ShallowSubtasks.Count -gt 0
 									</ScriptBlock>
 								</ItemSelectionCondition>
 								<ScriptBlock>
-									($_.Subtasks | % Key) -join ", "
+									($_.ShallowSubtasks | % Key) -join ", "
 								</ScriptBlock>
 							</ListItem>
 							<ListItem>

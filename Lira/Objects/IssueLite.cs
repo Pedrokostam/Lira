@@ -27,7 +27,7 @@ public record IssueLite : IssueCommon
         Reporter = donor.Fields.Reporter;
         Summary = donor.Fields.Summary;
         Creator = donor.Fields.Creator;
-        _worklogs = donor.Fields.Worklog.HasAllWorklogs ? new(donor.Fields.Worklog.InitialWorklogs) : null;
+        _worklogs = donor.Fields.Worklog.HasAllWorklogs ? new(donor.Fields.Worklog.InitialWorklogs) : [];
         _shallowSubtasks = new List<IssueStem>(donor.Fields.Subtasks);
         Created = donor.Fields.Created;
         Updated = donor.Fields.Updated;

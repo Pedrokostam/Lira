@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Lira.Objects;
 
 namespace Lira.Jql;
-public class JqlQuery
+public class JqlQuery : IEquatable<JqlQuery>
 {
     ///// <summary>
     ///// Jira function returning currently logged user
@@ -31,6 +31,7 @@ public class JqlQuery
     public StartEndDateTester<Worklog> WorklogDate { get; set; }
         = new("worklogDate", w => w.Started);
     private IEnumerable<IJqlQueryItem> AllFields => [
+        IssueId,
         IssueAssignee,
         IssueReporter,
         IssueCreator,
@@ -158,5 +159,21 @@ public class JqlQuery
     {
         IssueUpdatedDate.EndDate = date;
         return this;
+    }
+
+
+    public bool Equals(JqlQuery? other)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override bool Equals(object obj)
+    {
+        return Equals(obj as JqlQuery);
+    }
+
+    public override int GetHashCode()
+    {
+        throw new NotImplementedException();
     }
 }
