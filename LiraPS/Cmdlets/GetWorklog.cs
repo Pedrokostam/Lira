@@ -32,7 +32,7 @@ namespace LiraPS.Cmdlets
         [Parameter(Position = 0, ParameterSetName = "PERIOD")]
         public Period Period { get; set; } = Period.ThisMonth;
         [AllowNull]
-        [DateTransformer(outputIJqlDate: true, mode:DateMode.Start)]
+        [DateTransformer(outputIJqlDate: true, mode: DateMode.Start)]
         [ArgumentCompleter(typeof(JqlDateStartArgumentCompletionAttribute))]
         [Parameter(ParameterSetName = "MANUALDATE")]
         public IJqlDate? StartDate { get; set; } = null;
@@ -43,7 +43,7 @@ namespace LiraPS.Cmdlets
         [Parameter(ParameterSetName = "MANUALDATE")]
         public IJqlDate? EndDate { get; set; } = null;
 
-        [Parameter(ValueFromPipeline =true)]
+        [Parameter(ValueFromPipeline = true)]
         [UserDetailsToStringTransformer]
         [ValidateNotNullOrEmpty]
         public string[] User { get => user; set => user = value ?? []; }
@@ -54,10 +54,16 @@ namespace LiraPS.Cmdlets
         [Parameter]
         public int Chunk { get; set; } = -1;
 
+        [Parameter]
+        [Alias("Refresh", "Force")]
+        public SwitchParameter ForceRefresh { get; set; }
+
         const int IssuePaginationProgressId = 12;
         private string[] user = ["CurrentUser"];
         private string[] issue = [];
         private readonly List<Worklog> _worklogs = [];
+
+
         // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called
         protected override void ProcessRecord()
         {
@@ -80,6 +86,10 @@ namespace LiraPS.Cmdlets
                 .WhereWorklogAuthorIs(uniqueUsers.ToArray())
                 .WhereIssueIs(Issue);
             WriteVerbose($"Running query: {query.BuildQueryString(LiraSession.Client)}");
+            if (ForceRefresh.IsPresent)
+            {
+                LiraSession.Client.RemoveFromQueryCache(query.BuildQueryString(LiraSession.Client));
+            }
             var machine = new WorklogStateMachine(LiraSession.Client) { QueryLimit = Chunk };
             var state = machine.GetStartState(query);
             while (!state.IsFinished)
@@ -94,8 +104,9 @@ namespace LiraPS.Cmdlets
         protected override void EndProcessing()
         {
             var sorted = _worklogs.OrderBy(x => x.Started).ToList();
-            WriteObject(sorted,enumerateCollection:true);
+            WriteObject(sorted, enumerateCollection: true);
             SetGlobal("LiraLastWorklogs", sorted);
+            base.EndProcessing();   
         }
 
         private void PeriodToDates()

@@ -24,6 +24,7 @@ public class InvalidClientModeException(string method, ClientMode mode) : Invali
     {
         if (client.ConnectionMode == ClientMode.Offline)
         {
+
             Throw(method.ToUpperInvariant(), client.ConnectionMode);
         }
     }

@@ -31,5 +31,6 @@ $output = $output | Select-Object -Last 1
 $path = ($output -split '->')[1].Trim()
 
 $modulepath = Join-Path $path 'LiraPS.psd1'
-
+$DebugPreference = 'Continue'
+$VerbosePreference = 'Continue'
 Import-Module $modulepath -Verbose

@@ -47,24 +47,127 @@ public partial class LiraClient : IDisposable
     public const string IssueEndpoint = "rest/api/2/issue";
     public const string UserSearchEndpoint = "rest/api/2/user/search";
     public ClientMode ConnectionMode { get; }
-    internal IssueCache<Issue> Cache { get; } = new();
-    internal IssueCache<IssueLite> CacheLite { get; } = new();
+    private IssueCache<Issue> CacheFull { get; } = new();
+    private IssueCache<IssueLite> CacheLite { get; } = new();
+    private QueryCache CacheQueries { get; } = new();
 
     public bool TryGetCachedIssue(string key, [NotNullWhen(true)] out IssueCommon? issue)
     {
-        if (Cache.TryGetValue(key, out var full))
+        if (CacheFull.TryGetValue(key, out var full))
         {
             issue = full;
+            Logger.UsingCachedIssue(full!);
             return true;
 
         }
         if (CacheLite.TryGetValue(key, out var lite))
         {
             issue = lite;
+            Logger.UsingCachedIssue(lite!);
             return true;
         }
         issue = null;
         return false;
+    }
+
+    internal bool TryGetCachedIssue<T>(string key, [NotNullWhen(true)] out T? issue) where T : IssueCommon
+    {
+        if (typeof(T) == typeof(Issue))
+        {
+            if (CacheFull.TryGetValue(key, out var full))
+            {
+                issue = full as T;
+                Logger.UsingCachedIssue(full!);
+                return issue is not null;
+            }
+        }
+        if (typeof(T) == typeof(IssueLite))
+        {
+            if (CacheLite.TryGetValue(key, out var lite))
+            {
+                issue = lite as T;
+                Logger.UsingCachedIssue(lite!);
+                return issue is not null;
+            }
+        }
+        if (typeof(T) == typeof(IssueCommon))
+        {
+            bool res = TryGetCachedIssue(key, out var common);
+            issue = common as T;
+            return res && issue is not null;
+        }
+        issue = null;
+        return false;
+    }
+
+    internal void AddToCache(IssueCommon issue)
+    {
+        if (issue is Issue full)
+        {
+            CacheFull.Add(full);
+            Logger.CachingIssue(full);
+            // When fetching a full issue, the lite version should be removed
+            CacheLite.Remove(full.Key);
+        }
+        if (issue is IssueLite lite)
+        {
+            CacheLite.Add(lite);
+            Logger.CachingIssue(lite);
+            // One scenario where we add a lite issue is when adding a worklog to a cached issue
+            // in that case the lite has newer information than the full
+            if (CacheFull.TryGetValue(lite.Key, out var cachedFull) && cachedFull.Fetched < lite.Fetched)
+            {
+                CacheFull.Remove(lite.Key);
+            }
+        }
+    }
+    internal void AddToCache(string query, IEnumerable<Worklog> worklogs)
+    {
+        CacheQueries.Add(query, worklogs.Select(x => x.Issue));
+        Logger.CachingWorklogsForQuery(query);
+    }
+    public void ClearCache()
+    {
+        CacheFull.Clear();
+        CacheLite.Clear();
+        Logger.ClearingIssueCache();
+        ClearQueryCache();
+    }
+
+    public void RemoveFromIssueCache(string issue)
+    {
+        var fullRemoved = CacheFull.Remove(issue);
+        var liteRemoved = CacheLite.Remove(issue);
+        if (fullRemoved is not null || liteRemoved is not null)
+        {
+            CacheQueries.RemoveEntryByIssue(issue);
+            Logger.RemovedCacheEntryByIssue(issue);
+        }
+        if (fullRemoved is not null)
+        {
+            Logger.RemovingCacheEntry(fullRemoved);
+        }
+        if (liteRemoved is not null)
+        {
+            Logger.RemovingCacheEntry(liteRemoved);
+        }
+    }
+
+    public void RemoveFromQueryCache(string query)
+    {
+        if (CacheQueries.Remove(query))
+        {
+            Logger.RemovingCacheEntry(query);
+        }
+    }
+    public void ClearQueryCache()
+    {
+        Logger.ClearingQueryCache();
+        CacheQueries.Clear();
+    }
+    internal bool CheckWorklogCache(string query, [NotNullWhen(true)] out IReadOnlyCollection<string>? relevantIssues)
+    {
+        return CacheQueries.TryGetValue(query, out relevantIssues);
     }
 
     #region StateMachines
@@ -88,7 +191,7 @@ public partial class LiraClient : IDisposable
     public UpdateWorklogStateMachine GetUpdateWorklogMachine() => _updateWorklogMachine;
     #endregion StateMachines
 
-    internal LiraClient(Uri baseAddress, ILogger logger,ClientMode mode)
+    internal LiraClient(Uri baseAddress, ILogger logger, ClientMode mode)
     {
         Logger = logger;
         HttpClient = new HttpClient()
@@ -301,18 +404,6 @@ public partial class LiraClient : IDisposable
 
 
 
-    private long LogStart([CallerMemberName] string? name = null)
-    {
-        Logger.StartedMethod(name);
-        return Stopwatch.GetTimestamp();
-    }
-    private void LogEnd(long timestamp, [CallerMemberName] string? name = null)
-    {
-        var diff = TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp);
-        Logger.EndedMethod(diff, name);
-    }
-
-
     //public async Task<IList<T>> GetPaginatedResponse<T>(string endpoint, HttpQuery query, string propertyName)
     //    => await GetPaginatedResponse<T>(new Uri(endpoint, UriKind.Relative), query, propertyName).ConfigureAwait(false);
     //public async Task<IList<T>> GetPaginatedResponse<T>(Uri endpoint, HttpQuery query, string propertyName)
@@ -402,17 +493,6 @@ public partial class LiraClient : IDisposable
             // TODO: set large fields to null
             IsDisposed = true;
         }
-    }
-
-    public void ClearCache()
-    {
-        Cache.Clear();
-        CacheLite.Clear();
-    }
-    public void InvalidateCacheEntry(string issueKey)
-    {
-        Cache.Remove(issueKey);
-        CacheLite.Remove(issueKey);
     }
 
     public void Dispose()

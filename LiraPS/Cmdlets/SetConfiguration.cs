@@ -152,7 +152,7 @@ public class SetConfiguration : LiraCmdlet
         {
             LiraSession.StartSession().Wait();
         }
-        PrintLogs();
+        base.EndProcessing();
     }
     private void SetAddressManuallyIfMissing()
     {

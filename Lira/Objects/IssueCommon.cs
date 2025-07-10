@@ -30,7 +30,14 @@ public abstract record IssueCommon : IssueStem
         _worklogs.Add(worklog);
     }
     public IReadOnlyList<Worklog> Worklogs => _worklogs is null ? [] : _worklogs.AsReadOnly();
-
+    internal void SwapWorklog(Worklog oldLog, Worklog newLog)
+    {
+        int i = _worklogs.IndexOf(oldLog);
+        if (i >= 0)
+        {
+            _worklogs[i] = newLog;
+        }
+    }
     /// <summary>
     /// Total time spent on this issue and its Subtasks.
     /// </summary>

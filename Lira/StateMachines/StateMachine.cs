@@ -20,46 +20,7 @@ public abstract class StateMachine<TState, TStep>(LiraClient client) : IStateMac
 {
     private readonly LiraClient _liraClient = client;
 
-    private IssueCache<Issue> CacheFull => LiraClient.Cache;
-    private IssueCache<IssueLite> CacheLite => LiraClient.CacheLite;
-    protected bool TryGetValue<T>(string key, [NotNullWhen(true)] out T? issue) where T : IssueCommon
-    {
-        if (typeof(T) == typeof(Issue))
-        {
-            bool res = CacheFull.TryGetValue(key, out var full);
-            issue = full as T;
-            LiraClient.Logger.UsingCachedIssue(full!);
-            return res && issue is not null;
-        }
-        if (typeof(T) == typeof(IssueLite))
-        {
-            bool res = CacheLite.TryGetValue(key, out var lite);
-            issue = lite as T;
-            LiraClient.Logger.UsingCachedIssueLite(lite!);
-            return res && issue is not null;
-        }
-        issue = null;
-        return false;
-    }
-    protected void AddToCache(IssueCommon issue)
-    {
-        if (issue is Issue full)
-        {
-            CacheFull.Add(full);
-            // When fetching a full issue, the lite version should be removed
-            CacheLite.Remove(full.Key);
-        }
-        if (issue is IssueLite lite)
-        {
-            CacheLite.Add(lite);
-            // One scenario where we add a lite issue is when adding a worklog to a cached issue
-            // in that case the lite has newer information than the full
-            if (CacheFull.TryGetValue(lite.Key, out var cachedFull) && cachedFull.Fetched < lite.Fetched)
-            {
-                CacheFull.Remove(lite.Key);
-            }
-        }
-    }
+    
     protected LiraClient LiraClient
     {
         get
@@ -109,11 +70,13 @@ public abstract class StateMachine<TState, TStep>(LiraClient client) : IStateMac
     protected Task<HttpResponseMessage> GetAsync(string requestAddress)
     {
         InvalidClientModeException.CheckGet(LiraClient);
+        Logger.ExecutingRequest("GET",requestAddress);
         return HttpClient.GetAsync(requestAddress, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> DeleteAsync(string requestAddress)
     {
         InvalidClientModeException.CheckDelete(LiraClient);
+        Logger.ExecutingRequest("DELETE", requestAddress);
         return HttpClient.DeleteAsync(requestAddress, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> PutAsync<T>(string requestAddress, T contentToJsonify)
@@ -121,11 +84,13 @@ public abstract class StateMachine<TState, TStep>(LiraClient client) : IStateMac
         InvalidClientModeException.CheckPut(LiraClient);
         var json = JsonHelper.Serialize<T>(contentToJsonify);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
+        Logger.ExecutingRequest("PUT", requestAddress);
         return HttpClient.PutAsync(requestAddress, content, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> PostAsync(string requestAddress, HttpContent content)
     {
         InvalidClientModeException.CheckPost(LiraClient);
+        Logger.ExecutingRequest("POST", requestAddress);
         return HttpClient.PostAsync(requestAddress, content, LiraClient.GetToken());
     }
     protected Task<HttpResponseMessage> PostAsync<T>(string requestAddress, T contentToJsonify)
@@ -133,6 +98,7 @@ public abstract class StateMachine<TState, TStep>(LiraClient client) : IStateMac
         InvalidClientModeException.CheckPost(LiraClient);
         var json = JsonHelper.Serialize<T>(contentToJsonify);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
+        Logger.ExecutingRequest("POST", requestAddress);
         return HttpClient.PostAsync(requestAddress, content, LiraClient.GetToken());
     }
     protected Task<string> ReadContentString(HttpResponseMessage response)

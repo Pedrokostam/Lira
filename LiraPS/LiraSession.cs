@@ -23,7 +23,7 @@ public static class LiraSession
     public static IEnumerable<Log> LogQueue => (Logger as IEnumerable<Log>) ?? [];
     public static bool IsActiveSession(Configuration.Information info) => info.Equals(_config?.ToInformation());
     public static LoggingLevelSwitch LogSwitch { get; } = new(Serilog.Events.LogEventLevel.Verbose);
-    [AllowNull]
+    [System.Diagnostics.CodeAnalysis.AllowNull]
     internal static Configuration Config
     {
         get

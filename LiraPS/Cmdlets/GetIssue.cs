@@ -51,7 +51,7 @@ namespace LiraPS.Cmdlets
             {
                 if (ForceRefresh.IsPresent)
                 {
-                    LiraSession.Client.InvalidateCacheEntry(issueId);
+                    LiraSession.Client.RemoveFromIssueCache(issueId);
                 }
                 WriteProgress(new ProgressRecord(ActivityId, $"Fetching issues...", issueId) { PercentComplete = percentComplete });
                 var state = machine.GetStartState(issueId);
@@ -79,6 +79,7 @@ namespace LiraPS.Cmdlets
         protected override void EndProcessing()
         {
             WriteObject(_issues, enumerateCollection: true);
+            base.EndProcessing();
         }
 
     }

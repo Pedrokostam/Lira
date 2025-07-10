@@ -49,7 +49,6 @@ namespace LiraPS.Cmdlets
         }
         protected override void ProcessRecord()
         {
-
             if (TestBoundParameter(nameof(DateCurrent))){ WriteObject(DateCurrent); }
             if (TestBoundParameter(nameof(DateStart))){ WriteObject(DateStart); }
             if (TestBoundParameter(nameof(DateEnd))){ WriteObject(DateEnd); }
@@ -57,7 +56,6 @@ namespace LiraPS.Cmdlets
             if (TestBoundParameter(nameof(JqlStart))){ WriteObject(JqlStart); }
             if (TestBoundParameter(nameof(JqlEnd))){ WriteObject(JqlEnd); }
             if (TestBoundParameter(nameof(Time))){ WriteObject(Time); }
-         
         }
     }
 }

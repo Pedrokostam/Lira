@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Lira.Objects;
 using Lira.StateMachines;
+using Microsoft.Extensions.Logging;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 
@@ -28,18 +29,22 @@ namespace LiraPS.Cmdlets
         {
             foreach (var userName in Name)
             {
+                var replacement = ReplaceCurrentUserAlias(userName);
+                if (replacement.Equals(LiraSession.Client.Myself.Name))
+                {
+                    LiraSession.Logger.LogDebug("Skipped fetching user - used Client's owner");
+                    PrintLogs();
+                    WriteObject(LiraSession.Client.Myself);
+                    continue;
+                }
                 var machine = LiraSession.Client.GetUsersStateMachine();
-                var state = machine.GetStartState(ReplaceCurrentUserAlias(userName));
+                var state = machine.GetStartState(replacement);
                 while (!state.IsFinished)
                 {
                     var t = machine.Process(state).GetAwaiter();
                     state = t.GetResult();
                     PrintLogs();
                 }
-
-                //var task = LiraSession.Client.GetUsers(userName).GetAwaiter();
-                //var user = task.GetResult();
-                //PrintLogs();
                 WriteObject(state.Users,enumerateCollection:true);
             }
         }

@@ -64,7 +64,7 @@ public class GetIssueMachineImpl<T>(LiraClient client) : StateMachine<GetIssueMa
     }
     private async Task<State> GetIssue(State state)
     {
-        if (TryGetValue<T>(state.IssueId, out var cachedIssue))
+        if (LiraClient.TryGetCachedIssue<T>(state.IssueId, out var cachedIssue))
         {
             // Reuse cached issue. Cached issues already have worklogs loaded with subtrasks.
             return state with
@@ -127,7 +127,7 @@ public class GetIssueMachineImpl<T>(LiraClient client) : StateMachine<GetIssueMa
         await Task.WhenAll(tasks).ConfigureAwait(false);
         issueLite._shallowSubtasks.Clear();
         var issue = new Issue(issueLite, bag);
-        AddToCache(issue);
+        LiraClient.AddToCache(issue);
         return state.Advance() with
         {
             Issue = issue as T,
@@ -137,7 +137,6 @@ public class GetIssueMachineImpl<T>(LiraClient client) : StateMachine<GetIssueMa
     {
         IssueLite issueLite = state.IssueLite!;
         await issueLite.LoadWorklogs(LiraClient).ConfigureAwait(false);
-        LiraClient.Logger.CachingWorklogs(issueLite);
         return state.Advance();
     }
     public override Task<State> Process(State state)

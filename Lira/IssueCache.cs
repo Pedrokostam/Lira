@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -10,6 +12,125 @@ using System.Threading.Tasks;
 using Lira.Objects;
 
 namespace Lira;
+public class QueryCache
+{
+    public TimeSpan InvalidationPeriod { get; } = TimeSpan.FromMinutes(10);
+    private DateTimeOffset _oldestItemDate = DateTimeOffset.MaxValue;
+
+    private readonly record struct QueryEntry(ImmutableHashSet<string> Issues, DateTimeOffset Fetched)
+    {
+        public QueryEntry(IEnumerable<string> issues) : this(
+            ImmutableHashSet.CreateRange(StringComparer.OrdinalIgnoreCase, issues),
+            DateTimeOffset.UtcNow)
+        { }
+    }
+    private readonly object _lock = new();
+    private Dictionary<string, QueryEntry> _dict = new Dictionary<string, QueryEntry>(StringComparer.OrdinalIgnoreCase);
+    private void PurgeOld()
+    {
+        var now = DateTimeOffset.UtcNow;
+        if (now - _oldestItemDate < InvalidationPeriod)
+        {
+            return;
+        }
+        Debug.WriteLine("Invalidation!");
+        List<KeyValuePair<string, QueryEntry>> vals = _dict.ToList();
+        foreach (var entry in vals)
+        {
+            if (now - entry.Value.Fetched > InvalidationPeriod)
+            {
+                Debug.WriteLine($"Cached query removed {entry.Key}");
+                _dict.Remove(entry.Key);
+            }
+        }
+    }
+
+    public void Add(string query, IEnumerable<IssueCommon> issues)
+    {
+        lock (_lock)
+        {
+            _dict[query] = new(issues.Select(x => x.Key));
+            if (_dict[query].Fetched < _oldestItemDate)
+            {
+                _oldestItemDate = _dict[query].Fetched;
+            }
+        }
+    }
+
+    public bool Remove(string query)
+    {
+        lock (_lock)
+        {
+            if (_dict.TryGetValue(query, out var removee))
+            {
+                _dict.Remove(query);
+                if (_dict.Count == 0)
+                {
+                    _oldestItemDate = DateTimeOffset.MaxValue;
+                }
+                else if (removee.Fetched == _oldestItemDate)
+                {
+                    _oldestItemDate = _dict.Select(x => x.Value.Fetched).Min();
+                }
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            _dict.Clear();
+            _oldestItemDate = DateTimeOffset.MaxValue;
+        }
+    }
+
+    public void InvalidateEntryByIssue(IssueCommon issue) => RemoveEntryByIssue(issue.Key);
+    public void RemoveEntryByIssue(string issue)
+    {
+        lock (_lock)
+        {
+            List<string> toRemove = [];
+            foreach (var entry in _dict)
+            {
+                if (entry.Value.Issues.Contains(issue))
+                {
+                    toRemove.Add(entry.Key);
+                }
+            }
+            foreach (var entry in toRemove)
+            {
+                _dict.Remove(entry);
+            }
+            if (_dict.Count == 0)
+            {
+                _oldestItemDate = DateTimeOffset.MaxValue;
+            }
+            else
+            {
+                _oldestItemDate = _dict.Select(x => x.Value.Fetched).Min();
+            }
+        }
+    }
+
+    public bool TryGetValue(string key, [NotNullWhen(returnValue: true)] out IReadOnlyCollection<string>? issueKeys)
+    {
+        lock (_lock)
+        {
+            PurgeOld();
+            bool found = _dict.TryGetValue(key, out var entry);
+            if (found)
+            {
+                issueKeys = entry.Issues;
+                return true;
+            }
+            issueKeys = null;
+            return false;
+        }
+    }
+}
 /// <summary>
 /// Class used to store already loaded Issues. It may speed up fetching.
 /// </summary>
@@ -100,7 +221,7 @@ public class IssueCache<T> where T : IssueCommon
         }
     }
 
-    public bool Remove(string key)
+    public T? Remove(string key)
     {
         lock (_lock)
         {
@@ -109,15 +230,15 @@ public class IssueCache<T> where T : IssueCommon
                 _dict.Remove(key);
                 if (_dict.Count == 0)
                 {
-                    _oldestItemDate = DateTime.MaxValue;
+                    _oldestItemDate = DateTimeOffset.MaxValue;
                 }
                 else if (removee.Fetched == _oldestItemDate)
                 {
                     _oldestItemDate = _dict.Select(x => x.Value.Fetched).Min();
                 }
-                return true;
+                return removee;
             }
-            return false;
+            return default;
         }
     }
 
@@ -135,13 +256,13 @@ public class IssueCache<T> where T : IssueCommon
         lock (_lock)
         {
             _dict.Clear();
-            _oldestItemDate = DateTime.MaxValue;
+            _oldestItemDate = DateTimeOffset.MaxValue;
         }
     }
 
     public void PurgeOld()
     {
-        var now = DateTime.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         if (now - _oldestItemDate < InvalidationPeriod)
         {
             return;

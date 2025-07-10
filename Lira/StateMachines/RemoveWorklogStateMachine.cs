@@ -47,7 +47,10 @@ public class RemoveWorklogStateMachine(LiraClient client) : StateMachine<RemoveW
         var address = $"{LiraClient.GetIssueEndpoint(state.IssueKey)}/worklog/{state.WorklogToRemove.ID}";
         var response = await DeleteAsync(address).ConfigureAwait(false);
         await LiraClient.HandleErrorResponse(response).ConfigureAwait(false);
-
+        if (response.IsSuccessStatusCode)
+        {
+            LiraClient.RemoveFromIssueCache(state.WorklogToRemove.Issue.Key);
+        }
         return state.Advance() with { RemovalSuccess = response.IsSuccessStatusCode };
     }
     public override Task<State> Process(State state)

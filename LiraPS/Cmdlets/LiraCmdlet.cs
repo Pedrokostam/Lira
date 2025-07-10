@@ -133,16 +133,13 @@ namespace LiraPS.Cmdlets
             var txt = log.Message;
             switch (log.Level)
             {
-                case LogLevel.Information:
                 case LogLevel.Trace:
-                    WriteVerbose(txt);
-                    break;
                 case LogLevel.Debug:
                     WriteDebug(txt);
                     break;
-                //case LogLevel.Information:
-                //    WriteInformation(txt, ["Info"]);
-                //    break;
+                case LogLevel.Information:
+                    WriteVerbose(txt);
+                    break;
                 case LogLevel.Warning:
                     WriteWarning(txt);
                     break;
@@ -284,7 +281,7 @@ namespace LiraPS.Cmdlets
         {
             if (Console.IsInputRedirected)
             {
-                Terminate(new PSArgumentException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
+                Terminate(new PSInvalidOperationException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
             }
 
             if (options.Length == 0)
@@ -393,7 +390,7 @@ namespace LiraPS.Cmdlets
   .AddParameter("AutoSize");
 
             ps.AddCommand("Out-String");
-            var results = ps.Invoke(new object[] { input});
+            var results = ps.Invoke(new object[] { input });
             return string.Join("", results.Select(r => r.ToString()));
         }
 
@@ -409,11 +406,12 @@ namespace LiraPS.Cmdlets
                 throw new PSInvalidOperationException("DO NOT TEST ON ANYTHING BUT AVP-425!!!!");
             }
         }
-    [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-    protected void UserCancel(string operation)
-    {
-        var pascalCase = string.Join("", operation.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries).Select(x => char.ToUpperInvariant(x[0]) + x[1..]));
-        Terminate(new PSInvalidOperationException($"User cancelled {operation}"), $"{pascalCase}Cancelled", ErrorCategory.InvalidOperation);
-    }
+
+        [System.Diagnostics.CodeAnalysis.DoesNotReturn]
+        protected void UserCancel(string operation)
+        {
+            var pascalCase = string.Join("", operation.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries).Select(x => char.ToUpperInvariant(x[0]) + x[1..]));
+            Terminate(new PSInvalidOperationException($"User cancelled {operation}"), $"{pascalCase}Cancelled", ErrorCategory.InvalidOperation);
+        }
     }
 }

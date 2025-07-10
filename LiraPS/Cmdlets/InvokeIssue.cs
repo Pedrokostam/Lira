@@ -11,7 +11,7 @@ using Lira.Objects;
 namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Show, "LiraIssue")]
 [Alias("Invoke-Issue")]
-public class InvokeItem : LiraCmdlet
+public class InvokeIssue : LiraCmdlet
 {
     [Parameter(Position = 0, ValueFromPipeline = true)]
     public IssueStem[] Item { get; set; } = default!;
@@ -35,7 +35,6 @@ public class InvokeItem : LiraCmdlet
             }
             else
             {
-
                 if (OperatingSystem.IsWindows())
                 {
                     Process.Start(new ProcessStartInfo(url.ToString()) { UseShellExecute = true });

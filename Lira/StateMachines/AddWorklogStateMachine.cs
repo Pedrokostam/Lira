@@ -44,8 +44,8 @@ public class AddWorklogStateMachine(LiraClient client) : StateMachine<AddWorklog
     {
         // ugly >_<
         System.Runtime.CompilerServices.ConfiguredTaskAwaitable<IssueLite?> fallbackIssueLiteTask;
-        Issue? issueFull = null;
-        if (TryGetValue(state.IssueKey, out issueFull))
+
+        if (LiraClient.TryGetCachedIssue(state.IssueKey, out Issue? issueFull))
         {
             fallbackIssueLiteTask = Task.FromResult<IssueLite?>(null).ConfigureAwait(false);
         }
@@ -53,14 +53,14 @@ public class AddWorklogStateMachine(LiraClient client) : StateMachine<AddWorklog
         {
             fallbackIssueLiteTask = LiraClient.GetIssueLite(state.IssueKey).ConfigureAwait(false);
         }
-        System.Runtime.CompilerServices.ConfiguredTaskAwaitable<IssueLite?> issueLiteTask = LiraClient.GetIssueLite(state.IssueKey).ConfigureAwait(false)!;
+       
         var address = $"{LiraClient.GetIssueEndpoint(state.IssueKey)}/worklog";
         var response = await PostAsync(address, state.Worklog).ConfigureAwait(false);
         await LiraClient.HandleErrorResponse(response).ConfigureAwait(false);
         var responseContent = await ReadContentString(response).ConfigureAwait(false);
         var addedWorklog = JsonHelper.Deserialize<Worklog>(responseContent);
         
-        var issueLite = await issueLiteTask; // should return immediately if FromResult is used
+        var issueLite = await fallbackIssueLiteTask; // should return immediately if FromResult is used
         if (addedWorklog is not null && issueFull is not null)
         {
             addedWorklog.Issue = issueFull;

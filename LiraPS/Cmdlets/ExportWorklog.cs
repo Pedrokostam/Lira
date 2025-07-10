@@ -95,6 +95,7 @@ public class ExportWorklog : LiraCmdlet, IDynamicParameters
                 WriteObject(Lira.Extensions.WorklogExtensions.GetCsvHeaderLine(sep));
             }
             WriteObject(_allWorklogs.Select(x => x.GetCsvLine(sep)));
+            base.EndProcessing();
         }
         else if (As == ExportMode.Json)
         {

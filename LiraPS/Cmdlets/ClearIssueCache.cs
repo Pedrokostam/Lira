@@ -34,7 +34,7 @@ public class ClearIssueCache : LiraCmdlet
         {
             foreach (var id in Id)
             {
-                LiraSession.Client?.InvalidateCacheEntry(id);
+                LiraSession.Client?.RemoveFromIssueCache(id);
                 LiraSession.Logger.LogDebug("Cleared entry for {issue}", id);
 
             }

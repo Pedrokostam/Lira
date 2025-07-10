@@ -18,7 +18,7 @@ public class UpdateWorklogStateMachine(LiraClient client) : StateMachine<UpdateW
         UpdateWorklog,
         End,
     }
-    public readonly record struct State(WorklogUpdatePackage Package, Worklog OldWorklog, Worklog? UpdateWorklog=null, Steps FinishedStep = Steps.None) : IState<Steps,State>
+    public readonly record struct State(WorklogUpdatePackage Package, Worklog OldWorklog, Worklog? UpdateWorklog = null, Steps FinishedStep = Steps.None) : IState<Steps, State>
     {
         public Steps NextStep
         {
@@ -51,6 +51,11 @@ public class UpdateWorklogStateMachine(LiraClient client) : StateMachine<UpdateW
         await LiraClient.HandleErrorResponse(response).ConfigureAwait(false);
         var responseContent = await ReadContentString(response).ConfigureAwait(false);
         var updateWorklog = JsonHelper.Deserialize<Worklog>(responseContent);
+        if (updateWorklog is not null)
+        {
+            updateWorklog.Issue = state.OldWorklog.Issue;
+            state.OldWorklog.Issue.SwapWorklog(state.OldWorklog, updateWorklog);
+        }
         return state.Advance() with
         {
             UpdateWorklog = updateWorklog,
@@ -66,7 +71,7 @@ public class UpdateWorklogStateMachine(LiraClient client) : StateMachine<UpdateW
             _ => Task.FromResult(state),
         };
     }
-    public State GetStartState(Worklog oldWorklog,in WorklogUpdatePackage updatePayload)
+    public State GetStartState(Worklog oldWorklog, in WorklogUpdatePackage updatePayload)
     {
         return new State(updatePayload, oldWorklog);
     }

@@ -36,6 +36,7 @@ public class HttpQuery:IEnumerable<HttpQuery.QueryPart>
     {
         _parts[part.Name] = part;
     }
+    public bool TryGetQueryPart(string name, out QueryPart queryPart) => _parts.TryGetValue(name, out queryPart);
     public void Add(string name, object value) => Add(new QueryPart(name, value));
 
     public bool Remove(string name) => _parts.Remove(name);
