@@ -3,6 +3,12 @@
 	<Type>
 		<Name>Lira.Objects.IssueCommon</Name>
 		<Members>
+			<ScriptProperty>
+				<Name>Year</Name>
+				<GetScriptBlock>
+					$this.Started.Year
+				</GetScriptBlock>
+			</ScriptProperty>
 			<AliasProperty>
 				<Name>Time</Name>
 				<ReferencedMemberName>TimeSpent</ReferencedMemberName>
@@ -52,6 +58,12 @@
 	<Type>
 		<Name>Lira.Objects.Worklog</Name>
 		<Members>
+			<ScriptProperty>
+				<Name>Year</Name>
+				<GetScriptBlock>
+					$this.Started.Year
+				</GetScriptBlock>
+			</ScriptProperty>
 			<AliasProperty>
 				<Name>Time</Name>
 				<ReferencedMemberName>TimeSpent</ReferencedMemberName>

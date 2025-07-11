@@ -64,6 +64,17 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
         }
         if (inputData is string s)
         {
+            if (s.Contains("yester", StringComparison.OrdinalIgnoreCase))
+            {
+                IJqlDate? yesterday = Mode switch
+                {
+                    DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(-1)),
+                    DateMode.Start => new JqlKeywordDate(JqlKeywordDate.Keywords.StartOfDay,-1),
+                    DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, -1),
+                    _ => null,
+                };
+                return WrapUnwrap(yesterday);
+            }
             if (s.Equals("today", StringComparison.OrdinalIgnoreCase))
             {
                 IJqlDate? todayo = Mode switch

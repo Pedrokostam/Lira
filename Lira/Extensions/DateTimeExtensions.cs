@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using Lira.Jql;
 namespace Lira.Extensions;
 
@@ -70,5 +71,9 @@ public static class DateTimeExtensions
             JqlKeywordDate.Keywords.EndOfYear => EndOfYear(baseDate),
             _ => throw new NotSupportedException(),
         };
+    }
+    public static int WeekNumber(this DateTimeOffset dto)
+    {
+        return ISOWeek.GetWeekOfYear(dto.Date);
     }
 }
