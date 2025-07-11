@@ -401,10 +401,10 @@ namespace LiraPS.Cmdlets
         /// <exception cref="InvalidOperationException"></exception>
         protected void ENSURE_TESTING(string issue)
         {
-            if (!"AVP-425".Equals(issue, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new PSInvalidOperationException("DO NOT TEST ON ANYTHING BUT AVP-425!!!!");
-            }
+            //if (!"AVP-425".Equals(issue, StringComparison.OrdinalIgnoreCase))
+            //{
+            //    throw new PSInvalidOperationException("DO NOT TEST ON ANYTHING BUT AVP-425!!!!");
+            //}
         }
 
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]

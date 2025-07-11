@@ -38,7 +38,8 @@ public class RemoveWorklog : LiraCmdlet
             {
                 UserCancel("worklog adding");
             }
-            if (yesToAll || this.ShouldContinue($"Remove {worklog.Started.UnambiguousForm()} - {worklog.TimeSpent.PrettyTime()}  {worklog.Comment}", $"Do you want to remove this worklog?", ref yesToAll, ref noToAll))
+            // if there is only 1 log, we already asked for it
+            if (yesToAll || _worklogsAccumulated.Count==1 || this.ShouldContinue($"Remove {worklog.Started.UnambiguousForm()} - {worklog.TimeSpent.PrettyTime()}  {worklog.Comment}", $"Do you want to remove this worklog?", ref yesToAll, ref noToAll))
             {
                 _reallyToBeGone.Add(worklog);
             }

@@ -32,7 +32,7 @@ namespace LiraPS.Cmdlets
                 var replacement = ReplaceCurrentUserAlias(userName);
                 if (replacement.Equals(LiraSession.Client.Myself.Name))
                 {
-                    LiraSession.Logger.LogDebug("Skipped fetching user - used Client's owner");
+                    LiraSession.Logger.LogDebug("Skipped fetching user - used client's owner");
                     PrintLogs();
                     WriteObject(LiraSession.Client.Myself);
                     continue;
