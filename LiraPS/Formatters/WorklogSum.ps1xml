@@ -11,7 +11,8 @@
 			<TableControl>
 				<TableHeaders>
 					<TableColumnHeader>
-						<Label>Grouping</Label>
+						<Label>TimeSpent</Label>
+						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Issues</Label>
@@ -22,24 +23,23 @@
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>TimeSpent</Label>
-						<Alignment>Center</Alignment>
+						<Label>Header</Label>
 					</TableColumnHeader>
 				</TableHeaders>
 				<TableRowEntries>
 					<TableRowEntry>
 						<TableColumnItems>
 							<TableColumnItem>
-								<PropertyName>Grouping</PropertyName>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>$_.Issues.Length</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>$_.Worklogs.Length</ScriptBlock>
+								<ScriptBlock>$_.Worklogs.Count</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
+								<PropertyName>Header</PropertyName>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
@@ -59,12 +59,14 @@
 							<ListItem>
 								<Label>Properties</Label>
 								<ScriptBlock>
-									$_.Properties -join " => "
+									$_.Columns -join " => "
 								</ScriptBlock>
 							</ListItem>
 							<ListItem>
-								<Label>Grouping</Label>
-								<PropertyName>Grouping</PropertyName>
+								<Label>Header</Label>
+								<ScriptBlock>
+									$_.ColumnValuesString -join "`n"
+								</ScriptBlock>
 							</ListItem>
 							<ListItem>
 								<Label>Worklogs</Label>

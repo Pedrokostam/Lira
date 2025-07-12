@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Lira.DataTransferObjects;
+using Lira.Extensions;
 
 namespace Lira.Objects;
 public record Issue : IssueCommon
@@ -41,5 +42,5 @@ public record Issue : IssueCommon
 
     internal readonly List<Issue> _subtasks = [];
     public IReadOnlyList<IssueStem> Subtasks => _subtasks.AsReadOnly();
-    public TimeSpan TotalTimeSpent => TimeSpan.FromMinutes(AllWorklogs.Sum(x => x.TimeSpent.TotalMinutes));
+    public TimeSpan TotalTimeSpent => AllWorklogs.Select(x => x.TimeSpent).Sum();
 }

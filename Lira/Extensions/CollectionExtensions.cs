@@ -87,4 +87,11 @@ internal static class CollectionExtensions
     //{
     //    await LoadWorklogsImpl(issues, lira, (i, l) => i.LoadWorklogsRecurse(l.Client),output);
     //}
+    public static ImmutableArray<T> ToImmutableArray<T>(this IEnumerable<T> items, int knownCount)
+    {
+        var builder = ImmutableArray.CreateBuilder<T>(initialCapacity: knownCount);
+        builder.AddRange(items);
+        return builder.ToImmutableArray();
+    }
+
 }

@@ -45,7 +45,7 @@ public abstract record IssueCommon : IssueStem
     /// <summary>
     /// Time noted in this issue's worklogs, excluding time spent on Subtasks.
     /// </summary>
-    public TimeSpan TimeSpent => TimeSpan.FromMinutes(Worklogs.Sum(x => x.TimeSpent.TotalMinutes));
+    public TimeSpan TimeSpent => Worklogs.Select(x => x.TimeSpent).Sum();
     public override string ToString() => Key;
 
     /// <summary>

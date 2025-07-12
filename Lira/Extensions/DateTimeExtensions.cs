@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Lira.Jql;
 namespace Lira.Extensions;
 
@@ -76,4 +78,5 @@ public static class DateTimeExtensions
     {
         return ISOWeek.GetWeekOfYear(dto.Date);
     }
+    public static TimeSpan Sum(this IEnumerable<TimeSpan> timeSpans) => new TimeSpan(timeSpans.Sum(x => x.Ticks));
 }

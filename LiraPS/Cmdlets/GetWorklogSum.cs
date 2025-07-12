@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
+using Lira.Grouping;
 using Lira.Objects;
 using LiraPS.Arguments;
 using LiraPS.Extensions;
@@ -15,14 +16,14 @@ using Microsoft.Extensions.Logging;
 namespace LiraPS.Cmdlets;
 [Alias("logsum", "sum", "Get-WorklogSum")]
 [Cmdlet(VerbsCommon.Get, "LiraWorklogSum", DefaultParameterSetName = "STRUCT")]
-[OutputType(typeof(WorklogSum), ParameterSetName = ["STRUCT"])]
+[OutputType(typeof(CalculatedGroup<Worklog,TimeSpan>), ParameterSetName = ["STRUCT"])]
 public class GetWorklogSum : LiraCmdlet
 {
     [Parameter(Mandatory = false, ValueFromPipeline = true)]
     public Worklog[] Worklogs { get; set; } = [];
 
     [Parameter(Position = 0, ValueFromPipeline = false)]
-    public Property[] Groups { get; set; } = [Property.None];
+    public Property[] Properties { get; set; } = [Property.None];
 
     private readonly List<Worklog> _worklogs = [];
 
@@ -52,40 +53,40 @@ public class GetWorklogSum : LiraCmdlet
         }
         base.ProcessRecord();
     }
-    private IEnumerable<WorklogSum> CorrectIssues(IEnumerable<WorklogSum> worklogSums)
-    {
-        foreach (var worklog in worklogSums)
-        {
-            if (!worklog.Properties.Contains(Property.Issue))
-            {
-                yield return worklog;
-                continue;
-            }
-            var splits = worklog.Grouping.Split(WorklogSum.PropertySeparator, StringSplitOptions.TrimEntries);
-            IssueCommon? issue = default!;
-            string? key = default!;
-            foreach (var line in splits)
-            {
-                if (LiraSession.Client.TryGetCachedIssue(line, out var cache))
-                {
-                    key = line;
-                    issue = cache;
-                    break;
-                }
-            }
-            if (issue is not null && key is not null)
-            {
-                var newKey = $"{issue.Key} {issue.SummaryPlain}".TrimString(30);
-                yield return worklog with { Grouping = worklog.Grouping.Replace(key, newKey) };
-            }
-        }
-    }
+  
     protected override void EndProcessing()
     {
-        var summedLogs = WorklogSum.Sum(_worklogs, Groups);
-        var corrected =CorrectIssues(summedLogs);
-        WriteObject(corrected, enumerateCollection: true);
-        SetGlobal("LiraLastSum", summedLogs);
+        WorklogGroupingTimeSummator summer = [];
+        foreach(var g in Properties)
+        {
+            switch (g)
+            {
+                case Property.Issue:
+                    summer.Add(WorklogIssueGrouper.Instance);
+                    break;
+                case Property.User:
+                    summer.Add(WorklogAuthorGrouper.Instance);
+                    break;
+                case Property.Day:
+                    summer.Add(WorklogDayGrouper.Started);
+                    break;
+                case Property.Week:
+                    summer.Add(WorklogWeekGrouper.Started);
+                    break;
+                case Property.Month:
+                    summer.Add(WorklogMonthGrouper.Started);
+                    break;
+                case Property.Year:
+                    summer.Add(WorklogYearGrouper.Started);
+                    break;
+                case Property.None:
+                default:
+                    break;
+            }
+        }
+        var groups = summer.Group(_worklogs).Select(x=>new WorklogSum(x)).ToList();
+        WriteObject(groups, enumerateCollection: false);
+        SetGlobal("LiraLastSum", groups);
         base.EndProcessing();
     }
 }

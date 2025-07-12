@@ -22,7 +22,7 @@ namespace LiraPS.Cmdlets
         [Alias("Key")]
         public string Issue { get; set; } = string.Empty;
         [Parameter]
-        [Alias("Date")]
+        [Alias("DateType")]
         [DateTransformer(outputIJqlDate: false, mode: DateMode.Current)]
         [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
         public DateTimeOffset Started { get; set; } = default;

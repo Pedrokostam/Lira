@@ -77,6 +77,14 @@
 				<Name>Time</Name>
 				<ReferencedMemberName>TimeSpent</ReferencedMemberName>
 			</AliasProperty>
+			<AliasProperty>
+				<Name>Worklogs</Name>
+				<ReferencedMemberName>Items</ReferencedMemberName>
+			</AliasProperty>
+			<ScriptProperty>
+				<Name>Issues</Name>
+				<GetScriptBlock>$this.Items | % Issue -Unique | sort Key</GetScriptBlock>
+			</ScriptProperty>
 		</Members>
 	</Type>
 	<Type>

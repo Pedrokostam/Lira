@@ -21,7 +21,7 @@ public class UpdateWorklog : LiraCmdlet
     public Worklog Worklog { get; set; } = default!;
 
     [Parameter()]
-    [Alias("Date","NewDate")]
+    [Alias("DateType","NewDate")]
     [DateTransformer(outputIJqlDate: false, mode: DateMode.Current)]
     [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
     public DateTimeOffset NewStarted { get; set; } = default;
@@ -48,7 +48,7 @@ public class UpdateWorklog : LiraCmdlet
         }
         if (payload.Started is DateTimeOffset payloadDate)
         {
-            WriteHost("Date change", ConsoleColor.Cyan);
+            WriteHost("DateType change", ConsoleColor.Cyan);
             bool showTimezones = Worklog.Started.Offset != TimeZoneInfo.Local.BaseUtcOffset || payloadDate.Offset != TimeZoneInfo.Local.BaseUtcOffset;
             WriteHost($"{Worklog.Started.UnambiguousForm(showTimezones)} => {Bold}{payloadDate.UnambiguousForm(showTimezones)}{Reset}");
             WriteHost("");

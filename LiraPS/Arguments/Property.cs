@@ -8,6 +8,7 @@ public enum Property
     Issue,
     User,
     Day,
+    Week,
     Month,
     Year,
 }

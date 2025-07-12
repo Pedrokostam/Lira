@@ -58,9 +58,9 @@ public class SetConfiguration : LiraCmdlet
         {
             Type = (ConfigurationType)Menu("Choose what kind of authentication you want to use",
                                            new MenuItem(
-                                               "Personal Access Token",
+                                               "Personal GetGenericPropertyValue Token",
                                                ConfigurationType.PersonalAccessToken,
-                                               "You will be asked to provide a Personal Access Token.\nThe token can be created in your account's settings.\nhttps://developer.atlassian.com/server/jira/platform/personal-access-token/"),
+                                               "You will be asked to provide a Personal GetGenericPropertyValue Token.\nThe token can be created in your account's settings.\nhttps://developer.atlassian.com/server/jira/platform/personal-access-token/"),
                                            new MenuItem(
                                                "Username and password",
                                                ConfigurationType.Credentials,
