@@ -71,11 +71,15 @@
 		</Members>
 	</Type>
 	<Type>
-		<Name>LiraPS.Outputs.WorklogSum</Name>
+		<Name>LiraPS.Wrappers.WorklogTimespanCalculatedGroup</Name>
 		<Members>
 			<AliasProperty>
 				<Name>Time</Name>
-				<ReferencedMemberName>TimeSpent</ReferencedMemberName>
+				<ReferencedMemberName>CalculatedValue</ReferencedMemberName>
+			</AliasProperty>
+			<AliasProperty>
+				<Name>TimeSpent</Name>
+				<ReferencedMemberName>CalculatedValue</ReferencedMemberName>
 			</AliasProperty>
 			<AliasProperty>
 				<Name>Worklogs</Name>
@@ -83,7 +87,15 @@
 			</AliasProperty>
 			<ScriptProperty>
 				<Name>Issues</Name>
-				<GetScriptBlock>$this.Items | % Issue -Unique | sort Key</GetScriptBlock>
+				<GetScriptBlock>$this.Items | ForEach-Object Issue | Select-Object -Unique | Sort-Object Key</GetScriptBlock>
+			</ScriptProperty>
+			<ScriptProperty>
+				<Name>IssueCount</Name>
+				<GetScriptBlock>$this.Issues.Count</GetScriptBlock>
+			</ScriptProperty>
+			<ScriptProperty>
+				<Name>WorklogCount</Name>
+				<GetScriptBlock>$this.Worklogs.Count</GetScriptBlock>
 			</ScriptProperty>
 		</Members>
 	</Type>

@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Lira.Grouping;
 
-public  record CalculatedGroup<TObject, TCalculated> : IGrouping<string, TObject?>
+public sealed record CalculatedGroup<TObject, TCalculated> : IGrouping<string, TObject?>
 {
     public ImmutableArray<TObject?> Items { get; }
     public string Header { get; }

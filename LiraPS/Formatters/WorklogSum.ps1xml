@@ -6,7 +6,7 @@
 		<View>
 			<Name>WorklogSumTable</Name>
 			<ViewSelectedBy>
-				<TypeName>LiraPS.Outputs.WorklogSum</TypeName>
+				<TypeName>LiraPS.Wrappers.WorklogTimespanCalculatedGroup</TypeName>
 			</ViewSelectedBy>
 			<TableControl>
 				<TableHeaders>
@@ -33,13 +33,21 @@
 								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>$_.Issues.Length</ScriptBlock>
+								<ScriptBlock>
+									if($_.IssueCount -ne 1){
+									$_.IssueCount
+									}else{
+									$_.Issues[0].Key
+									}
+									</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<ScriptBlock>$_.Worklogs.Count</ScriptBlock>
+								<ScriptBlock>$_.WorklogCount</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
-								<PropertyName>Header</PropertyName>
+								<ScriptBlock>
+									$_.ColumnValuesTexts -join "`e[2m => `e[0m"
+								</ScriptBlock>
 							</TableColumnItem>
 						</TableColumnItems>
 					</TableRowEntry>
@@ -50,7 +58,7 @@
 		<View>
 			<Name>Default</Name>
 			<ViewSelectedBy>
-				<TypeName>LiraPS.Outputs.WorklogSum</TypeName>
+				<TypeName>LiraPS.Wrappers.WorklogTimespanCalculatedGroup</TypeName>
 			</ViewSelectedBy>
 			<ListControl>
 				<ListEntries>
@@ -65,12 +73,12 @@
 							<ListItem>
 								<Label>Header</Label>
 								<ScriptBlock>
-									$_.ColumnValuesString -join "`n"
+									$_.ColumnValuesTexts -join "`n"
 								</ScriptBlock>
 							</ListItem>
 							<ListItem>
 								<Label>Worklogs</Label>
-								<ScriptBlock>$_.Worklogs.Count</ScriptBlock>
+								<ScriptBlock>$_.WorklogCount</ScriptBlock>
 							</ListItem>
 							<ListItem>
 								<Label>Issues</Label>

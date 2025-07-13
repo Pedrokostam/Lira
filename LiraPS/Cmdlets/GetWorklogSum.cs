@@ -10,13 +10,13 @@ using Lira.Grouping;
 using Lira.Objects;
 using LiraPS.Arguments;
 using LiraPS.Extensions;
-using LiraPS.Outputs;
+using LiraPS.Wrappers;
 using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets;
-[Alias("logsum", "sum", "Get-WorklogSum")]
+[Alias("logsum", "sum", "Get-WorklogTimespanCalculatedGroup")]
 [Cmdlet(VerbsCommon.Get, "LiraWorklogSum", DefaultParameterSetName = "STRUCT")]
-[OutputType(typeof(CalculatedGroup<Worklog,TimeSpan>), ParameterSetName = ["STRUCT"])]
+[OutputType(typeof(WorklogTimespanCalculatedGroup), ParameterSetName = ["STRUCT"])]
 public class GetWorklogSum : LiraCmdlet
 {
     [Parameter(Mandatory = false, ValueFromPipeline = true)]
@@ -53,11 +53,11 @@ public class GetWorklogSum : LiraCmdlet
         }
         base.ProcessRecord();
     }
-  
+
     protected override void EndProcessing()
     {
         WorklogGroupingTimeSummator summer = [];
-        foreach(var g in Properties)
+        foreach (var g in Properties)
         {
             switch (g)
             {
@@ -84,7 +84,10 @@ public class GetWorklogSum : LiraCmdlet
                     break;
             }
         }
-        var groups = summer.Group(_worklogs).Select(x=>new WorklogSum(x)).ToList();
+        var groups = summer
+            .Group(_worklogs)
+            .Select(WorklogTimespanCalculatedGroup.Wrap)
+            .ToList();
         WriteObject(groups, enumerateCollection: false);
         SetGlobal("LiraLastSum", groups);
         base.EndProcessing();
