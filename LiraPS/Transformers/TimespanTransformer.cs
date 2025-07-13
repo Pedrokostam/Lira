@@ -5,7 +5,11 @@ using System.Management.Automation;
 using System.Runtime.CompilerServices;
 using System.Text;
 namespace LiraPS.Transformers;
-public class TimespanTransformer : ArgumentTransformationAttribute
+public interface ITransformer
+{
+    object? TransformString(string inputData);
+}
+public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer
 {
     private ref struct XD
     {
@@ -43,6 +47,7 @@ public class TimespanTransformer : ArgumentTransformationAttribute
         Minutes,
         Hours,
     }
+    public object? TransformString(string inputData) => ParseTime(inputData);
     public override object Transform(EngineIntrinsics engineIntrinsics, object inputData)
     {
         if (inputData is TimeSpan ts)
@@ -96,4 +101,6 @@ public class TimespanTransformer : ArgumentTransformationAttribute
         }
         return result;
     }
+
+   
 }

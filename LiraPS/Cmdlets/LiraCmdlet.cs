@@ -17,6 +17,7 @@ using Lira.Jql;
 using Lira.Objects;
 using Lira.StateMachines;
 using LiraPS.Cmdlets;
+using LiraPS.Completers;
 using LiraPS.Transformers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -383,16 +384,154 @@ namespace LiraPS.Cmdlets
             }
         }
 
-        protected string GetFormattedTableString(object input, string? view = null)
+        protected object? Prompt(string prompt, ISimpleArgumentCompleter argumentCompleter)
         {
-            using PowerShell ps = PowerShell.Create(RunspaceMode.CurrentRunspace);
-            ps.AddCommand("Format-Table")
-  .AddParameter("AutoSize");
+            if (Console.IsInputRedirected)
+            {
+                Terminate(new PSInvalidOperationException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
+            }
+            int bufferLength = 50;
+            try
+            {
+                Console.TreatControlCAsInput = true;
+                Console.CursorVisible = false;
 
-            ps.AddCommand("Out-String");
-            var results = ps.Invoke(new object[] { input });
-            return string.Join("", results.Select(r => r.ToString()));
+                StringBuilder stb = new(10);
+                int selectedCompletionIndex = -1;
+                List<CompletionResult> completions = [];
+                Console.WriteLine();
+                //Console.WriteLine($"{Bold}Cancel{Reset} = Backspace, Ctrl-C || {Bold}Move selection{Reset} = Arrows, Digits || {Bold}Accept{Reset} = Enter ");
+                Console.WriteLine();
+                int lineCounter = 0;
+                bool showCompletions = false;
+                int completionLinesCount = 0;
+                int lastIterationCompletionLineCount = 0;
+                while (true)
+                {
+                    var workingText = stb.ToString();
+                    var selectedCompletion = completions.ElementAtOrDefault(selectedCompletionIndex);
+                    string interactiveLine = prompt + ": " + workingText;
+                    if (selectedCompletion is CompletionResult res && res.CompletionText.Contains(workingText, StringComparison.OrdinalIgnoreCase))
+                    {
+                        interactiveLine += $"{Invert}{res.CompletionText[workingText.Length..]}{Reset}";
+                    }
+                    Console.WriteLine(interactiveLine.PadRight(Console.BufferWidth - 2));
+                    lineCounter++;
+
+                    int currentCompletionLineCount = 0;
+                    // Print completions
+                    if (completions.Count > 0 && showCompletions)
+                    {
+                        lastIterationCompletionLineCount = 1;
+                        int maxCompletionWidth = completions.Max(x => x.ListItemText.Length) + 2;
+                        var columns = Math.Clamp((Console.BufferWidth - 5) / (maxCompletionWidth + 2), 1, 99);
+                        for (int i = 0; i < completions.Count; i++)
+                        {
+                            string padded = completions[i].ListItemText.PadRight(maxCompletionWidth);
+                            if (i != 0 && i % columns == 0)
+                            {
+                                Console.WriteLine();
+                                lineCounter++;
+                                lastIterationCompletionLineCount++;
+                            }
+                            if (selectedCompletionIndex == i)
+                            {
+                                Console.Write($"{Invert}{padded}{Reset}");
+                            }
+                            else
+                            {
+                                Console.Write(padded);
+                            }
+                        }
+                        Console.WriteLine();
+                        lineCounter++;
+                        if (selectedCompletion is not null && !string.IsNullOrWhiteSpace(selectedCompletion.ToolTip))
+                        {
+                            Console.WriteLine(selectedCompletion.ToolTip.PadRight(Console.BufferWidth - 2));
+                            lastIterationCompletionLineCount++;
+                            lineCounter++;
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < lastIterationCompletionLineCount; i++)
+                        {
+                            Console.WriteLine("".PadRight(Console.BufferWidth - 2));
+                            lineCounter++;
+                        }
+                        //Console.WriteLine();
+                        //lineCounter++;
+                        lastIterationCompletionLineCount = 0;
+                    }
+                    // Read user input
+                    var info = Console.ReadKey(intercept: true);
+
+                    if (info.Modifiers.HasFlag(ConsoleModifiers.Control) && info.Key == ConsoleKey.C)
+                    {
+                        Console.WriteLine();
+                        Terminate(new PipelineStoppedException("Exited menu"), "MenuCancelled", ErrorCategory.OperationStopped);
+                    }
+                    var comepletions = argumentCompleter.CompleteArgument(workingText);
+                    switch (info.Key)
+                    {
+                        case ConsoleKey.Escape:
+                            selectedCompletionIndex = -1;
+                            showCompletions = false;
+                            break;
+                        case ConsoleKey.Tab:
+                            if (completions.Count > 0)
+                            {
+                                selectedCompletionIndex = selectedCompletionIndex >= 0 ? selectedCompletionIndex + 1 : -1;
+                            }
+                            showCompletions = true;
+                            break;
+                        case ConsoleKey.DownArrow:
+                        case ConsoleKey.UpArrow:
+                            break;
+                        //case ConsoleKey.DownArrow:
+                        case ConsoleKey.RightArrow:
+                            selectedCompletionIndex = completions.Count > 0 ? (selectedCompletionIndex + 1) % completions.Count : -1;
+                            break;
+                        // case ConsoleKey.UpArrow:
+                        case ConsoleKey.LeftArrow:
+                            selectedCompletionIndex = completions.Count > 0 ? (selectedCompletionIndex - 1) % completions.Count : -1;
+                            break;
+                        case ConsoleKey.Backspace:
+                            if (stb.Length > 0)
+                                stb.Remove(stb.Length - 1, 1);
+                            break;
+                        case ConsoleKey.Enter:
+                            if (selectedCompletion is not null)
+                            {
+                                return selectedCompletion.CompletionText;
+                            }
+                            else
+                            {
+                                return workingText;
+                            }
+                        default:
+                            stb.Append(info.KeyChar);
+                            break;
+                    }
+                    completions.Clear();
+                    completions.AddRange(argumentCompleter.CompleteArgument(stb.ToString()).Where(x => x.CompletionText.StartsWith(stb.ToString(), StringComparison.OrdinalIgnoreCase)));
+                    if (showCompletions && completions.Count > 0 && selectedCompletionIndex == -1)
+                    {
+                        selectedCompletionIndex = 0;
+                    }
+                    // Calculate lines to move cursor up for redraw
+                    Console.SetCursorPosition(0, Console.CursorTop - lineCounter);
+                    lineCounter = 0;
+                }
+            }
+            finally
+            {
+                Console.CursorVisible = true;
+                Console.TreatControlCAsInput = false;
+            }
         }
+
+        //protected string InteractivePrompt(string prompt, )
 
         /// <summary>
         /// YOU CAN ONLY TOUCH AVP-425

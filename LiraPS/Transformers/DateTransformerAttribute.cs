@@ -22,7 +22,7 @@ internal enum DateMode
     End,
 
 }
-internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : ArgumentTransformationAttribute()
+internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : ArgumentTransformationAttribute(), ITransformer
 {
     public bool OutputIJqlDate { get; } = outputIJqlDate;
     public DateMode Mode { get; } = mode;
@@ -64,62 +64,7 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
         }
         if (inputData is string s)
         {
-            if (s.Contains("yester", StringComparison.OrdinalIgnoreCase))
-            {
-                IJqlDate? yesterday = Mode switch
-                {
-                    DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(-1)),
-                    DateMode.Start => new JqlKeywordDate(JqlKeywordDate.Keywords.StartOfDay,-1),
-                    DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, -1),
-                    _ => null,
-                };
-                return WrapUnwrap(yesterday);
-            }
-            if (s.Equals("today", StringComparison.OrdinalIgnoreCase))
-            {
-                IJqlDate? todayo = Mode switch
-                {
-                    DateMode.Current => new JqlManualDate(DateTimeOffset.Now),
-                    DateMode.Start => JqlKeywordDate.StartOfDay,
-                    DateMode.End => JqlKeywordDate.EndOfDay,
-                    _ => null,
-                };
-                return WrapUnwrap(todayo);
-            }
-            if (s.Equals(value: "now", StringComparison.OrdinalIgnoreCase))
-            {
-                return WrapUnwrap(new JqlManualDate(DateTimeOffset.Now));
-            }
-            if (string.IsNullOrWhiteSpace(s))
-            {
-                return null;
-            }
-            if (DateCompletionHelper.GetDateFromNonPositiveInt(s,Mode, out var date, out _))
-            {
-                return WrapUnwrap(date);
-            }
-            if (JqlKeywordDate.TryParse(s.Replace(" ", ""), out var keywordDate))
-            {
-                return WrapUnwrap(keywordDate);
-            }
-            if (TimeExtensions.TryParseDateTimeOffset(s, out var parsedDate))
-            {
-                if (parsedDate.TimeOfDay == TimeSpan.Zero)
-                {
-                    parsedDate = Mode switch
-                    {
-                        DateMode.Current => parsedDate.AddHours(DateTime.Now.TimeOfDay.TotalHours),
-                        DateMode.Start => parsedDate,
-                        DateMode.End => parsedDate.AddDays(1).Subtract(TimeSpan.FromTicks(1)),
-                        _ => throw new PSNotImplementedException(),
-                    };
-                }
-                inputData = parsedDate;
-            }
-            else
-            {
-                throw new ArgumentTransformationMetadataException($"Could not parse string {s} to DateTimeOffset");
-            }
+            return TransformString(s);
         }
 
         DateTimeOffset dateTimeOffset = default;
@@ -137,5 +82,65 @@ internal class DateTransformerAttribute(bool outputIJqlDate, DateMode mode) : Ar
         }
 
         throw new ArgumentTransformationMetadataException($"Could not convert {inputData} to IJqlDate");
+    }
+
+    public object? TransformString(string s)
+    {
+        if (s.Contains("yester", StringComparison.OrdinalIgnoreCase))
+        {
+            IJqlDate? yesterday = Mode switch
+            {
+                DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(-1)),
+                DateMode.Start => new JqlKeywordDate(JqlKeywordDate.Keywords.StartOfDay, -1),
+                DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, -1),
+                _ => null,
+            };
+            return WrapUnwrap(yesterday);
+        }
+        if (s.Equals("today", StringComparison.OrdinalIgnoreCase))
+        {
+            IJqlDate? todayo = Mode switch
+            {
+                DateMode.Current => new JqlManualDate(DateTimeOffset.Now),
+                DateMode.Start => JqlKeywordDate.StartOfDay,
+                DateMode.End => JqlKeywordDate.EndOfDay,
+                _ => null,
+            };
+            return WrapUnwrap(todayo);
+        }
+        if (s.Equals(value: "now", StringComparison.OrdinalIgnoreCase))
+        {
+            return WrapUnwrap(new JqlManualDate(DateTimeOffset.Now));
+        }
+        if (string.IsNullOrWhiteSpace(s))
+        {
+            return null;
+        }
+        if (DateCompletionHelper.GetDateFromNonPositiveInt(s, Mode, out var date, out _))
+        {
+            return WrapUnwrap(date);
+        }
+        if (JqlKeywordDate.TryParse(s.Replace(" ", ""), out var keywordDate))
+        {
+            return WrapUnwrap(keywordDate);
+        }
+        if (TimeExtensions.TryParseDateTimeOffset(s, out var parsedDate))
+        {
+            if (parsedDate.TimeOfDay == TimeSpan.Zero)
+            {
+                parsedDate = Mode switch
+                {
+                    DateMode.Current => parsedDate.AddHours(DateTime.Now.TimeOfDay.TotalHours),
+                    DateMode.Start => parsedDate,
+                    DateMode.End => parsedDate.AddDays(1).Subtract(TimeSpan.FromTicks(1)),
+                    _ => throw new PSNotImplementedException(),
+                };
+            }
+           return WrapUnwrap(parsedDate);
+        }
+        else
+        {
+            throw new ArgumentTransformationMetadataException($"Could not parse string {s} to DateTimeOffset");
+        }
     }
 }

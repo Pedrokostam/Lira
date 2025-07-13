@@ -14,16 +14,16 @@ using LiraPS.Extensions;
 using LiraPS.Transformers;
 using System.Data;
 namespace LiraPS.Completers;
-
 /// <summary>
 /// Provides argument completion for JQL date parameters in PowerShell cmdlets.
 /// Suggests possible date values, keywords, and relative dates based on user input,
 /// enabling enhanced tab-completion and user experience for date arguments in JQL queries.
 /// </summary>
-internal abstract class JqlDateArgumentCompletionAttributeBase : IArgumentCompleter
+internal abstract class JqlDateArgumentCompletionAttributeBase : IArgumentCompleter, ISimpleArgumentCompleter
 {
     public abstract DateMode Mode { get; }
-    public IEnumerable<CompletionResult> CompleteArgument(string commandName, string parameterName, string wordToComplete, CommandAst commandAst, IDictionary fakeBoundParameters)
+    public IEnumerable<CompletionResult> CompleteArgument(string commandName, string parameterName, string wordToComplete, CommandAst commandAst, IDictionary fakeBoundParameters) => CompleteArgument(wordToComplete);
+    public IEnumerable<CompletionResult> CompleteArgument( string wordToComplete)
     {
         wordToComplete = (wordToComplete ?? "").Trim();
 

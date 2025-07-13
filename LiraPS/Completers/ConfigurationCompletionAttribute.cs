@@ -7,9 +7,10 @@ using System.Text;
 using LiraPS.Cmdlets;
 
 namespace LiraPS.Completers;
-public class ConfigurationCompletionAttribute : IArgumentCompleter
+public class ConfigurationCompletionAttribute : IArgumentCompleter,ISimpleArgumentCompleter
 {
-    public IEnumerable<CompletionResult> CompleteArgument(string commandName, string parameterName, string wordToComplete, CommandAst commandAst, IDictionary fakeBoundParameters)
+    public IEnumerable<CompletionResult> CompleteArgument(string commandName, string parameterName, string wordToComplete, CommandAst commandAst, IDictionary fakeBoundParameters) => CompleteArgument(wordToComplete);
+    public IEnumerable<CompletionResult> CompleteArgument(string wordToComplete)
     {
         foreach (var info in GetAvailableConfigurations.GetAvailable())
         {
