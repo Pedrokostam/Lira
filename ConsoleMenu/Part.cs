@@ -1,10 +1,9 @@
-﻿namespace ConsoleMenu;
+﻿using System.Text.RegularExpressions;
 
-public record Part(string Text, GraphicModes StartMode = GraphicModes.None, GraphicModes EndMode = GraphicModes.None)
+namespace ConsoleMenu;
+
+public partial record Part(string Text, GraphicModes StartMode = GraphicModes.None, GraphicModes EndMode = GraphicModes.None)
 {
-    private const string Escape = "\x001b[";
-    private const string Reset = "\x001b[0m";
-
     private record ModeValue(GraphicModes Mode, string Activate, string Deactivate)
     {
         public string Get(bool deactivate) => deactivate ? Deactivate : Activate;
@@ -15,6 +14,10 @@ public record Part(string Text, GraphicModes StartMode = GraphicModes.None, Grap
         new(GraphicModes.Italics,"3","23"),
         new(GraphicModes.Invert,"7","27"),
         ];
+
+    private const string Escape = "\x001b[";
+    private const string Reset = "\x001b[0m";
+
     public static string? ToSequence(GraphicModes mode)
     {
         if (mode == GraphicModes.None || mode == GraphicModes.Deactivate)
@@ -42,11 +45,11 @@ public record Part(string Text, GraphicModes StartMode = GraphicModes.None, Grap
         }
         return Escape + string.Join(';', buffer) + 'm';
     }
-    public static implicit operator Part(string txt) => new Part(txt);
+    //public static implicit operator Part(string txt) => new Part(txt);
     public int Length => Text.Length;
-    public string GetConsoleString(bool disableEscapeCodes = false)
+    public string GetConsoleString(bool plainText = false)
     {
-        if (disableEscapeCodes)
+        if (plainText)
         {
             return Text;
         }
@@ -60,8 +63,20 @@ public record Part(string Text, GraphicModes StartMode = GraphicModes.None, Grap
         };
 
     }
-    public Part(string text, GraphicModes wrappingMode) : this(text, wrappingMode, GraphicModes.Reset)
+    public bool IsMultiline() => NewLineFinder().IsMatch(Text);
+    public IEnumerable<Part> SplitLines()
     {
-
+        var texts = NewLineFinder().Split(Text);
+        if (texts.Length == 0)
+        {
+            yield return this;
+            yield break;
+        }
+        foreach (var item in texts)
+        {
+            yield return this with { Text = item.TrimEnd() };
+        }
     }
+    [GeneratedRegex(@"\r?\n")]
+    public static partial Regex NewLineFinder();
 }
