@@ -13,7 +13,7 @@ public abstract partial class MenuBase<T>
     /// Length of each of previously printed lines
     /// </summary>
     protected List<int> PreviousLineLengths = new(10);
-    protected int BufferWidth { get; set; }
+    protected int BufferWidth { get; set; } = -1;
     /// <summary>
     /// Index of <see cref="QueuedLines"/> that is currently being written to.
     /// </summary>
@@ -22,7 +22,7 @@ public abstract partial class MenuBase<T>
     {
         Index++;
     }
- 
+
     protected void Append(string text, GraphicModes wrap) => Append(text, wrap, GraphicModes.Reset);
     protected void Append(string text) => Append(text, GraphicModes.None, GraphicModes.None);
     protected void Append(string text, GraphicModes pre, GraphicModes post)
@@ -43,7 +43,7 @@ public abstract partial class MenuBase<T>
             }
             else
             {
-                thisQueuedLine.Add(new Part(CroPad(line,diff-1), pre, post));
+                thisQueuedLine.Add(new Part(CroPad(line, diff - 1), pre, post));
             }
         }
     }
@@ -89,7 +89,12 @@ public abstract partial class MenuBase<T>
     }
     protected static void MoveCursorUp(int lineCount)
     {
-        Console.SetCursorPosition(0, Console.CursorTop - lineCount);
+        var newLine = Console.CursorTop - lineCount;
+        if (newLine < 0)
+        {
+            newLine = 0;
+        }
+        Console.SetCursorPosition(0, newLine);
     }
     protected void FinalCleanUp()
     {
@@ -107,13 +112,29 @@ public abstract partial class MenuBase<T>
     {
         Console.TreatControlCAsInput = false;
     }
-    protected void SetCursor(bool enabled) => Console.CursorVisible = enabled;
+    protected void SetCursor(bool enabled) => Console.CursorVisible = true;
 
     public abstract T Show();
     [DoesNotReturn]
     protected static void Terminate()
     {
         throw new UserCancelationException();
+    }
+    protected static string Crop(string s, int maxLength)
+    {
+        if (s.Length == maxLength)
+        {
+            return s;
+        }
+        if (s.Length > maxLength)
+        {
+            if (s.Length <= 1)
+            {
+                return s;
+            }
+            return s[..(maxLength - 1)] + "~";
+        }
+        return s;
     }
     protected static string CroPad(string s, int length)
     {
@@ -134,9 +155,18 @@ public abstract partial class MenuBase<T>
     protected void UpdateBufferWidth()
     {
         var interim = Console.BufferWidth;
-        if (interim < BufferWidth)
+        if (interim != BufferWidth && BufferWidth>=0)
         {
-            Console.Clear();
+            var oldCursorPos = Console.CursorTop;
+            var oldWindowPos = Console.WindowTop;
+            for (int i = 0; i < 200; i++)
+            {
+                Console.WriteLine(new string(' ', 2));
+            }
+            //Console.Clear();
+            var diff = oldCursorPos;
+            Console.SetCursorPosition(0, oldCursorPos);
+            MoveCursorUp(diff);
             PreviousLineLengths.Clear();
         }
         BufferWidth = interim;

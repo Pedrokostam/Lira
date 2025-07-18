@@ -41,7 +41,7 @@ internal class Program
                 }
                 if (parsed < 1000000)
                 {
-                    yield return new(parsed.ToString(), null, tooltip: $"Liczba {parsed}");
+                    yield return new(parsed.ToString(), null, tooltip: null);
                     parsed *= 10;
                 }
                 if (parsed < 10000000)
@@ -56,7 +56,7 @@ internal class Program
                 }
                 if (parsed < 1000000000)
                 {
-                    yield return new(parsed.ToString(), parsed.ToString() + " KONIEC", null);
+                    yield return new(parsed.ToString(), parsed.ToString() + " KONIEC", ":(");
                 }
             }
         }
@@ -87,6 +87,10 @@ internal class Program
     }
     static void Main(string[] args)
     {
+        Console.WriteLine("YOU HAVE TO KEEP IT SAFE!");
+        Console.WriteLine("PROTECT IT");
+        Console.WriteLine(new String('2',100));
+
         Inter();
         Choice();
     }
