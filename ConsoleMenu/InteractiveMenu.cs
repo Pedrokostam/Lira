@@ -109,7 +109,7 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
                 FinalCleanUp();
             }
 
-            return Transformer.Transform(ShowImpl());
+            return Transformer.Transform(payload);
         }
         finally
         {
@@ -216,8 +216,15 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
             {
                 AdvanceLine();
                 Append(selectedCompletion.Tooltip);
-                AdvanceLine();
             }
+            string toParse = selectedCompletion?.CompletionText ?? currentInput;
+            if (Transformer.DescriptiveTransform(toParse) is string potential)
+            {
+                AdvanceLine();
+                Append("Output: ");
+                Append(potential, GraphicModes.Bold);
+            }
+            AdvanceLine();
 
             Print();
             MoveCursorUp(PreviousLineLengths.Count);
@@ -262,9 +269,12 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
                     inputChanged = true;
                     break;
                 case ConsoleKey.Enter:
-                    if (selectedCompletion is not null)
+                    if (selectedCompletion is not null && !string.Equals(selectedCompletion.CompletionText, currentInput, StringComparison.OrdinalIgnoreCase))
                     {
-                        return selectedCompletion.CompletionText;
+                        _input.Clear();
+                        _input.Append(selectedCompletion.CompletionText);
+                        showNewCompletions = false;
+                        break;
                     }
                     else
                     {
@@ -276,7 +286,11 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
                     showNewCompletions = true;
                     break;
             }
-            if (inputChanged)
+            if (!showNewCompletions)
+            {
+                _completions.Clear();
+            }
+            if (inputChanged || showNewCompletions)
             {
                 _completions.Clear();
                 _completions.AddRange(Completer.Complete(_input.ToString()));
@@ -292,8 +306,8 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
             }
         }
     }
-    private void IndexLeft() => ChangeIndex(-1,0);
-    private void IndexRight() => ChangeIndex(1 ,0);
+    private void IndexLeft() => ChangeIndex(-1, 0);
+    private void IndexRight() => ChangeIndex(1, 0);
     private void IndexUp() => ChangeIndex(0, -1);
     private void IndexDown() => ChangeIndex(0, 1);
     private void ChangeIndex(int x, int y)

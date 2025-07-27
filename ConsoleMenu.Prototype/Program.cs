@@ -5,6 +5,13 @@ internal class Program
 {
     public class Trans : ITransform<string>
     {
+        public string? DescriptiveTransform(string item)
+        {
+            if (int.TryParse(item, out var result))
+            { return result.ToString(); }
+            return null;
+        }
+
         public string Transform(string item) => item;
     }
     public class Comp : ICompleter
@@ -41,7 +48,7 @@ internal class Program
                 }
                 if (parsed < 1000000)
                 {
-                    yield return new(parsed.ToString(), null, tooltip: null);
+                    yield return new(parsed.ToString(), "Żmyłeczka", tooltip: null);
                     parsed *= 10;
                 }
                 if (parsed < 10000000)
@@ -74,7 +81,7 @@ internal class Program
             new("JAMES","Jim","To je imie"),
             new("eruifh8234hfi345urdh43urv9u8erwh8fi234h80fcher53wuiyu8934hcu8y34y7cghwerybchweujgvui92w34hfuiertg89fu2349uvbweruincouiw3e4rd890uj89vuebwriuhfd934",null,"To je nic"),
             new("DUCH!",null,"To je nic"),
-            new("DUCH!",null,"To je nic"),
+            new("DUCH!","Żymłeczka","To je nic"),
             new("DUCH!",null,null),
             new("DUCH!",null,"To je nic"),
             new("DUCH!",null,"To je nic"),
@@ -89,7 +96,7 @@ internal class Program
     {
         Console.WriteLine("YOU HAVE TO KEEP IT SAFE!");
         Console.WriteLine("PROTECT IT");
-        Console.WriteLine(new String('2',100));
+        Console.WriteLine(new String('2', 100));
 
         Inter();
         Choice();

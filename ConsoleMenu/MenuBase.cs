@@ -56,6 +56,7 @@ public abstract partial class MenuBase<T>
     //}
     protected void Print()
     {
+        //ClearToBottom(); Clear to bottom would allow us to not store line info, but it causes a slight flicker
         AdvanceLine();
         int currentWidth = Console.BufferWidth;
         //if (_bufferWidth != currentWidth)
@@ -157,18 +158,14 @@ public abstract partial class MenuBase<T>
         var interim = Console.BufferWidth;
         if (interim != BufferWidth && BufferWidth>=0)
         {
-            var oldCursorPos = Console.CursorTop;
-            var oldWindowPos = Console.WindowTop;
-            for (int i = 0; i < 200; i++)
-            {
-                Console.WriteLine(new string(' ', 2));
-            }
-            //Console.Clear();
-            var diff = oldCursorPos;
-            Console.SetCursorPosition(0, oldCursorPos);
-            MoveCursorUp(diff);
+            ClearToBottom();
             PreviousLineLengths.Clear();
         }
         BufferWidth = interim;
+    }
+
+    protected static void ClearToBottom()
+    {
+        Console.Write("\x1b[0J");
     }
 }
