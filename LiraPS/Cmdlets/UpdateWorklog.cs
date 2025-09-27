@@ -17,12 +17,14 @@ namespace LiraPS.Cmdlets;
 public class UpdateWorklog : LiraCmdlet
 {
     public readonly record struct Change(string Name, object Old, object Updated) { }
+
     [Parameter(Mandatory = true, ValueFromPipeline = true)]
+    [CachedWorklogTransformer]
     public Worklog Worklog { get; set; } = default!;
 
     [Parameter()]
     [Alias("DateType","NewDate")]
-    [DateTransformer(outputIJqlDate: false, mode: DateMode.Current)]
+    [DateTimeOffsetDateTransformerAttribute( mode: DateMode.Current)]
     [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
     public DateTimeOffset NewStarted { get; set; } = default;
     [Parameter]

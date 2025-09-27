@@ -46,11 +46,11 @@ public partial record Part(string Text, GraphicModes StartMode = GraphicModes.No
     private const string EscapeSeparator = ";";
     private const string EscapeReset = EscapeStart+Reset+EscapeEnd;
 
-    public static (string Activation, string Deactivation)? ToSequence(GraphicModes mode, ConsoleColor? consoleColor)
+    public static (string Activation, string Deactivation) ToSequence(GraphicModes mode, ConsoleColor? consoleColor)
     {
         if (mode == GraphicModes.None && consoleColor is null)
         {
-            return null;
+            return (string.Empty, string.Empty);
         }
         var buffer = new List<ModeValue>(Values.Length + 2);
         var bufferStart = new List<string>(Values.Length + 1);
@@ -71,7 +71,7 @@ public partial record Part(string Text, GraphicModes StartMode = GraphicModes.No
         }
         if (bufferStart.Count == 0)
         {
-            return null;
+            return (string.Empty,string.Empty);
         }
         if (buffer.Count == 1)
         {
@@ -88,15 +88,8 @@ public partial record Part(string Text, GraphicModes StartMode = GraphicModes.No
         {
             return Text;
         }
-        var startBuff = ToSequence(StartMode);
-        var endBuff = ToSequence(EndMode);
-        return (startBuff, endBuff) switch
-        {
-            (null, null) => Text,
-            (Reset, Reset or null) => Reset + Text,
-            (_, _) => startBuff + Text + endBuff,
-        };
-
+        var bounds = ToSequence(StartMode,consoleColor:null);
+        return bounds.Activation + Text + bounds.Deactivation;
     }
     public bool IsMultiline() => NewLineFinder().IsMatch(Text);
     public IEnumerable<Part> SplitLines()

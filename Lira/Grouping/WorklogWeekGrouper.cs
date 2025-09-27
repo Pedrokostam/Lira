@@ -21,8 +21,7 @@ public sealed class WorklogWeekGrouper(DateSelector date) : WorklogDateGrouperBa
     {
         var accDate = GetDate(obj);
 
-        var weekStart = ISOWeek.ToDateTime(accDate.Year, accDate.WeekNumber(), DayOfWeek.Monday);
-        var dateStartString = accDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var dateStartString = accDate.WeekStart().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         return $"{dateStartString} (week {accDate.WeekNumber()})";
     }
 }

@@ -12,30 +12,30 @@ namespace LiraPS.Cmdlets
     [Alias("tt")]
     public class TestTime : LiraCmdlet
     {
-  
+
         [Parameter]
-        [DateTransformer(outputIJqlDate:false, mode: DateMode.Start)]
+        [DateTimeOffsetDateTransformerAttribute(mode: DateMode.Start)]
         [ArgumentCompleter(typeof(JqlDateStartArgumentCompletionAttribute))]
         public DateTimeOffset DateStart { get; set; } = default;
         [Parameter]
-        [DateTransformer(outputIJqlDate: false, mode: DateMode.End)]
+        [DateTimeOffsetDateTransformerAttribute(mode: DateMode.End)]
         [ArgumentCompleter(typeof(JqlDateEndArgumentCompletionAttribute))]
         public DateTimeOffset DateEnd { get; set; } = default;
         [Parameter]
-        [DateTransformer(outputIJqlDate: false, mode: DateMode.Current)]
+        [DateTimeOffsetDateTransformerAttribute(mode: DateMode.Current)]
         [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
         public DateTimeOffset DateCurrent { get; set; } = default;
 
         [Parameter]
-        [DateTransformer(outputIJqlDate: true, mode: DateMode.Start)]
+        [JqlDateTransformerAttribute(mode: DateMode.Start)]
         [ArgumentCompleter(typeof(JqlDateStartArgumentCompletionAttribute))]
         public IJqlDate JqlStart { get; set; } = default!;
         [Parameter]
-        [DateTransformer(outputIJqlDate: true, mode: DateMode.End)]
+        [JqlDateTransformerAttribute(mode: DateMode.End)]
         [ArgumentCompleter(typeof(JqlDateEndArgumentCompletionAttribute))]
         public IJqlDate JqlEnd { get; set; } = default!;
         [Parameter]
-        [DateTransformer(outputIJqlDate: true, mode: DateMode.Current)]
+        [JqlDateTransformerAttribute(mode: DateMode.Current)]
         [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
         public IJqlDate JqlCurrent { get; set; } = default!;
 
@@ -51,13 +51,20 @@ namespace LiraPS.Cmdlets
         {
             var q = Prompt("Dawaj datę, frajerze", new LiraPS.Completers.JqlDateCurrentArgumentCompletionAttribute());
             WriteObject(q);
-            if (TestBoundParameter(nameof(DateCurrent))){ WriteObject(DateCurrent); }
-            if (TestBoundParameter(nameof(DateStart))){ WriteObject(DateStart); }
-            if (TestBoundParameter(nameof(DateEnd))){ WriteObject(DateEnd); }
-            if (TestBoundParameter(nameof(JqlCurrent))){ WriteObject(JqlCurrent); }
-            if (TestBoundParameter(nameof(JqlStart))){ WriteObject(JqlStart); }
-            if (TestBoundParameter(nameof(JqlEnd))){ WriteObject(JqlEnd); }
-            if (TestBoundParameter(nameof(Time))){ WriteObject(Time); }
+            if (TestBoundParameter(nameof(DateCurrent)))
+            { WriteObject(DateCurrent); }
+            if (TestBoundParameter(nameof(DateStart)))
+            { WriteObject(DateStart); }
+            if (TestBoundParameter(nameof(DateEnd)))
+            { WriteObject(DateEnd); }
+            if (TestBoundParameter(nameof(JqlCurrent)))
+            { WriteObject(JqlCurrent); }
+            if (TestBoundParameter(nameof(JqlStart)))
+            { WriteObject(JqlStart); }
+            if (TestBoundParameter(nameof(JqlEnd)))
+            { WriteObject(JqlEnd); }
+            if (TestBoundParameter(nameof(Time)))
+            { WriteObject(Time); }
         }
     }
 }

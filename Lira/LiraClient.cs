@@ -70,6 +70,38 @@ public partial class LiraClient : IDisposable
         return false;
     }
 
+    public bool TryGetCachedWorklog(string worklogId, string? issueId, [NotNullWhen(true)] out Worklog? worklog)
+    {
+        if (issueId is not null)
+        {
+            if (TryGetCachedIssue(issueId, out var issue))
+            {
+                worklog = issue.Worklogs.FirstOrDefault(x => x.ID == worklogId);
+                return worklog is not null;
+            }
+            worklog = null;
+            return false;
+        }
+        foreach (var issue in CacheFull.Values)
+        {
+            worklog = issue.Worklogs.FirstOrDefault(x => x.ID == worklogId);
+            if (worklog is not null)
+            {
+                return true;
+            }
+        }
+        foreach (var issue in CacheLite.Values)
+        {
+            worklog = issue.Worklogs.FirstOrDefault(x => x.ID == worklogId);
+            if (worklog is not null)
+            {
+                return true;
+            }
+        }
+        worklog = null;
+        return false;
+    }
+
     internal bool TryGetCachedIssue<T>(string key, [NotNullWhen(true)] out T? issue) where T : IssueCommon
     {
         if (typeof(T) == typeof(Issue))

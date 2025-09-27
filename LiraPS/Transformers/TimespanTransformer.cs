@@ -4,12 +4,14 @@ using System.Globalization;
 using System.Management.Automation;
 using System.Runtime.CompilerServices;
 using System.Text;
+using ConsoleMenu;
+using LiraPS.Extensions;
 namespace LiraPS.Transformers;
-public interface ITransformer
-{
-    object? TransformString(string inputData);
-}
-public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer
+//public interface ITransformer
+//{
+//    object? TransformString(string inputData);
+//}
+public class TimespanTransformer : ArgumentTransformationAttribute, ITransform<TimeSpan>
 {
     private ref struct XD
     {
@@ -19,7 +21,7 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer
         {
             Buffer = buffer;
         }
-        public bool CanAppend => Position < Buffer.Length;
+        public readonly bool CanAppend => Position < Buffer.Length;
         public int Append(char c)
         {
             Buffer[Position] = c;
@@ -47,7 +49,7 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer
         Minutes,
         Hours,
     }
-    public object? TransformString(string inputData) => ParseTime(inputData);
+    public TimeSpan Transform(string inputData) => ParseTime(inputData);
     public override object Transform(EngineIntrinsics engineIntrinsics, object inputData)
     {
         if (inputData is TimeSpan ts)
@@ -102,5 +104,21 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer
         return result;
     }
 
-   
+    public string? DescriptiveTransform(string? item)
+    {
+        if(item is null)
+        {
+            return null;
+        }
+        try
+        {
+            return Transform(item).PrettyTime();
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+    
 }

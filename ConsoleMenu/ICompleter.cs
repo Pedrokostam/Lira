@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-
 namespace ConsoleMenu;
 
+/// <summary>
+/// Provides <see cref="Completion"/>s for a string input. Equivalent of <see cref="System.Management.Automation.IArgumenentCompleter"/>
+/// </summary>
 public interface ICompleter
 {
     public record Completion()

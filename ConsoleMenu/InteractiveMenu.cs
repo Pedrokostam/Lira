@@ -138,7 +138,8 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
                 }
                 else
                 {
-                    Append(selectedCompletion.CompletionText, GraphicModes.Invert);
+                    Append(currentInput);
+                    //Append(selectedCompletion.CompletionText, GraphicModes.Invert);
                     AdvanceLine();
                 }
             }
@@ -294,7 +295,7 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
             {
                 _completions.Clear();
                 _completions.AddRange(Completer.Complete(_input.ToString()));
-                _completionIndex = 0;
+                //_completionIndex = 0;
             }
             if (_completions.Count == 0)
             {

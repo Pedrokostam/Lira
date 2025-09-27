@@ -45,6 +45,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\ConsoleMenu\ConsoleMenu.csproj" />
 		<ProjectReference Include="..\Lira\Lira.csproj" />
 	</ItemGroup>
 

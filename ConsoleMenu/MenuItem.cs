@@ -4,17 +4,17 @@ namespace ConsoleMenu;
 
 public record MenuItem
 {
-    private string? tooltip;
+    private string? _tooltip;
 
     public required string Name { get; init; }
     public string? Tooltip
     {
-        get => tooltip; init
+        get => _tooltip; init
         {
-            TooltipLines = value?.Split(["\n", "\r\n", "\r"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
+            TooltipLines = value?.Split(["\r\n", "\n",  "\r"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
             TooltipHeight = TooltipLines.Length;
             TooltipWidth = TooltipLines.Length == 0 ? 0 : TooltipLines.Max(x => x.Length);
-            tooltip = string.Join(Environment.NewLine, TooltipLines);
+            _tooltip = string.Join(Environment.NewLine, TooltipLines);
         }
     }
     public string[] TooltipLines { get; private init; } = [];

@@ -5,7 +5,7 @@ internal class Program
 {
     public class Trans : ITransform<string>
     {
-        public string? DescriptiveTransform(string item)
+        public string? DescriptiveTransform(string? item)
         {
             if (int.TryParse(item, out var result))
             { return result.ToString(); }
@@ -70,13 +70,13 @@ internal class Program
     }
     private static void Inter()
     {
-        var p = new InteractiveMenu<string>("dawaj, dawaj", new Comp(), new Trans()).Show();
+        var p = new InteractiveMenu<DateTimeOffset>("Interactive", new  LiraPS.Completers.JqlDateArgumentCompleter(), new LiraPS.Transformers.DateTimeOffsetDateTransformerAttribute(LiraPS.Transformers.DateMode.Current)).Show();
         Console.WriteLine("Wybrałeś opcję {0}", p);
     }
     private static void Choice()
     {
 
-        var m = new ChoiceMenu("Siemano", [
+        var m = new ChoiceMenu("Choice", [
             new("opcja a",123,"To je liczba"),
             new("JAMES","Jim","To je imie"),
             new("eruifh8234hfi345urdh43urv9u8erwh8fi234h80fcher53wuiyu8934hcu8y34y7cghwerybchweujgvui92w34hfuiertg89fu2349uvbweruincouiw3e4rd890uj89vuebwriuhfd934",null,"To je nic"),

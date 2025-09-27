@@ -32,9 +32,9 @@ internal static partial class DateCompletionHelper
         return new JqlKeywordDate(keyword).ToAccountDatetime(TimeZoneInfo.Local);
     }
   
-    internal static CompletionResult CreateCompletion(string completionText, string listItemText, CompletionResultType resultType, string toolTip)
+    internal static CompletionResult CreateCompletion(string completionText, string listItemText, CompletionResultType resultType, string toolTip, bool noWrap)
     {
-        var completionNoSpace = completionText.Contains(' ') ? $"'{completionText}'" : completionText;
+        var completionNoSpace = noWrap || !completionText.Contains(' ')  ? completionText : $"'{completionText}'";
         return new CompletionResult(completionNoSpace, listItemText, resultType, toolTip);
     }
     /// <summary>
@@ -132,7 +132,7 @@ internal static partial class DateCompletionHelper
     /// <summary>
     /// Matches a partial or complete date string and generates completion results for possible date values.
     /// </summary>
-    public static IEnumerable<CompletionResult> MatchDate(string wordToComplete, DateMode mode)
+    public static IEnumerable<CompletionResult> MatchDate(string wordToComplete, DateMode mode, bool noWrap)
     {
         wordToComplete = wordToComplete.Trim();
         if (string.IsNullOrEmpty(wordToComplete))
@@ -202,7 +202,7 @@ internal static partial class DateCompletionHelper
         foreach (var item in uniques)
         {
             var str = item.NumericalForm();
-            yield return CreateCompletion(str, str, CompletionResultType.ParameterValue, item.Tooltip);
+            yield return CreateCompletion(str, str, CompletionResultType.ParameterValue, item.Tooltip,noWrap);
         }
     }
     /// <summary>
@@ -229,7 +229,7 @@ internal static partial class DateCompletionHelper
     /// <summary>
     /// Attempts to generate a completion result for a non-positive integer date input.
     /// </summary>
-    public static bool GetIntCompletions(string wordToComplete, DateMode mode, [NotNullWhen(true)] out CompletionResult? completionResult)
+    public static bool GetIntCompletions(string wordToComplete, DateMode mode, [NotNullWhen(true)] out CompletionResult? completionResult,bool noWrap)
     {
         completionResult = null;
         if (GetDateFromNonPositiveInt(wordToComplete, mode, out var desiredDate, out int number))
@@ -237,7 +237,7 @@ internal static partial class DateCompletionHelper
             var unambiguous = desiredDate.UnambiguousForm();
             var completion = desiredDate.NumericalForm();
             var tooltip = number == 0 ? "Today" : $"{-number} days ago";
-            completionResult =  CreateCompletion(completion, unambiguous, CompletionResultType.ParameterValue, tooltip);
+            completionResult =  CreateCompletion(completion, unambiguous, CompletionResultType.ParameterValue, tooltip,noWrap);
             return true;
         }
         return false;
@@ -246,7 +246,7 @@ internal static partial class DateCompletionHelper
     /// <summary>
     /// Generates completion results for JQL date keyword enums and the "today" keyword, matching the input string.
     /// </summary>
-    public static IEnumerable<CompletionResult> GetEnumCompletions(string wordToComplete, DateMode mode)
+    public static IEnumerable<CompletionResult> GetEnumCompletions(string wordToComplete, DateMode mode, bool noWrap)
     {
         wordToComplete = (wordToComplete ?? "").Trim();
         if ("today".Contains(wordToComplete, StringComparison.OrdinalIgnoreCase))
@@ -262,7 +262,7 @@ internal static partial class DateCompletionHelper
             yield return CreateCompletion("Today",
                 "Today",
                 CompletionResultType.ParameterValue,
-                datetip.tooltip
+                datetip.tooltip, noWrap
                 );
         }
         if ("now".Contains(wordToComplete, StringComparison.OrdinalIgnoreCase))
@@ -270,7 +270,7 @@ internal static partial class DateCompletionHelper
             yield return CreateCompletion("Now",
                 "Now",
                 CompletionResultType.ParameterValue,
-                "Current time"
+                "Current time", noWrap
                 );
         }
         foreach (var value in _periods)
@@ -284,7 +284,7 @@ internal static partial class DateCompletionHelper
                 yield return CreateCompletion(stringValue,
                                                   stringValue,
                                                   CompletionResultType.ParameterValue,
-                                                  tooltip);
+                                                  tooltip, noWrap);
             }
         }
     }

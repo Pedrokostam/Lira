@@ -12,6 +12,10 @@
 			<TableControl>
 				<TableHeaders>
 					<TableColumnHeader>
+						<Label>ID</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
 						<Label>Issue</Label>
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
@@ -34,6 +38,9 @@
 				<TableRowEntries>
 					<TableRowEntry>
 						<TableColumnItems>
+							<TableColumnItem>
+								<ScriptBlock>$_.ID</ScriptBlock>
+							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>$_.Issue.KeySummaryTrimmed</ScriptBlock>
 							</TableColumnItem>
@@ -71,6 +78,10 @@
 			<TableControl>
 				<TableHeaders>
 					<TableColumnHeader>
+						<Label>ID</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
 						<Label>Issue</Label>
 					<Alignment>Center</Alignment>
 					</TableColumnHeader>
@@ -105,6 +116,9 @@
 				<TableRowEntries>
 					<TableRowEntry>
 						<TableColumnItems>
+							<TableColumnItem>
+								<ScriptBlock>$_.ID</ScriptBlock>
+							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>$_.Issue.KeySummaryTrimmed</ScriptBlock>
 							</TableColumnItem>

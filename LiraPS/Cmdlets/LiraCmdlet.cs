@@ -58,6 +58,11 @@ namespace LiraPS.Cmdlets
             value = default;
             return false;
         }
+        /// <summary>
+        /// Check if the given argument was specified in the command line
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns>If parameter was explicitly specified - <see langword="true"/>. If not - <see langword="false"/></returns>
         protected bool TestBoundParameter(string name)
         {
             return MyInvocation.BoundParameters.ContainsKey(name);

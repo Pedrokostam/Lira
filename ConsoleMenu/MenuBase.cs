@@ -23,9 +23,7 @@ public abstract partial class MenuBase<T>
         Index++;
     }
 
-    protected void Append(string text, GraphicModes wrap) => Append(text, wrap, GraphicModes.Reset);
-    protected void Append(string text) => Append(text, GraphicModes.None, GraphicModes.None);
-    protected void Append(string text, GraphicModes pre, GraphicModes post)
+    protected void Append(string text, GraphicModes pre=GraphicModes.None)
     {
         var lines = Part.NewLineFinder().Split(text);
 
@@ -39,11 +37,11 @@ public abstract partial class MenuBase<T>
             int diff = BufferWidth - thisQueuedLine.Length;
             if (line.Length < diff)
             {
-                thisQueuedLine.Add(new Part(line, pre, post));
+                thisQueuedLine.Add(new Part(line, pre));
             }
             else
             {
-                thisQueuedLine.Add(new Part(CroPad(line, diff - 1), pre, post));
+                thisQueuedLine.Add(new Part(CroPad(line, diff - 1), pre));
             }
         }
     }
@@ -56,7 +54,6 @@ public abstract partial class MenuBase<T>
     //}
     protected void Print()
     {
-        //ClearToBottom(); Clear to bottom would allow us to not store line info, but it causes a slight flicker
         AdvanceLine();
         int currentWidth = Console.BufferWidth;
         //if (_bufferWidth != currentWidth)
@@ -76,7 +73,8 @@ public abstract partial class MenuBase<T>
         {
             if (i <= Index)
             {
-                var len = toClear.ElementAtOrDefault(i);
+                var len = Console.BufferWidth;
+                //var len = toClear.ElementAtOrDefault(i);
                 var (text, printableLength) = QueuedLines[i].Format(len);
                 var (plainText, _) = QueuedLines[i].Format(len, true);
                 s += plainText + "\r\n";
@@ -86,6 +84,8 @@ public abstract partial class MenuBase<T>
             QueuedLines[i].Clear();
         }
         Index = 0;
+        ClearToBottom();// Clear to bottom would allow us to not store line info, but it causes a slight flicker
+
 
     }
     protected static void MoveCursorUp(int lineCount)

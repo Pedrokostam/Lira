@@ -78,5 +78,9 @@ public static class DateTimeExtensions
     {
         return ISOWeek.GetWeekOfYear(dto.Date);
     }
+    public static DateTimeOffset WeekStart(this DateTimeOffset dto)
+    {
+       return new DateTimeOffset(ISOWeek.ToDateTime(dto.Year, dto.WeekNumber(), DayOfWeek.Monday),dto.Offset);
+    }
     public static TimeSpan Sum(this IEnumerable<TimeSpan> timeSpans) => new TimeSpan(timeSpans.Sum(x => x.Ticks));
 }

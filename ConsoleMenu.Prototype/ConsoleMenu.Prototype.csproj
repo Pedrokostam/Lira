@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ConsoleMenu\ConsoleMenu.csproj" />
+    <ProjectReference Include="..\LiraPS\LiraPS.csproj" />
   </ItemGroup>
 
 </Project>
