@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -25,32 +26,36 @@ public static partial class TimeExtensions
         }
         else
         {
-            return date.ToLocalTime().ToString(UnambiguousFormat,CultureInfo.InvariantCulture);
+            return date.ToLocalTime().ToString(UnambiguousFormat, CultureInfo.InvariantCulture);
         }
     }
-
+    private const string TimePartSeparator = " ";
     public static readonly string[] ParseFormatters = [
        // Date only
-        "yyyy-M-d",
-        "d-M-yyyy",
-        "d-M-yy",
-        "d-MMM-yyyy",
-        "d-MMMM-yyyy",
-        "yyyy-MMM-d",
-        "yyyy-MMMM-d",
-        "d-MMM-yy",
-        "d-MMMM-yy",
+        "yyyy M d",
+        "d M yyyy",
+        "d M yy",
+        "d MMM yyyy",
+        "d MMMM yyyy",
+        "MMM d yyyy",
+        "MMMM d yyyy",
+        "yyyy MMM d",
+        "yyyy MMMM d",
+        "d MMM yy",
+        "d MMMM yy",
 
         // Date + time
-        "yyyy-M-d H:m",
-        "d-M-yy H:m",
-        "d-M-yyyy H:m",
-        "d-MMM-yyyy H:m",
-        "d-MMMM-yyyy H:m",
-        "yyyy-MMM-d H:m",
-        "yyyy-MMMM-d H:m",
-        "d-MMM-yy H:m",
-        "d-MMMM-yy H:m",
+        "yyyy M d H:m",
+        "d M yy H:m",
+        "d M yyyy H:m",
+        "d MMM yyyy H:m",
+        "d MMMM yyyy H:m",
+        "MMM d yyyy H:m",
+        "MMMM d yyyy H:m",
+        "yyyy MMM d H:m",
+        "yyyy MMMM d H:m",
+        "d MMM yy H:m",
+        "d MMMM yy H:m",
 
         // Date + time + offset
         "yyyy-M-d H:m zzz",
@@ -58,6 +63,8 @@ public static partial class TimeExtensions
         "d-M-yyyy H:m zzz",
         "d-MMM-yyyy H:m zzz",
         "d-MMMM-yyyy H:m zzz",
+        "MMM d yyyy H:m zzz",
+        "MMMM d yyyy H:m zzz",
         "yyyy-MMM-d H:m zzz",
         "yyyy-MMMM-d H:m zzz",
         "d-MMM-yy H:m zzz",
@@ -70,6 +77,8 @@ public static partial class TimeExtensions
         "d-M-yyyy zzz",
         "d-MMM-yyyy zzz",
         "d-MMMM-yyyy zzz",
+        "MMM-d-yyyy zzz",
+        "MMMM-d-yyyy zzz",
         "yyyy-MMM-d zzz",
         "yyyy-MMMM-d zzz",
         "d-MMM-yy zzz",
@@ -81,10 +90,12 @@ public static partial class TimeExtensions
         // Today + time + offset
         "H:m zzz",
     ];
+    private static readonly string[] NormalizedParseFormatters = [.. ParseFormatters.Select(x => DateTimeCorrecter().Replace(x, TimePartSeparator)).Concat(
+        ParseFormatters.Where(x=>x.Contains("H:m",StringComparison.Ordinal)).Select(x=>x.Replace("H:m","HHmm",StringComparison.Ordinal)))];
     public static bool TryParseDateTimeOffset(string value, out DateTimeOffset dto)
     {
-        value = DateTimeCorrecter().Replace(value, "-");
-        return DateTimeOffset.TryParseExact(value, ParseFormatters, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out dto);
+        value = DateTimeCorrecter().Replace(value, TimePartSeparator);
+        return DateTimeOffset.TryParseExact(value, NormalizedParseFormatters, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out dto);
     }
     private static string Pad(int pad)
     {
@@ -108,6 +119,6 @@ public static partial class TimeExtensions
         return $"{Pad(pad)}{s}{Pad(pad)}";
     }
     public static string PrettyDate(this DateTimeOffset dto) => PrettyDate(dto, 0);
-    [GeneratedRegex(@"[\/\\\.]", RegexOptions.ExplicitCapture, 250)]
+    [GeneratedRegex(@"[\/\\\.\- :](?!\d?\d:?\d\d)$", RegexOptions.ExplicitCapture, 250)]
     private static partial Regex DateTimeCorrecter();
 }

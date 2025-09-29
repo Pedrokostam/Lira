@@ -77,13 +77,32 @@ public class ColFirstMatrix<T>
         return Woa[newY, newX];
     }
 }
-
-public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<T> transformer) : MenuBase<T>
+public enum MenuClearMode
 {
-    public string Prompt { get; } = prompt;
-    public ICompleter Completer { get; } = completer;
-    public ITransform<T> Transformer { get; } = transformer;
-    public bool ClearAfterFinish { get; private set; }
+    /// <summary>
+    /// Does not remove anything - text continues after menu
+    /// </summary>
+    None,
+    /// <summary>
+    /// Removes everything below last prompt
+    /// </summary>
+    ToPrompt,
+    /// <summary>
+    /// Clears everything
+    /// </summary>
+    Everything
+}
+/// <summary>
+/// 
+/// </summary>
+/// <typeparam name="T"></typeparam>
+public class InteractiveMenu<T> : MenuBase<T>
+{
+    public string? PlaceholderValue { get; set; }
+    public string Prompt { get; set; } = "Enter value";
+    public ICompleter? Completer { get; set; }
+    public ITransform<T> Transformer { get; set; }
+    public MenuClearMode ClearMode { get; set; } = MenuClearMode.ToPrompt;
     private StringBuilder _input = new();
     //private string _currentInput = string.Empty;
     private List<ICompleter.Completion> _completions = [];
@@ -92,8 +111,37 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
     private bool _showCompletions = false;
     private const string InterItemPad = "  ";
     private ColFirstMatrix<ICompleter.Completion> _displayMatrix = default!;
+
+    /// <param name="prompt"></param>
+    /// <param name="transformer"></param>
+    /// <param name="completer"></param>
+    public InteractiveMenu(ITransform<T> transformer)
+    {
+        Transformer = transformer;
+    }
+    public InteractiveMenu(ITransform<T> transformer, string prompt) : this(transformer)
+    {
+        Prompt = prompt;
+    }
+    public InteractiveMenu(ITransform<T> transformer, string prompt, ICompleter completer) : this(transformer, prompt)
+    {
+        Prompt = prompt;
+        Completer = completer;
+    }
+    public InteractiveMenu(ITransform<T> transformer, string prompt, string placeholder) : this(transformer, prompt)
+    {
+        PlaceholderValue = placeholder;
+    }
+    public InteractiveMenu(ITransform<T> transformer, string prompt,string placeholder, ICompleter completer) : this(transformer, prompt,completer)
+    {
+        PlaceholderValue = placeholder;
+    }
+
     private int DisplayColumns { get; set; }
     private int DisplayRows { get; set; }
+
+    /// <inheritdoc cref="MenuBase{T}.Show"/>
+    /// <exception cref="PromptTransformException"/>
     public override T Show()
     {
         try
@@ -103,13 +151,28 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
 
 
             var payload = ShowImpl();
-            if (ClearAfterFinish)
+            switch (ClearMode)
             {
-                MoveCursorUp(PreviousLineLengths.Count);
-                FinalCleanUp();
+                case MenuClearMode.None:
+                    break;
+                case MenuClearMode.ToPrompt:
+                    MoveCursorDown(1);
+                    ClearToBottom();
+                    break;
+                case MenuClearMode.Everything:
+                    ClearToBottom();
+                    break;
+                default:
+                    break;
             }
-
-            return Transformer.Transform(payload);
+            try
+            {
+                return Transformer.Transform(payload);
+            }
+            catch (Exception e)
+            {
+                throw PromptTransformException.WrapException<T>(payload, e);
+            }
         }
         finally
         {
@@ -127,27 +190,30 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
             Append(Prompt);
             Append(": ");
             var selectedCompletion = _completions.ElementAtOrDefault(_completionIndex);
-            if (selectedCompletion is not null)
+            if (!string.IsNullOrWhiteSpace(PlaceholderValue) && string.IsNullOrWhiteSpace(currentInput))
+            {
+                Append(PlaceholderValue, GraphicModes.Dim);
+                currentInput = PlaceholderValue;
+            }
+            else if (selectedCompletion is not null)
             {
                 if (selectedCompletion.CompletionText.StartsWith(currentInput, StringComparison.OrdinalIgnoreCase))
                 {
                     Append(currentInput);
                     var rest = selectedCompletion.CompletionText[currentInput.Length..];
                     Append(rest, GraphicModes.Invert);
-                    AdvanceLine();
                 }
                 else
                 {
                     Append(currentInput);
-                    //Append(selectedCompletion.CompletionText, GraphicModes.Invert);
-                    AdvanceLine();
+                    Append(" (" + selectedCompletion.CompletionText + ")", GraphicModes.Dim);
                 }
             }
             else
             {
                 Append(currentInput);
-                AdvanceLine();
             }
+            AdvanceLine();
             bool completionsShown = false;
             DisplayColumns = 1;
             if (_completions.Count > 0)
@@ -219,11 +285,15 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
                 Append(selectedCompletion.Tooltip);
             }
             string toParse = selectedCompletion?.CompletionText ?? currentInput;
+            AdvanceLine();
+            Append("Output: ");
             if (Transformer.DescriptiveTransform(toParse) is string potential)
             {
-                AdvanceLine();
-                Append("Output: ");
                 Append(potential, GraphicModes.Bold);
+            }
+            else
+            {
+                Append("Cannot parse value!", GraphicModes.Bold | GraphicModes.Dim);
             }
             AdvanceLine();
 
@@ -294,7 +364,10 @@ public class InteractiveMenu<T>(string prompt, ICompleter completer, ITransform<
             if (inputChanged || showNewCompletions)
             {
                 _completions.Clear();
-                _completions.AddRange(Completer.Complete(_input.ToString()));
+                if (Completer is not null)
+                {
+                    _completions.AddRange(Completer.Complete(_input.ToString()));
+                }
                 //_completionIndex = 0;
             }
             if (_completions.Count == 0)

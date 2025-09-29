@@ -97,6 +97,15 @@ public abstract partial class MenuBase<T>
         }
         Console.SetCursorPosition(0, newLine);
     }
+    protected static void MoveCursorDown(int lineCount)
+    {
+        var newLine = Console.CursorTop + lineCount;
+        if (newLine < 0)
+        {
+            newLine = 0;
+        }
+        Console.SetCursorPosition(0, newLine);
+    }
     protected void FinalCleanUp()
     {
         foreach (var item in PreviousLineLengths)
@@ -113,8 +122,9 @@ public abstract partial class MenuBase<T>
     {
         Console.TreatControlCAsInput = false;
     }
-    protected void SetCursor(bool enabled) => Console.CursorVisible = true;
+    protected void SetCursor(bool enabled) => Console.CursorVisible = enabled;
 
+    /// <exception cref="UserCancelationException"/>
     public abstract T Show();
     [DoesNotReturn]
     protected static void Terminate()

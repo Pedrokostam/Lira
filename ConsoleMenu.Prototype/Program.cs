@@ -70,7 +70,10 @@ internal class Program
     }
     private static void Inter()
     {
-        var p = new InteractiveMenu<DateTimeOffset>("Interactive", new  LiraPS.Completers.JqlDateArgumentCompleter(), new LiraPS.Transformers.DateTimeOffsetDateTransformerAttribute(LiraPS.Transformers.DateMode.Current)).Show();
+        var p = new InteractiveMenu<DateTimeOffset>(new LiraPS.Transformers.DateTimeOffsetDateTransformerAttribute(LiraPS.Transformers.DateMode.Current),
+                                                    "Interactive",
+                                                    new LiraPS.Completers.JqlDateArgumentCompleter())
+        { PlaceholderValue=DateTime.Now.ToString("yyyy-M-d H:m zzz") }.Show();
         Console.WriteLine("Wybrałeś opcję {0}", p);
     }
     private static void Choice()

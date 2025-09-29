@@ -1,8 +1,11 @@
-﻿namespace ConsoleMenu;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace ConsoleMenu;
 
 public interface ITransform<T>
 {
     T Transform(string item);
+   
     /// <summary>
     /// Tries to transform <paramref name="item"/> into an instance of <typeparamref name="T"/> and then returns its canonical string representation.
     /// </summary>

@@ -31,10 +31,10 @@ internal static partial class DateCompletionHelper
     {
         return new JqlKeywordDate(keyword).ToAccountDatetime(TimeZoneInfo.Local);
     }
-  
+
     internal static CompletionResult CreateCompletion(string completionText, string listItemText, CompletionResultType resultType, string toolTip, bool noWrap)
     {
-        var completionNoSpace = noWrap || !completionText.Contains(' ')  ? completionText : $"'{completionText}'";
+        var completionNoSpace = noWrap || !completionText.Contains(' ') ? completionText : $"'{completionText}'";
         return new CompletionResult(completionNoSpace, listItemText, resultType, toolTip);
     }
     /// <summary>
@@ -88,14 +88,14 @@ internal static partial class DateCompletionHelper
         {
             0 => Format($"this year"),
             > 0 => Format($"{PluralYear(yearDiff)} ago"),
-            < 0 => Format($"{PluralYear(yearDiff)} in the future")
+            < 0 => Format($"{PluralYear(-yearDiff)} in the future")
         };
     }
     /// <summary>
     /// Attempts to add a date variant to the list, handling invalid dates gracefully.
     /// </summary>
     /// <param name="variants">The list to add the date to.</param>
-    private static void TryAddDateVariant(List<ITooltipDate> variants, int year, int month, int day,int hour, int minute, string tooltip)
+    private static void TryAddDateVariant(List<ITooltipDate> variants, int year, int month, int day, int hour, int minute, string tooltip)
     {
         try
         {
@@ -162,7 +162,7 @@ internal static partial class DateCompletionHelper
         {
             DateMode.Current => now.TimeOfDay,
             DateMode.Start => TimeSpan.Zero,
-            DateMode.End =>TimeSpan.FromHours(24).Subtract(TimeSpan.FromTicks(1)),
+            DateMode.End => TimeSpan.FromHours(24).Subtract(TimeSpan.FromTicks(1)),
             _ => throw new PSNotImplementedException(),
         };
         List<ITooltipDate> variants = [];
@@ -175,7 +175,7 @@ internal static partial class DateCompletionHelper
                 var monthDate = new DateTime(year, month, 1, time.Hours, time.Minutes, 0, DateTimeKind.Local);
                 if (day > 0)
                 {
-                    variants.Add(new TooltipManualDate(new DateTime(year, month, day,time.Hours,time.Minutes,0), "Today's date"));
+                    variants.Add(new TooltipManualDate(new DateTime(year, month, day, time.Hours, time.Minutes, 0), "Today's date"));
                 }
                 else
                 {
@@ -202,7 +202,7 @@ internal static partial class DateCompletionHelper
         foreach (var item in uniques)
         {
             var str = item.NumericalForm();
-            yield return CreateCompletion(str, str, CompletionResultType.ParameterValue, item.Tooltip,noWrap);
+            yield return CreateCompletion(str, str, CompletionResultType.ParameterValue, item.Tooltip, noWrap);
         }
     }
     /// <summary>
@@ -212,13 +212,21 @@ internal static partial class DateCompletionHelper
     {
         if (int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out number) && number <= 0)
         {
-            IJqlDate? todayo = mode switch
+            IJqlDate? todayo = null;
+            try
             {
-                DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(number)),
-                DateMode.Start => new JqlKeywordDate(JqlKeywordDate.Keywords.StartOfDay, number),
-                DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, number),
-                _ =>null,
-            };
+                todayo = mode switch
+                {
+                    DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(number)),
+                    DateMode.Start => new JqlKeywordDate(JqlKeywordDate.Keywords.StartOfDay, number),
+                    DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, number),
+                    _ => null,
+                };
+            }
+            catch (Exception)
+            {
+                todayo = null;
+            }
             date = todayo?.ToAccountDatetime(TimeZoneInfo.Local) ?? default;
             return todayo is not null;
         }
@@ -229,7 +237,7 @@ internal static partial class DateCompletionHelper
     /// <summary>
     /// Attempts to generate a completion result for a non-positive integer date input.
     /// </summary>
-    public static bool GetIntCompletions(string wordToComplete, DateMode mode, [NotNullWhen(true)] out CompletionResult? completionResult,bool noWrap)
+    public static bool GetIntCompletions(string wordToComplete, DateMode mode, [NotNullWhen(true)] out CompletionResult? completionResult, bool noWrap)
     {
         completionResult = null;
         if (GetDateFromNonPositiveInt(wordToComplete, mode, out var desiredDate, out int number))
@@ -237,7 +245,7 @@ internal static partial class DateCompletionHelper
             var unambiguous = desiredDate.UnambiguousForm();
             var completion = desiredDate.NumericalForm();
             var tooltip = number == 0 ? "Today" : $"{-number} days ago";
-            completionResult =  CreateCompletion(completion, unambiguous, CompletionResultType.ParameterValue, tooltip,noWrap);
+            completionResult = CreateCompletion(completion, unambiguous, CompletionResultType.ParameterValue, tooltip, noWrap);
             return true;
         }
         return false;

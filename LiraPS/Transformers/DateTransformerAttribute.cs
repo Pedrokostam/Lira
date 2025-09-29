@@ -12,6 +12,7 @@ using System.Threading;
 using LiraPS.Extensions;
 using Lira.Jql;
 using ConsoleMenu;
+using System.Diagnostics.CodeAnalysis;
 namespace LiraPS.Transformers;
 public enum DateMode
 {
@@ -221,9 +222,13 @@ public abstract class DateTransformerAttribute<T>(DateMode mode) : ArgumentTrans
 
         throw new ArgumentTransformationMetadataException($"Could not convert {inputData} to IJqlDate");
     }
-
+   
     public T Transform(string s)
     {
+        if (string.IsNullOrWhiteSpace(s))
+        {
+            throw new ArgumentNullException(nameof(s));
+        }
         if (s.Contains("yester", StringComparison.OrdinalIgnoreCase))
         {
             IJqlDate? yesterday = Mode switch
@@ -249,10 +254,6 @@ public abstract class DateTransformerAttribute<T>(DateMode mode) : ArgumentTrans
         if (s.Equals(value: "now", StringComparison.OrdinalIgnoreCase))
         {
             return WrapUnwrap(new JqlManualDate(DateTimeOffset.Now));
-        }
-        if (string.IsNullOrWhiteSpace(s))
-        {
-            throw new ArgumentNullException(nameof(s));
         }
         if (DateCompletionHelper.GetDateFromNonPositiveInt(s, Mode, out var date, out _))
         {
@@ -290,7 +291,12 @@ public abstract class DateTransformerAttribute<T>(DateMode mode) : ArgumentTrans
         }
         try
         {
-            return Transform(item)?.ToString();
+            var transform = Transform(item);
+            if (transform is DateTimeOffset dto)
+            {
+                return dto.UnambiguousForm();
+            }
+            return transform?.ToString();
         }
         catch (Exception)
         {

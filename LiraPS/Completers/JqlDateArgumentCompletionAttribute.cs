@@ -36,7 +36,7 @@ public abstract class JqlDateArgumentCompletionBase : IArgumentCompleter, ISimpl
 
         if (LiraPS.Extensions.TimeExtensions.TryParseDateTimeOffset(wordToComplete, out var dto))
         {
-            yield return DateCompletionHelper.CreateCompletion(dto.NumericalForm(), dto.UnambiguousForm(), CompletionResultType.ParameterValue, "Current date", !WrapStringsWithSpaces);
+            yield return DateCompletionHelper.CreateCompletion(dto.NumericalForm(), dto.UnambiguousForm(), CompletionResultType.ParameterValue, "Parsed date", !WrapStringsWithSpaces);
         }
         if (wordToComplete.Length == 0 || char.IsLetter(wordToComplete[0]))
         {

@@ -114,7 +114,7 @@ namespace LiraPS.Cmdlets
             {
                 throw new PSInvalidOperationException("You have to configure jira session parameters first. Call Set-Configuration.");
             }
-            LiraSession.StartSession().Wait();
+            //LiraSession.StartSession().Wait();
             PrintLogs();
         }
         public void WriteHost(string message, ConsoleColor? foregroundColor = null, ConsoleColor? backgroundColor = null)

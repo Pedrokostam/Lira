@@ -3,6 +3,7 @@ using System.Management.Automation;
 using System.Net.Mail;
 using System.Reflection;
 using System.Threading;
+using ConsoleMenu;
 using Lira.Objects;
 using LiraPS.Completers;
 using LiraPS.Extensions;
@@ -57,27 +58,21 @@ namespace LiraPS.Cmdlets
             }
             if (Started == default)
             {
+                var now = DateTimeOffset.Now;
+                var dateMenu = new InteractiveMenu<DateTimeOffset>(
+                    new DateTimeOffsetDateTransformerAttribute(DateMode.Current),
+                    "Enter date of work",
+                    now.NumericalForm(),
+                    new JqlDateArgumentCompleter());
+
                 while (true)
                 {
-                    var now = DateTimeOffset.Now;
-                    var dataTrans = new DateTimeOffsetDateTransformerAttribute(mode: DateMode.Current);
-                    var tstring = ReadInput($"\nEnter date of work, leave empty to use {now.NumericalForm()}");
                     try
                     {
-                        var dto = string.IsNullOrWhiteSpace(tstring) ? now : dataTrans.Transform(tstring)!;
-                        var choice = ChoiceYesNo($"Is the following date correct? {Bold}{dto.UnambiguousForm()}{Reset}", ChoiceOptions.Yes, ChoiceSettings.YesNoCancel);
-                        if (choice == ChoiceOptions.Yes)
-                        {
-                            Started = dto;
-                            break;
-                        }
-                        if (choice == ChoiceOptions.Cancel)
-                        {
-                            UserCancel("worklog adding");
-                        }
-
+                        Started = dateMenu.Show();
+                        break;
                     }
-                    catch
+                    catch (PromptTransformException)
                     {
                         WriteWarning("Invalid date");
                     }
@@ -85,24 +80,25 @@ namespace LiraPS.Cmdlets
             }
             if (Duration == default)
             {
+                var timeMenu = new InteractiveMenu<TimeSpan>(
+                    new TimespanTransformer(),
+                    "Enter time spent");
                 while (true)
                 {
-                    var tstring = ReadInput("\nEnter time spent (e.g. 2h 15m)");
-                    var ts = TimespanTransformer.ParseTime(tstring);
-                    if (ts == TimeSpan.Zero)
+                    try
                     {
-                        WriteWarning("Duration cannot be zero");
-                    }
-                    else
-                    {
-                        Duration = ts;
+                        Duration = timeMenu.Show();
                         break;
+                    }
+                    catch (PromptTransformException)
+                    {
+                        WriteWarning("Invalid timespan");
                     }
                 }
             }
             if (string.IsNullOrWhiteSpace(Comment) && !TestBoundParameter(nameof(Comment)))
             {
-                Comment = ReadInput("\nEnter optional comment");
+                Comment = ReadInput("Enter optional comment");
                 if (string.IsNullOrWhiteSpace(Comment))
                 {
                     Comment = null;
@@ -117,7 +113,7 @@ namespace LiraPS.Cmdlets
                 WriteHost($"     Issue: {Bold}{Issue}{Reset}");
                 WriteHost($"   Started: {Bold}{worklogToAdd.Started.UnambiguousForm()}{Reset}");
                 WriteHost($" TimeSpent: {Bold}{worklogToAdd.TimeSpent.PrettyTime()}{Reset}");
-                string com = worklogToAdd.Comment ?? $"{Dim}None{Reset}";
+                string com = string.IsNullOrWhiteSpace(worklogToAdd.Comment) ? $"{Dim}None{Reset}" : worklogToAdd.Comment;
                 WriteHost($"   Comment: {Bold}{com}{Reset}");
                 WriteHost("");
                 var choice = ChoiceYesNo($"Is the worklog correct?", null, ChoiceSettings.YesNo);
