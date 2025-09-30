@@ -77,32 +77,27 @@ public class ColFirstMatrix<T>
         return Woa[newY, newX];
     }
 }
-public enum MenuClearMode
-{
-    /// <summary>
-    /// Does not remove anything - text continues after menu
-    /// </summary>
-    None,
-    /// <summary>
-    /// Removes everything below last prompt
-    /// </summary>
-    ToPrompt,
-    /// <summary>
-    /// Clears everything
-    /// </summary>
-    Everything
-}
 /// <summary>
 /// 
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class InteractiveMenu<T> : MenuBase<T>
 {
-    public string? PlaceholderValue { get; set; }
+    public ITransformer<T> Transformer { get; set; }
     public string Prompt { get; set; } = "Enter value";
     public ICompleter? Completer { get; set; }
-    public ITransform<T> Transformer { get; set; }
+    public IValidator? Validator { get; set; }
+    public Func<string, bool> ValidatorFunction
+    {
+        set
+        {
+            Validator = new SimpleValidator(value);
+        }
+    }
+    public string? PlaceholderValue { get; set; }
+    public Hint Hints { get; set; } = Hint.All;
     public MenuClearMode ClearMode { get; set; } = MenuClearMode.ToPrompt;
+
     private StringBuilder _input = new();
     //private string _currentInput = string.Empty;
     private List<ICompleter.Completion> _completions = [];
@@ -115,24 +110,24 @@ public class InteractiveMenu<T> : MenuBase<T>
     /// <param name="prompt"></param>
     /// <param name="transformer"></param>
     /// <param name="completer"></param>
-    public InteractiveMenu(ITransform<T> transformer)
+    public InteractiveMenu(ITransformer<T> transformer)
     {
         Transformer = transformer;
     }
-    public InteractiveMenu(ITransform<T> transformer, string prompt) : this(transformer)
+    public InteractiveMenu(ITransformer<T> transformer, string prompt) : this(transformer)
     {
         Prompt = prompt;
     }
-    public InteractiveMenu(ITransform<T> transformer, string prompt, ICompleter completer) : this(transformer, prompt)
+    public InteractiveMenu(ITransformer<T> transformer, string prompt, ICompleter completer) : this(transformer, prompt)
     {
         Prompt = prompt;
         Completer = completer;
     }
-    public InteractiveMenu(ITransform<T> transformer, string prompt, string placeholder) : this(transformer, prompt)
+    public InteractiveMenu(ITransformer<T> transformer, string prompt, string placeholder) : this(transformer, prompt)
     {
         PlaceholderValue = placeholder;
     }
-    public InteractiveMenu(ITransform<T> transformer, string prompt,string placeholder, ICompleter completer) : this(transformer, prompt,completer)
+    public InteractiveMenu(ITransformer<T> transformer, string prompt, string placeholder, ICompleter completer) : this(transformer, prompt, completer)
     {
         PlaceholderValue = placeholder;
     }
@@ -180,7 +175,41 @@ public class InteractiveMenu<T> : MenuBase<T>
             SetCursor(true);
         }
     }
-
+    private void DrawValidation(string value, bool dim=false)
+    {
+        if (!Hints.HasFlag(Hint.Validation))
+        {
+            return;
+        }
+        string? reason = null;
+        bool isValid = false;
+        if (Validator is IReasonableValidator reasoning)
+        {
+            var r = reasoning.ValidateWithReason(value);
+            reason = r.reason;
+            isValid = r.valid;
+        }
+        else
+        {
+            isValid = Validator?.Validate(value) ?? Transformer.TryTransform(value, out _);
+        }
+        string validateChar = isValid ? "OK" : "INVALID";
+        if (!string.IsNullOrEmpty(value))
+        {
+            Append(' ');
+        }
+        ConsoleColor color = isValid ? ConsoleColor.Green : ConsoleColor.Red;
+        var mode = GraphicModes.Bold;
+        if (dim)
+        {
+            mode |= GraphicModes.Dim;
+        }
+        Append(validateChar, mode, color);
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            Append($" ({reason})", GraphicModes.Dim);
+        }
+    }
     private string ShowImpl()
     {
         while (true)
@@ -190,10 +219,11 @@ public class InteractiveMenu<T> : MenuBase<T>
             Append(Prompt);
             Append(": ");
             var selectedCompletion = _completions.ElementAtOrDefault(_completionIndex);
-            if (!string.IsNullOrWhiteSpace(PlaceholderValue) && string.IsNullOrWhiteSpace(currentInput))
+            if (!string.IsNullOrWhiteSpace(PlaceholderValue) && currentInput.Length==0)
             {
-                Append(PlaceholderValue, GraphicModes.Dim);
                 currentInput = PlaceholderValue;
+                Append(currentInput, GraphicModes.Dim);
+                DrawValidation(currentInput);
             }
             else if (selectedCompletion is not null)
             {
@@ -202,82 +232,23 @@ public class InteractiveMenu<T> : MenuBase<T>
                     Append(currentInput);
                     var rest = selectedCompletion.CompletionText[currentInput.Length..];
                     Append(rest, GraphicModes.Invert);
+                    DrawValidation(currentInput);
                 }
                 else
                 {
                     Append(currentInput);
+                    DrawValidation(currentInput);
                     Append(" (" + selectedCompletion.CompletionText + ")", GraphicModes.Dim);
                 }
             }
             else
             {
                 Append(currentInput);
+                DrawValidation(currentInput);
             }
             AdvanceLine();
-            bool completionsShown = false;
             DisplayColumns = 1;
-            if (_completions.Count > 0)
-            {
-                int availableWidth = Console.BufferWidth - 1; // slightly decrease the buffer
-                int maxItemWidth = _completions.Max(x => x.ListItem.Length); // length of the longest list item
-                // Between items there is a gap (InterItemPad)
-                // The gap can be skipped if it occurs after the last item in the line
-                // To allow the virtual last gap, increase the buffer width value by gap length
-                int gap = InterItemPad.Length;
-                DisplayColumns = (availableWidth + gap) / (maxItemWidth + gap);
-                // sanity check
-                var column_check = maxItemWidth * DisplayColumns + gap * (DisplayColumns - 1);
-                if (column_check > availableWidth)
-                {
-                    DisplayColumns--;
-                }
-                if (DisplayColumns < 1)
-                {
-                    DisplayColumns = 1;
-                }
-                // now that we know the number of columns we can update with list item width
-                maxItemWidth = (availableWidth + gap - DisplayColumns * gap) / DisplayColumns;
-                // powershell's completions go like Japanese, first vertically then horizontally
-                // but left to right, unlike Japanese
-                DisplayRows = (int)Math.Ceiling(1f * _completions.Count / DisplayColumns);
-                _displayMatrix = new(_completions, DisplayColumns);
-                _completionsReorderedIndices.Clear();
-                for (int row = 0; row < DisplayRows; row++)
-                {
-                    //bool firstItem = true;
-                    //foreach (var item in _displayMatrix.GetItemsFromRow(row))
-                    //{
-                    //    if (!firstItem)
-                    //    {
-                    //        Append(InterItemPad);
-                    //    }
-                    //    else
-                    //    {
-                    //        firstItem = false;
-                    //    }
-                    //}
-                    for (int column = 0; column < DisplayColumns; column++)
-                    {
-                        int i = row + column * DisplayRows;
-                        if (i >= _completions.Count)
-                        {
-                            break;
-                        }
-                        var mode = i == _completionIndex ? GraphicModes.Invert : GraphicModes.None;
-                        string cropped = Crop(_completions[i].ListItem, maxItemWidth);
-                        Append(cropped, mode);
-                        int toPad = maxItemWidth - cropped.Length;
-                        Append(new(' ', toPad));
-                        if (column < DisplayColumns - 1)
-                        {
-                            Append(InterItemPad); // do not write padding for last item
-                        }
-                        _completionsReorderedIndices.Add(i);
-                    }
-                    AdvanceLine();
-                }
-                completionsShown = true;
-            }
+            var completionsShown = DrawCompletions();
 
             if (!string.IsNullOrWhiteSpace(selectedCompletion?.Tooltip))
             {
@@ -286,16 +257,8 @@ public class InteractiveMenu<T> : MenuBase<T>
             }
             string toParse = selectedCompletion?.CompletionText ?? currentInput;
             AdvanceLine();
-            Append("Output: ");
-            if (Transformer.DescriptiveTransform(toParse) is string potential)
-            {
-                Append(potential, GraphicModes.Bold);
-            }
-            else
-            {
-                Append("Cannot parse value!", GraphicModes.Bold | GraphicModes.Dim);
-            }
-            AdvanceLine();
+
+            DrawOutput(toParse);
 
             Print();
             MoveCursorUp(PreviousLineLengths.Count);
@@ -349,7 +312,14 @@ public class InteractiveMenu<T> : MenuBase<T>
                     }
                     else
                     {
-                        return currentInput;
+                        bool isValid = Validator?.Validate(currentInput) ?? Transformer.TryTransform(currentInput, out _);
+                        if (isValid || info.Modifiers.HasFlag(ConsoleModifiers.Shift | ConsoleModifiers.Control))
+                        {
+                            return currentInput;
+                        }
+                        Append($"Cannot transform {currentInput} into a valid object!", GraphicModes.Bold, ConsoleColor.Red);
+                        AdvanceLine();
+                        break;
                     }
                 default:
                     AppendCharacter(info.KeyChar);
@@ -380,6 +350,80 @@ public class InteractiveMenu<T> : MenuBase<T>
             }
         }
     }
+
+    private bool DrawCompletions()
+    {
+        bool completionsShown = false;
+        if (_completions.Count > 0)
+        {
+            int availableWidth = Console.BufferWidth - 1; // slightly decrease the buffer
+            int maxItemWidth = _completions.Max(x => x.ListItem.Length); // length of the longest list item
+                                                                         // Between items there is a gap (InterItemPad)
+                                                                         // The gap can be skipped if it occurs after the last item in the line
+                                                                         // To allow the virtual last gap, increase the buffer width value by gap length
+            int gap = InterItemPad.Length;
+            DisplayColumns = (availableWidth + gap) / (maxItemWidth + gap);
+            // sanity check
+            var column_check = maxItemWidth * DisplayColumns + gap * (DisplayColumns - 1);
+            if (column_check > availableWidth)
+            {
+                DisplayColumns--;
+            }
+            if (DisplayColumns < 1)
+            {
+                DisplayColumns = 1;
+            }
+            // now that we know the number of columns we can update with list item width
+            maxItemWidth = (availableWidth + gap - DisplayColumns * gap) / DisplayColumns;
+            // powershell's completions go like Japanese, first vertically then horizontally
+            // but left to right, unlike Japanese
+            DisplayRows = (int)Math.Ceiling(1f * _completions.Count / DisplayColumns);
+            _displayMatrix = new(_completions, DisplayColumns);
+            _completionsReorderedIndices.Clear();
+            for (int row = 0; row < DisplayRows; row++)
+            {
+                for (int column = 0; column < DisplayColumns; column++)
+                {
+                    int i = row + column * DisplayRows;
+                    if (i >= _completions.Count)
+                    {
+                        break;
+                    }
+                    var mode = i == _completionIndex ? GraphicModes.Invert : GraphicModes.None;
+                    string cropped = Crop(_completions[i].ListItem, maxItemWidth);
+                    Append(cropped, mode);
+                    int toPad = maxItemWidth - cropped.Length;
+                    Append(new string(' ', toPad));
+                    if (column < DisplayColumns - 1)
+                    {
+                        Append(InterItemPad); // do not write padding for last item
+                    }
+                    _completionsReorderedIndices.Add(i);
+                }
+                AdvanceLine();
+            }
+            completionsShown = true;
+        }
+        return completionsShown;
+    }
+
+    private void DrawOutput(string toParse)
+    {
+        if (Hints.HasFlag(Hint.ParsedOutput))
+        {
+            Append("Output: ");
+            if (Transformer.DescriptiveTransform(toParse) is string potential)
+            {
+                Append(potential, GraphicModes.Bold);
+            }
+            else
+            {
+                Append("Cannot parse value!", GraphicModes.Bold | GraphicModes.Dim);
+            }
+            AdvanceLine();
+        }
+    }
+
     private void IndexLeft() => ChangeIndex(-1, 0);
     private void IndexRight() => ChangeIndex(1, 0);
     private void IndexUp() => ChangeIndex(0, -1);

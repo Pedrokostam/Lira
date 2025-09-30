@@ -88,8 +88,12 @@ public partial record Part(string Text, GraphicModes StartMode = GraphicModes.No
         {
             return Text;
         }
-        var bounds = ToSequence(StartMode,consoleColor:null);
+        var bounds = ToSequence(StartMode,Color);
         return bounds.Activation + Text + bounds.Deactivation;
+    }
+    public static string GetConsoleString(string text,GraphicModes mode=GraphicModes.None, ConsoleColor? color=null)
+    {
+        return new Part(text, mode, color).GetConsoleString();
     }
     public bool IsMultiline() => NewLineFinder().IsMatch(Text);
     public IEnumerable<Part> SplitLines()

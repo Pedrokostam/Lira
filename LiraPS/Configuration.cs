@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -29,10 +30,12 @@ namespace LiraPS;
 
 public class Configuration
 {
+
+    private static HashSet<string> InvalidConfigurationNames = new(StringComparer.OrdinalIgnoreCase);
     private string profileName = DefaultConfigName;
     private const string Extension = ".lbs";
     private static string DefaultConfigName => "DefaultConfig";
-    private static string DefaultConfigPath => Path.Combine(GetConfigFolderPath(), DefaultConfigName);
+    private static string DefaultConfigPath => CreateConfigPathFromName(DefaultConfigName);
 
     [JsonIgnore]
     public bool IsInitialized => !string.IsNullOrWhiteSpace(ServerAddress);
@@ -70,8 +73,9 @@ public class Configuration
         };
         return matching;
     }
-    public static string GetProfilePath(string? profileName = null)
+    public static string? GetProfilePath(string? profileName = null)
     {
+        var forbiddenPaths = InvalidConfigurationNames.Select(x => CreateConfigPathFromName(x)).ToList();
         profileName = profileName?.Trim();
         var configFolder = GetConfigFolderPath();
         var lastProfileTxtPath = GetLastProfileTxtPath(configFolder);
@@ -79,20 +83,28 @@ public class Configuration
         if (File.Exists(lastProfileTxtPath))
         {
             var name = File.ReadAllText(lastProfileTxtPath);
-            lastProfilePath = Path.Combine(configFolder, name);
-            lastProfilePath = Path.ChangeExtension(lastProfilePath, Extension);
+            lastProfilePath = CreateConfigPathFromName(name);
             lastProfilePath = File.Exists(lastProfilePath) ? lastProfilePath : null;
         }
         var present = GetAvailableProfiles();
-        var matching = GetProfilePath_Null(profileName);
-        return matching ?? lastProfilePath ?? present.FirstOrDefault() ?? DefaultConfigPath;
+        string?[] candidates = [
+            lastProfilePath,
+            .. present ,
+            DefaultConfigPath
+            ];
+        var allowedCandidates = candidates.OfType<string>().Except(forbiddenPaths, StringComparer.OrdinalIgnoreCase).ToList();
+        var matching = allowedCandidates.FirstOrDefault(x => Path.GetFileNameWithoutExtension(x).Equals(profileName, StringComparison.OrdinalIgnoreCase));
+        return matching ?? allowedCandidates.FirstOrDefault();
     }
 
     private static string GetLastProfileTxtPath(string configFolder)
     {
         return Path.Combine(configFolder, "LastProfile.txt");
     }
-
+    private static string CreateConfigPathFromName(string name)
+    {
+        return Path.ChangeExtension(Path.Combine(GetConfigFolderPath(), name),Extension);
+    }
     private static string GetConfigFolderPath()
     {
         string folder;
@@ -118,9 +130,15 @@ public class Configuration
         File.WriteAllText(GetLastProfileTxtPath(GetConfigFolderPath()), conf.profileName);
     }
 
+    public static void MarkWrong(Configuration conf)
+    {
+        InvalidConfigurationNames.Add(conf.Name);
+    }
+
     public static Configuration Create(IAuthorization auth, string server, string? profile = null)
     {
         var conf = new Configuration(profile, auth, server);
+        InvalidConfigurationNames.Remove(conf.Name);
         conf.Save();
         return conf;
     }
@@ -163,7 +181,7 @@ public class Configuration
     }
 
     [SetsRequiredMembers]
-    public Configuration() : this(null, null, null) { }
+    public Configuration() : this(null, null, null) {}
 
     private static Type GetType(string? typeName)
     {
@@ -216,7 +234,7 @@ public class Configuration
 
     public Information ToInformation()
     {
-        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress,Name);
+        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress, Name);
     }
 
     public readonly record struct Information

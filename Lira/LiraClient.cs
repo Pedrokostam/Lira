@@ -31,13 +31,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Lira;
-
-public enum ClientMode
-{
-    Online,
-    ReadOnly,
-    Offline,
-}
 public partial class LiraClient : IDisposable
 {
     private const string ApplicationAgentName = "Lira_";

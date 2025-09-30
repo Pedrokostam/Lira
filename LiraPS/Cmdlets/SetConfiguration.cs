@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Diagnostics.Metrics;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using ConsoleMenu;
 using Lira.Authorization;
 using Lira.Objects;
+using LiraPS.Validators;
 using Microsoft.Extensions.Logging;
 using Serilog.Core;
 using Serilog.Events;
@@ -58,9 +62,9 @@ public class SetConfiguration : LiraCmdlet
         {
             Type = (ConfigurationType)Menu("Choose what kind of authentication you want to use",
                                            new MenuItem(
-                                               "Personal GetGenericPropertyValue Token",
+                                               "Personal Access Token",
                                                ConfigurationType.PersonalAccessToken,
-                                               "You will be asked to provide a Personal GetGenericPropertyValue Token.\nThe token can be created in your account's settings.\nhttps://developer.atlassian.com/server/jira/platform/personal-access-token/"),
+                                               "You will be asked to provide a Personal Access Token.\nThe token can be created in your account's settings.\nhttps://developer.atlassian.com/server/jira/platform/personal-access-token/"),
                                            new MenuItem(
                                                "Username and password",
                                                ConfigurationType.Credentials,
@@ -132,7 +136,7 @@ public class SetConfiguration : LiraCmdlet
         }
         if (!TestBoundParameter(nameof(Name)))
         {
-            Name = ReadInput("Do you want to specify custom username for this configuration? Leave empty to use the \"DefaultConfig\"");
+            Name = InteractiveStringMenu.Create("Enter name for this configuration", "DefaultConfig", x=>!string.IsNullOrWhiteSpace(x)).Show();
         }
         var c = Configuration.Create(Authorization, ServerAddress, Name);
         c.Save();
@@ -162,18 +166,10 @@ public class SetConfiguration : LiraCmdlet
             return;
         }
         bool validAddress = LiraSession.Config.IsInitialized;
-        if (validAddress)
-        {
-            ServerAddress = ReadInput($"Enter new server address (leave empty to reuse {LiraSession.Config.ServerAddress})");
-            if (string.IsNullOrWhiteSpace(ServerAddress))
-            {
-                ServerAddress = LiraSession.Config.ServerAddress;
-            }
-        }
-        else
-        {
-            ServerAddress = ReadInput("Enter server address (usually \"https://jira.(company).com\")");
-        }
+        var prompt = validAddress ? "Enter server address" : "Enter server address (usually \"https://jira.(company).com\")";
+        var placeholder = validAddress ? LiraSession.Config.ServerAddress : null;
+        var addresMenu = InteractiveStringMenu.Create(prompt, placeholder, AddressValidator.Instance);
+        ServerAddress = addresMenu.Show();
         EnsureNotEmpty(ServerAddress, nameof(ServerAddress));
     }
 }

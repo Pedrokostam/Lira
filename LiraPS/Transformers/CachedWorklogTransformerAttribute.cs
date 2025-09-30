@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 namespace LiraPS.Transformers;
 internal class CachedWorklogTransformerAttribute : ArgumentTransformationAttribute
 {
+    public static readonly UserDetailsToStringTransformerAttribute Instance = new();
     public override object? Transform(EngineIntrinsics engineIntrinsics, object inputData)
     {
         var rawPotentialWorklog = inputData switch
@@ -21,10 +22,7 @@ internal class CachedWorklogTransformerAttribute : ArgumentTransformationAttribu
         {
             return rawPotentialWorklog;
         }
-        if (rawPotentialWorklog is not string logString)
-        {
-            throw new ArgumentTransformationMetadataException($"Cannot convert {rawPotentialWorklog.GetType().FullName} into a valid worklog");
-        }
+        string logString = rawPotentialWorklog.ToString() ?? "";
         if (LiraSession.Client is null)
         {
             throw new ArgumentTransformationMetadataException($"No worklog cache is present - fetch worklogs from server");
@@ -35,6 +33,10 @@ internal class CachedWorklogTransformerAttribute : ArgumentTransformationAttribu
         if (LiraSession.Client.TryGetCachedWorklog(id, issue, out Worklog? log))
         {
             return log;
+        }
+        if (LiraSession.TryGetCachedWorklog(logString, out var sessionCache))
+        {
+            return sessionCache;
         }
         throw new ArgumentTransformationMetadataException($"No cached worklog for query: {logString}. Fetch new worklogs or make sure the ID is correct");
     }

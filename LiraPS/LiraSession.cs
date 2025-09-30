@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Lira;
 using Lira.Authorization;
+using Lira.Objects;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog;
@@ -17,9 +18,10 @@ using Serilog.Core;
 namespace LiraPS;
 public static class LiraSession
 {
+    private static readonly Dictionary<string, Worklog> _worklogCache = new Dictionary<string, Worklog>(StringComparer.OrdinalIgnoreCase);
     private static Configuration? _config;
 
-  
+    public static string? LastAddedLogId { get; set; }
     public static IEnumerable<Log> LogQueue => (Logger as IEnumerable<Log>) ?? [];
     public static bool IsActiveSession(Configuration.Information info) => info.Equals(_config?.ToInformation());
     public static LoggingLevelSwitch LogSwitch { get; } = new(Serilog.Events.LogEventLevel.Verbose);
@@ -47,6 +49,31 @@ public static class LiraSession
             if (_config is not null)
             {
                 Configuration.MarkLast(_config);
+            }
+        }
+    }
+    public static bool TryGetCachedWorklog(string id, [NotNullWhen(true)] out Worklog? log) => _worklogCache.TryGetValue(id, out log);
+    public static void CacheWorklog(Worklog log)
+    {
+        _worklogCache[log.ID] = log;
+        Logger.LogDebug("Added worklog {id} to session cache", log.ID);
+    }
+    public static void UncacheWorklog(Worklog log)
+    {
+        if (_worklogCache.Remove(log.ID))
+        {
+            Logger.LogDebug("Removed worklog {id} from session cache", log.ID);
+        }
+    }
+    public static void ValidateWorklogCache()
+    {
+        List<Worklog> cached = [.. _worklogCache.Values];
+        foreach (var c in cached)
+        {
+            if (Client.TryGetCachedIssue(c.ID, out _))
+            {
+                Logger.LogDebug("Removing client-cached worklog {id} from session cache", c.ID);
+                UncacheWorklog(c);
             }
         }
     }
@@ -78,16 +105,30 @@ public static class LiraSession
             Logger.LogDebug("Reusing existing session.");
             return Client;
         }
-        Config ??= Configuration.Load();
-        if (!Config.IsInitialized)
+        while (true)
         {
-            throw new PSInvalidOperationException("Attempted to load unitialized configuration. Call Set-Configuration to initialize it.");
+
+            Config ??= Configuration.Load();
+            if (!Config.IsInitialized)
+            {
+                throw new PSInvalidOperationException("Attempted to load unitialized configuration. Call Set-Configuration to initialize it.");
+            }
+            try
+            {
+                Client = await LiraSessionFactory.Create(Config.ServerAddress)
+                     .WithLogger(Logger)
+                     .AuthorizedBy(Config.Authorization)
+                     .Online()
+                     .Initialize();
+                break;
+            }
+            catch (Exception)
+            {
+                Configuration.MarkWrong(Config);
+                Config = null;
+                Logger.LogInformation("Marked config {name} as invalid",Config.Name);
+            }
         }
-        Client = await LiraSessionFactory.Create(Config.ServerAddress)
-             .WithLogger(Logger)
-             .AuthorizedBy(Config.Authorization)
-             .Online()
-             .Initialize();
         if (Client.Authorization is NoAuthorization)
         {
             Logger.LogWarning("Created session with no authorization.");

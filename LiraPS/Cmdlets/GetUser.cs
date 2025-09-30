@@ -17,16 +17,20 @@ namespace LiraPS.Cmdlets
     public class GetUser : LiraCmdlet
     {
         [Alias("ID", "DisplayName")]
+        [AllowEmptyCollection]
         [Parameter(
-            Mandatory = true,
+            Mandatory = false,
             Position = 0,
             ValueFromPipeline = true,
             ValueFromPipelineByPropertyName = true)]
-        public string[] Name { get; set; } = default!;
+        public string[] Name { get; set; } = [];
 
-        // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called
         protected override void ProcessRecord()
         {
+            if (Name.Length == 0)
+            {
+                throw new ArgumentException("No user specified! Hint: use \"me\" to choose currently logged user", nameof(Name));
+            }
             foreach (var userName in Name)
             {
                 var replacement = ReplaceCurrentUserAlias(userName);

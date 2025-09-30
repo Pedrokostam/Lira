@@ -10,6 +10,15 @@
 		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
 		<GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
 		<UserSecretsId>b36bcdd9-83d8-430e-8974-faa8487cb4aa</UserSecretsId>
+		<Title>LiraPS</Title>
+		<Description>Module that simplifies using the Write-Progress cmdlet in PowerShell: automates time and percentage calculations; enables pipeline support.</Description>
+		<Copyright>Maciej Krosta</Copyright>
+		<PackageProjectUrl>https://github.com/Pedrokostam/Lira</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Pedrokostam/Lira</RepositoryUrl>
+		<OutputType>Library</OutputType>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<RepositoryType>git</RepositoryType>
+		<RunPostBuildEvent>Always</RunPostBuildEvent>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -79,4 +88,7 @@
 		</None>
 	</ItemGroup>
 
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Exec Command="pwsh -executionpolicy bypass -noprofile -file &quot;$(ProjectDir)\build_scripts\postbuild.ps1&quot; -OutputDir $(TargetDir) -Name $(AssemblyName) -Version $(Version) -ProjectDir $(ProjectDir)" />
+	</Target>
 </Project>

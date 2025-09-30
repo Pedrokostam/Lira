@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Lira.Objects;
 using LiraPS.Extensions;
+using LiraPS.Transformers;
 using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets;
@@ -14,6 +15,7 @@ namespace LiraPS.Cmdlets;
 public class RemoveWorklog : LiraCmdlet
 {
     [Parameter(ValueFromPipeline = true, Mandatory = true)]
+    [CachedWorklogTransformer]
     public Worklog[] Worklogs { get; set; } = [];
     [Parameter]
     public SwitchParameter Force { get; set; }
@@ -36,7 +38,7 @@ public class RemoveWorklog : LiraCmdlet
         {
             if (noToAll)
             {
-                UserCancel("worklog adding");
+                UserCancel("worklog removing");
             }
             // if there is only 1 log, we already asked for it
             if (yesToAll || _worklogsAccumulated.Count==1 || this.ShouldContinue($"Remove {worklog.Started.UnambiguousForm()} - {worklog.TimeSpent.PrettyTime()}  {worklog.Comment}", $"Do you want to remove this worklog?", ref yesToAll, ref noToAll))
@@ -60,6 +62,7 @@ public class RemoveWorklog : LiraCmdlet
 
             if (state.RemovalSuccess)
             {
+                LiraSession.UncacheWorklog(worklog);
                 WriteObject($"Worklog {worklog.ID} has been deleted");
                 LiraSession.Logger.LogInformation("Removed worklog {id}", worklog.ID);
             }

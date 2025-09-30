@@ -13,7 +13,7 @@ namespace LiraPS.Cmdlets;
 public class CsvDynamicParameters
 {
     [Parameter]
-    public Separator Separator { get; set; } =Separator.Comma;
+    public Separator Separator { get; set; } = Separator.Comma;
     [Parameter]
     public SwitchParameter NoHeader { get; set; }
 }
@@ -95,7 +95,6 @@ public class ExportWorklog : LiraCmdlet, IDynamicParameters
                 WriteObject(Lira.Extensions.WorklogExtensions.GetCsvHeaderLine(sep));
             }
             WriteObject(_allWorklogs.Select(x => x.GetCsvLine(sep)));
-            base.EndProcessing();
         }
         else if (As == ExportMode.Json)
         {
@@ -110,6 +109,7 @@ public class ExportWorklog : LiraCmdlet, IDynamicParameters
             }
             WriteObject(JsonSerializer.Serialize(_allWorklogs.Select(x => x.GetDict()), opt), enumerateCollection: true);
         }
+        base.EndProcessing();
     }
 
 }

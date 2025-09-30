@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Management.Automation;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using ConsoleMenu;
 using LiraPS.Extensions;
@@ -11,8 +13,9 @@ namespace LiraPS.Transformers;
 //{
 //    object? TransformString(string inputData);
 //}
-public class TimespanTransformer : ArgumentTransformationAttribute, ITransform<TimeSpan>
+public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer<TimeSpan>, IReasonableValidator
 {
+    public static readonly TimespanTransformer Instance = new();
     private ref struct XD
     {
         Span<char> Buffer { get; }
@@ -56,10 +59,6 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransform<T
         {
             return ts;
         }
-        //if(inputData is int seconds)
-        //{
-        //    return TimeSpan.FromSeconds(seconds);
-        //}
         if (inputData is not string s)
         {
             throw new ArgumentTransformationMetadataException($"Could not convert {inputData.GetType().FullName} to TimeSpan");
@@ -71,6 +70,7 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransform<T
         var buffer = new XD(stackalloc char[24]);
         var span = s.AsSpan();
         TimeSpan result = TimeSpan.Zero;
+        bool hasParsed = false;
         for (int i = 0; i < s.Length; i++)
         {
             char czar = s[i];
@@ -91,6 +91,7 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransform<T
             }
             if (double.TryParse(buffer.GetString(), NumberParseStyle, CultureInfo.InvariantCulture, out var number))
             {
+                hasParsed |= true;
                 result += unit switch
                 {
                     TimeUnit.Seconds => TimeSpan.FromSeconds(number),
@@ -101,6 +102,10 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransform<T
             }
 
         }
+        if (!hasParsed)
+        {
+            throw new ArgumentException($"Cannot conver \"{s}\" to TimeSpan");
+        }
         return result;
     }
 
@@ -110,15 +115,46 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransform<T
         {
             return null;
         }
+        if(TryTransform(item, out var result))
+        {
+            return result.PrettyTime();
+        }
+        return null;
+    }
+
+    public bool TryTransform(string item, [NotNullWhen(true)] out TimeSpan value)
+    {
         try
         {
-            return Transform(item).PrettyTime();
+            value = Transform(item)!;
+            return true;
         }
         catch (Exception)
         {
-
-            throw;
+            value = default!;
+            return false;
         }
     }
-    
+
+    public (bool valid, string? reason) ValidateWithReason(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return (false, "Duration cannot be an empty string");
+        }
+        if(TryTransform(value,out var r))
+        {
+            if(r == TimeSpan.Zero)
+            {
+                return (false, "Duration cannot be zero");
+            }
+            return (true, null);
+        }
+        return (false, "Cannot convert to timespan");
+    }
+
+    public bool Validate(string value)
+    {
+        return ValidateWithReason(value).valid;
+    }
 }

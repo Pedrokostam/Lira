@@ -11,9 +11,9 @@ using Lira.Extensions;
 using static LiraPS.StringFormatter;
 using System.Diagnostics.CodeAnalysis;
 using LiraPS.Extensions;
-using LiraPS.Transformers;
 using System.Data;
 using ConsoleMenu;
+using LiraPS.Transformers;
 namespace LiraPS.Completers;
 /// <summary>
 /// Provides argument completion for JQL date parameters in PowerShell cmdlets.

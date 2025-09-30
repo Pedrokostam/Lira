@@ -84,6 +84,7 @@ public class AddWorklogStateMachine(LiraClient client) : StateMachine<AddWorklog
             Steps.AddWorklog => AddWorklog(state),
             _ => Task.FromResult(state),
         };
+
     }
     public State GetStartState(string issueKey, in WorklogToAdd worklogToAdd)
     {

@@ -44,7 +44,7 @@ namespace LiraPS.Cmdlets
         public IJqlDate? EndDate { get; set; } = null;
 
         [Parameter(ValueFromPipeline = true)]
-        [UserDetailsToStringTransformer]
+        [UserDetailsToStringTransformerAttribute]
         [ValidateNotNullOrEmpty]
         public string[] User { get => user; set => user = value ?? []; }
         [Parameter]

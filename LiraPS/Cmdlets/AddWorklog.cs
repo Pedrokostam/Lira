@@ -8,6 +8,7 @@ using Lira.Objects;
 using LiraPS.Completers;
 using LiraPS.Extensions;
 using LiraPS.Transformers;
+
 using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets
@@ -44,7 +45,7 @@ namespace LiraPS.Cmdlets
             {
                 while (true)
                 {
-                    var id = ReadInput("Enter issue id");
+                    var id = InteractiveStringMenu.CreateNonWhitespace("Enter issue id", LiraSession.LastAddedLogId).Show();
                     if (string.IsNullOrWhiteSpace(id))
                     {
                         WriteWarning("Issue id cannot be empty");
@@ -56,13 +57,14 @@ namespace LiraPS.Cmdlets
                     }
                 }
             }
+            LiraSession.LastAddedLogId = Issue;
             if (Started == default)
             {
                 var now = DateTimeOffset.Now;
                 var dateMenu = new InteractiveMenu<DateTimeOffset>(
                     new DateTimeOffsetDateTransformerAttribute(DateMode.Current),
                     "Enter date of work",
-                    now.NumericalForm(),
+                    "Now",
                     new JqlDateArgumentCompleter());
 
                 while (true)
@@ -81,8 +83,11 @@ namespace LiraPS.Cmdlets
             if (Duration == default)
             {
                 var timeMenu = new InteractiveMenu<TimeSpan>(
-                    new TimespanTransformer(),
-                    "Enter time spent");
+                TimespanTransformer.Instance,
+                "Enter time spent")
+                {
+                    Validator = TimespanTransformer.Instance
+                };
                 while (true)
                 {
                     try
@@ -136,6 +141,7 @@ namespace LiraPS.Cmdlets
 
             if (state.AddedWorklog is Worklog added)
             {
+                LiraSession.CacheWorklog(added);
                 LiraSession.Logger.LogInformation("Added worklog {id}", added.ID);
                 WriteObject(added);
             }

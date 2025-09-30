@@ -23,7 +23,8 @@ public abstract partial class MenuBase<T>
         Index++;
     }
 
-    protected void Append(string text, GraphicModes pre=GraphicModes.None)
+    protected void Append(char sign, GraphicModes mode = GraphicModes.None, ConsoleColor? color = null) => Append(sign.ToString(), mode,color);
+    protected void Append(string text, GraphicModes mode=GraphicModes.None, ConsoleColor? color =null)
     {
         var lines = Part.NewLineFinder().Split(text);
 
@@ -37,11 +38,11 @@ public abstract partial class MenuBase<T>
             int diff = BufferWidth - thisQueuedLine.Length;
             if (line.Length < diff)
             {
-                thisQueuedLine.Add(new Part(line, pre));
+                thisQueuedLine.Add(new Part(line, mode,color));
             }
             else
             {
-                thisQueuedLine.Add(new Part(CroPad(line, diff - 1), pre));
+                thisQueuedLine.Add(new Part(CroPad(line, diff - 1), mode, color));
             }
         }
     }
@@ -85,8 +86,6 @@ public abstract partial class MenuBase<T>
         }
         Index = 0;
         ClearToBottom();// Clear to bottom would allow us to not store line info, but it causes a slight flicker
-
-
     }
     protected static void MoveCursorUp(int lineCount)
     {
@@ -173,7 +172,9 @@ public abstract partial class MenuBase<T>
         }
         BufferWidth = interim;
     }
-
+    /// <summary>
+    /// May cause flicker but clears well
+    /// </summary>
     protected static void ClearToBottom()
     {
         Console.Write("\x1b[0J");

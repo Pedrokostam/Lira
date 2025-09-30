@@ -1,9 +1,12 @@
 ﻿
+using System.Diagnostics.CodeAnalysis;
+using LiraPS.Transformers;
+
 namespace ConsoleMenu.Prototype;
 
 internal class Program
 {
-    public class Trans : ITransform<string>
+    public class Trans : ITransformer<string>
     {
         public string? DescriptiveTransform(string? item)
         {
@@ -13,6 +16,20 @@ internal class Program
         }
 
         public string Transform(string item) => item;
+
+        public bool TryTransform(string item, [NotNullWhen(true)] out string value)
+        {
+            try
+            {
+                value = Transform(item)!;
+                return true;
+            }
+            catch (Exception)
+            {
+                value = default!;
+                return false;
+            }
+        }
     }
     public class Comp : ICompleter
     {
@@ -70,7 +87,7 @@ internal class Program
     }
     private static void Inter()
     {
-        var p = new InteractiveMenu<DateTimeOffset>(new LiraPS.Transformers.DateTimeOffsetDateTransformerAttribute(LiraPS.Transformers.DateMode.Current),
+        var p = new InteractiveMenu<DateTimeOffset>(new LiraPS.Transformers.DateTimeOffsetDateTransformerAttribute(DateMode.Current),
                                                     "Interactive",
                                                     new LiraPS.Completers.JqlDateArgumentCompleter())
         { PlaceholderValue=DateTime.Now.ToString("yyyy-M-d H:m zzz") }.Show();
