@@ -365,3 +365,4 @@ FodyWeavers.xsd
 **/log.json
 **/log.txt
 **/*.log
+LiraPS/published/**
