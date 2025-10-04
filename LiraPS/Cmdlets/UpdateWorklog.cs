@@ -20,7 +20,7 @@ public class UpdateWorklog : LiraCmdlet
 {
     public readonly record struct Change(string Name, object Old, object Updated) { }
 
-    [Parameter(Mandatory = true, ValueFromPipeline = true)]
+    [Parameter(Mandatory = true, ValueFromPipeline = true,Position=0)]
     [CachedWorklogTransformer]
     public Worklog Worklog { get; set; } = default!;
 

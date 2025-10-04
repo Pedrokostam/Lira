@@ -14,7 +14,7 @@ namespace LiraPS.Cmdlets;
 [Alias("Remove-Worklog")]
 public class RemoveWorklog : LiraCmdlet
 {
-    [Parameter(ValueFromPipeline = true, Mandatory = true)]
+    [Parameter(ValueFromPipeline = true, Mandatory = true, Position=0)]
     [CachedWorklogTransformer]
     public Worklog[] Worklogs { get; set; } = [];
     [Parameter]
