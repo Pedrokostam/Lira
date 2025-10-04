@@ -77,6 +77,9 @@ public static class LiraSession
             }
         }
     }
+
+    public static DateTimeOffset? LastAddedLogDate { get; set; } =DateTimeOffset.Now;
+
     public static bool HasConfig
     {
         get

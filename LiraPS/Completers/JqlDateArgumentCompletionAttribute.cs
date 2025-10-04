@@ -24,6 +24,7 @@ public abstract class JqlDateArgumentCompletionBase : IArgumentCompleter, ISimpl
 {
     public abstract DateMode Mode { get; }
     public abstract bool WrapStringsWithSpaces { get; }
+    public bool UseLastLogDate { get; set; } = false;
 
     public IEnumerable<ICompleter.Completion> Complete(string item)
     {
@@ -40,7 +41,7 @@ public abstract class JqlDateArgumentCompletionBase : IArgumentCompleter, ISimpl
         }
         if (wordToComplete.Length == 0 || char.IsLetter(wordToComplete[0]))
         {
-            foreach (var item in DateCompletionHelper.GetEnumCompletions(wordToComplete, Mode, !WrapStringsWithSpaces))
+            foreach (var item in DateCompletionHelper.GetEnumCompletions(wordToComplete, Mode, !WrapStringsWithSpaces, UseLastLogDate))
             {
                 yield return item;
             }

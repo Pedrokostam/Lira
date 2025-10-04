@@ -62,10 +62,10 @@ namespace LiraPS.Cmdlets
             {
                 var now = DateTimeOffset.Now;
                 var dateMenu = new InteractiveMenu<DateTimeOffset>(
-                    new DateTimeOffsetDateTransformerAttribute(DateMode.Current),
+                    new DateTimeOffsetDateTransformerAttribute(DateMode.Current) { UseLastLogDate=true},
                     "Enter date of work",
-                    "Now",
-                    new JqlDateArgumentCompleter());
+                    LiraSession.LastAddedLogDate is null ? DateCompletionHelper.NowKeyword : $"{DateCompletionHelper.LastLogDateKeyword} +1",
+                    new JqlDateArgumentCompleter() { UseLastLogDate = true });
 
                 while (true)
                 {

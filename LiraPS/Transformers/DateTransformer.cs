@@ -27,6 +27,7 @@ public enum DateMode
 public abstract class DateTransformer<T>(DateMode mode) : ArgumentTransformationAttribute(), ITransformer<T>
 {
     public DateMode Mode { get; } = mode;
+    public bool UseLastLogDate { get; set; } = false;
 
     protected abstract T WrapUnwrap(object? dateObject);
 
@@ -75,12 +76,12 @@ public abstract class DateTransformer<T>(DateMode mode) : ArgumentTransformation
     }
     public T Transform(string s)
     {
-
+        s = s.Trim();
         if (string.IsNullOrWhiteSpace(s))
         {
             throw new ArgumentNullException(nameof(s));
         }
-        if (s.Contains("yester", StringComparison.OrdinalIgnoreCase))
+        if (s.StartsWith(DateCompletionHelper.YesterdayKeywordStart, StringComparison.OrdinalIgnoreCase))
         {
             IJqlDate? yesterday = Mode switch
             {
@@ -91,7 +92,7 @@ public abstract class DateTransformer<T>(DateMode mode) : ArgumentTransformation
             };
             return WrapUnwrap(yesterday);
         }
-        if (s.Equals("today", StringComparison.OrdinalIgnoreCase))
+        if (s.Equals(DateCompletionHelper.TodayKeyword, StringComparison.OrdinalIgnoreCase))
         {
             IJqlDate? todayo = Mode switch
             {
@@ -102,9 +103,17 @@ public abstract class DateTransformer<T>(DateMode mode) : ArgumentTransformation
             };
             return WrapUnwrap(todayo);
         }
-        if (s.Equals(value: "now", StringComparison.OrdinalIgnoreCase))
+        if (s.Equals(DateCompletionHelper.NowKeyword, StringComparison.OrdinalIgnoreCase))
         {
             return WrapUnwrap(new JqlManualDate(DateTimeOffset.Now));
+        }
+        if (UseLastLogDate && s.StartsWith(DateCompletionHelper.LastLogDateKeyword, StringComparison.OrdinalIgnoreCase) && LiraSession.LastAddedLogDate is DateTimeOffset lastDto)
+        {
+            var cr = DateCompletionHelper.GetLastLogCompletion(s, lastDto, true);
+            if (cr?.date is DateTimeOffset shiftedDto)
+            {
+                return WrapUnwrap(shiftedDto);
+            }
         }
         if (DateCompletionHelper.GetDateFromNonPositiveInt(s, Mode, out var date, out _))
         {
