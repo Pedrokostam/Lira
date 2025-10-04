@@ -366,3 +366,4 @@ FodyWeavers.xsd
 **/log.txt
 **/*.log
 LiraPS/published/**
+LiraPS/published/*
