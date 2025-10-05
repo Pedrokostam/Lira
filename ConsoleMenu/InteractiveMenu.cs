@@ -137,15 +137,14 @@ public class InteractiveMenu<T> : MenuBase<T>
 
     /// <inheritdoc cref="MenuBase{T}.Show"/>
     /// <exception cref="PromptTransformException"/>
-    public override T Show()
+    public override T Show() => Show(true);
+    public  T Show(bool showInitialCompletions)
     {
         try
         {
             SetCursor(false);
             CatchCtrlC();
-
-
-            var payload = ShowImpl();
+            var payload = ShowImpl(showInitialCompletions);
             switch (ClearMode)
             {
                 case MenuClearMode.None:
@@ -210,8 +209,12 @@ public class InteractiveMenu<T> : MenuBase<T>
             Append($" ({reason})", GraphicModes.Dim);
         }
     }
-    private string ShowImpl()
+    private string ShowImpl(bool showInitialCompletions)
     {
+        if (showInitialCompletions && Completer is not null)
+        {
+            _completions.AddRange(Completer.Complete(_input.ToString()));
+        }
         while (true)
         {
             UpdateBufferWidth();
@@ -272,7 +275,7 @@ public class InteractiveMenu<T> : MenuBase<T>
                 Terminate();
             }
             bool inputChanged = false;
-            bool showNewCompletions = completionsShown;
+            bool showNewCompletions = completionsShown || showInitialCompletions;
             switch (info.Key)
             {
                 case ConsoleKey.Escape:
@@ -378,7 +381,7 @@ public class InteractiveMenu<T> : MenuBase<T>
             // powershell's completions go like Japanese, first vertically then horizontally
             // but left to right, unlike Japanese
             DisplayRows = (int)Math.Ceiling(1f * _completions.Count / DisplayColumns);
-            _displayMatrix = new(_completions, DisplayColumns);
+            //_displayMatrix = new(_completions, DisplayColumns);
             _completionsReorderedIndices.Clear();
             for (int row = 0; row < DisplayRows; row++)
             {

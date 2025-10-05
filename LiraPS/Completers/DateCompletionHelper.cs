@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Management.Automation;
 using System.Text.RegularExpressions;
-using Lira.Jql;
+using ConsoleMenu;
 using Lira.Extensions;
-using static LiraPS.StringFormatter;
-using System.Diagnostics.CodeAnalysis;
-using LiraPS.Extensions;
-using LiraPS.Completers;
+using Lira.Jql;
 using LiraPS.Arguments;
+using LiraPS.Completers;
+using LiraPS.Extensions;
 using LiraPS.Transformers;
+using static ConsoleMenu.ICompleter;
+using static LiraPS.StringFormatter;
 namespace LiraPS;
 
 /// <summary>
@@ -21,6 +23,28 @@ namespace LiraPS;
 /// </summary>
 internal static partial class DateCompletionHelper
 {
+    public readonly record struct LastLogDateCompletion(int Shift, DateTimeOffset BaseDate, bool IsValid)
+    {
+        public DateTimeOffset? ParsedDate => BaseDate.AddDays(Shift);
+        public string CompletionString
+        {
+            get
+            {
+                return $"{DateCompletionHelper.LastLogDateKeyword} {NumberString}";
+            }
+        }
+        private string NumberString => (Shift).ToString("+0;-0;0", null);
+
+        public CompletionResult ToCompletionResult(bool noWrap)
+        {
+            return CreateCompletion(
+                CompletionString,
+                listItemText: CompletionString,
+                CompletionResultType.ParameterValue,
+                $"Date of the last added log shifted by {NumberString} days -> {ParsedDate?.UnambiguousForm() ?? "N/A"}",
+                noWrap);
+        }
+    }
     public const string LastLogDateKeyword = "LastLog";
     public const string NowKeyword = "Now";
     public const string TodayKeyword = "Today";
@@ -32,7 +56,7 @@ internal static partial class DateCompletionHelper
     public static partial Regex LastLogSanitizer();
     [GeneratedRegex(@"[^\d+-]", RegexOptions.ExplicitCapture, 250)]
     public static partial Regex LastLogShiftInvalidator();
-    [GeneratedRegex(@"^la?s?t?l?o?g?[\s\[\]{}()<>+]*(?<shift>[-+]?\d+)?[\s\[\]{}()<>]*$", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase, 250)]
+    [GeneratedRegex(@"^l?a?s?t?l?o?g?[\s\[\]{}()<>+]*(?<shift>[-+]?\d+)?[\s\[\]{}()<>]*$", RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase, 250)]
     public static partial Regex LastLogParser();
     /// <summary>
     /// Gets a specific date based on a JQL keyword, converted to the local time zone.
@@ -260,8 +284,16 @@ internal static partial class DateCompletionHelper
         }
         return false;
     }
-    internal static (CompletionResult completion, DateTimeOffset date)? GetLastLogCompletion(string wordToComplete, DateTimeOffset baseDate, bool noWrap)
+    /// <summary>
+    /// Return null only if 
+    /// </summary>
+    /// <param name="wordToComplete"></param>
+    /// <param name="baseDate"></param>
+    /// <param name="noWrap"></param>
+    /// <returns></returns>
+    internal static LastLogDateCompletion? GetLastLogCompletion(string wordToComplete, DateTimeOffset baseDate, bool noWrap)
     {
+        wordToComplete = wordToComplete.Trim();
         var parserMatch = LastLogParser().Match(wordToComplete);
         if (!parserMatch.Success)
         {
@@ -273,18 +305,21 @@ internal static partial class DateCompletionHelper
         {
             shift = maybeShift;
         }
-        string numberString = shift.ToString("+0;-0;0", null);
-        string completion = $"{LastLogDateKeyword} {numberString}";
         try
         {
-            var newDate = baseDate.AddDays(shift);
-            string tooltip = $"Date of the last added log shifted by {numberString} days - {newDate.UnambiguousForm()}";
-            return (CreateCompletion(completion, completion, CompletionResultType.ParameterValue, tooltip, noWrap), newDate);
+
+            var ret = new LastLogDateCompletion(shift, baseDate, wordToComplete.StartsWith(LastLogDateKeyword, StringComparison.OrdinalIgnoreCase));
+            _ = ret.ParsedDate; // Get the parsed date to check if it is still in range
+            return ret;
         }
         catch (Exception)
         {
             return null;
         }
+    }
+    private static bool Fuzzy(string input, string keyword)
+    {
+        return keyword.StartsWith(input, StringComparison.OrdinalIgnoreCase);
     }
     /// <summary>
     /// Generates completion results for JQL date keyword enums and the "today" keyword, matching the input string.
@@ -292,16 +327,21 @@ internal static partial class DateCompletionHelper
     public static IEnumerable<CompletionResult> GetEnumCompletions(string wordToComplete, DateMode mode, bool noWrap, bool useLastLogDate)
     {
         wordToComplete = (wordToComplete ?? "").Trim();
-        if (useLastLogDate
-            && LiraSession.LastAddedLogDate is DateTimeOffset lastDto
-            && (LastLogDateKeyword.StartsWith(wordToComplete, StringComparison.OrdinalIgnoreCase) || wordToComplete.Contains(LastLogDateKeyword, StringComparison.OrdinalIgnoreCase)))
+        bool canUseLastDate = useLastLogDate && LiraSession.LastAddedLogDate is not null;
+        if (canUseLastDate
+            && (Fuzzy(wordToComplete, LastLogDateKeyword) || wordToComplete.Contains(LastLogDateKeyword, StringComparison.OrdinalIgnoreCase)))
         {
-            if (GetLastLogCompletion(wordToComplete, lastDto, noWrap)?.completion is CompletionResult cr)
+            if (GetLastLogCompletion(wordToComplete, LiraSession.LastAddedLogDate!.Value, noWrap) is LastLogDateCompletion llc)
             {
-                yield return cr;
+                yield return llc.ToCompletionResult(noWrap);
+                if (llc.Shift == 0)
+                {
+                    yield return (llc with { Shift = +1 }).ToCompletionResult(noWrap);
+                    yield return (llc with { Shift = -1 }).ToCompletionResult(noWrap);
+                }
             }
         }
-        if (TodayKeyword.StartsWith(wordToComplete, StringComparison.OrdinalIgnoreCase))
+        if (Fuzzy(wordToComplete, TodayKeyword))
         {
             (IJqlDate date, string tooltip) datetip = mode switch
             {
@@ -317,7 +357,7 @@ internal static partial class DateCompletionHelper
                 datetip.tooltip, noWrap
                 );
         }
-        if (NowKeyword.StartsWith(wordToComplete, StringComparison.OrdinalIgnoreCase))
+        if (Fuzzy(wordToComplete, NowKeyword))
         {
             yield return CreateCompletion(NowKeyword,
                 NowKeyword,

@@ -109,6 +109,7 @@ namespace LiraPS.Cmdlets
                     Comment = null;
                 }
             }
+            LiraSession.LastAddedLogDate = Started;
             var worklogToAdd = new WorklogToAdd(Started, Duration, Comment);
             if (!NoConfirm.IsPresent)
             {

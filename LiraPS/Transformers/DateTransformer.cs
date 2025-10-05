@@ -109,10 +109,10 @@ public abstract class DateTransformer<T>(DateMode mode) : ArgumentTransformation
         }
         if (UseLastLogDate && s.StartsWith(DateCompletionHelper.LastLogDateKeyword, StringComparison.OrdinalIgnoreCase) && LiraSession.LastAddedLogDate is DateTimeOffset lastDto)
         {
-            var cr = DateCompletionHelper.GetLastLogCompletion(s, lastDto, true);
-            if (cr?.date is DateTimeOffset shiftedDto)
+            var llc = DateCompletionHelper.GetLastLogCompletion(s, lastDto, true);
+            if (llc.HasValue && llc.Value.IsValid)
             {
-                return WrapUnwrap(shiftedDto);
+                return WrapUnwrap(llc.Value.ParsedDate);
             }
         }
         if (DateCompletionHelper.GetDateFromNonPositiveInt(s, Mode, out var date, out _))

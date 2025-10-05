@@ -367,3 +367,4 @@ FodyWeavers.xsd
 **/*.log
 LiraPS/published/**
 LiraPS/published/*
+/LiraPS/LastNuspec.nuspec
