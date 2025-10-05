@@ -32,23 +32,24 @@ namespace LiraPS.Cmdlets
         [Parameter(Position = 0, ParameterSetName = "PERIOD")]
         public Period Period { get; set; } = Period.ThisMonth;
         [AllowNull]
-        [JqlDateTransformerAttribute(mode: DateMode.Start)]
-        [ArgumentCompleter(typeof(JqlDateStartArgumentCompletionAttribute))]
+        [JqlDateTransformer(mode: DateMode.Start)]
+        [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
         [Parameter(ParameterSetName = "MANUALDATE")]
         public IJqlDate? StartDate { get; set; } = null;
 
         [AllowNull]
-        [JqlDateTransformerAttribute(mode: DateMode.Start)]
-        [ArgumentCompleter(typeof(JqlDateEndArgumentCompletionAttribute))]
+        [JqlDateTransformer(mode: DateMode.Start)]
+        [ArgumentCompleter(typeof(JqlDateEndArgumentCompleter))]
         [Parameter(ParameterSetName = "MANUALDATE")]
         public IJqlDate? EndDate { get; set; } = null;
 
         [Parameter(ValueFromPipeline = true)]
-        [UserDetailsToStringTransformerAttribute]
+        [UserDetailsToStringTransformer]
         [ValidateNotNullOrEmpty]
         public string[] User { get => user; set => user = value ?? []; }
         [Parameter]
         [AllowNull]
+        [ArgumentCompleter(typeof(RecentIssuesCompleter))]
         [System.Diagnostics.CodeAnalysis.AllowNull]
         public string[] Issue { get => issue; set => issue = value ?? []; }
         [Parameter]

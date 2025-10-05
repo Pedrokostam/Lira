@@ -20,17 +20,17 @@ public class UpdateWorklog : LiraCmdlet
 {
     public readonly record struct Change(string Name, object Old, object Updated) { }
 
-    [Parameter(Mandatory = true, ValueFromPipeline = true,Position=0)]
+    [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
     [CachedWorklogTransformer]
     public Worklog Worklog { get; set; } = default!;
 
     [Parameter()]
-    [Alias("NewDate", "Started", "DateTime")]
+    [Alias("NewDate", "Started", "Date")]
     [DateTimeOffsetDateTransformerAttribute(mode: DateMode.Current)]
-    [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
+    [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompleter))]
     public DateTimeOffset NewStarted { get; set; } = default;
     [Parameter]
-    [Alias("Time", "TimeSpan", "NewTime")]
+    [Alias("Time", "NewTime")]
     [TimespanTransformer]
     public TimeSpan NewDuration { get; set; } = default!;
     [Parameter()]
@@ -50,9 +50,9 @@ public class UpdateWorklog : LiraCmdlet
         WriteHost("");
         WriteHost(changeName, ConsoleColor.Cyan);
         PrettyPrint("From:", GraphicModes.Italics);
-        WriteHost("      "+from, ConsoleColor.DarkYellow);
+        WriteHost("      " + from, ConsoleColor.DarkYellow);
         PrettyPrint("To:", GraphicModes.Italics);
-        WriteHost("    "+to, ConsoleColor.Green);
+        WriteHost("    " + to, ConsoleColor.Green);
     }
     protected override void ProcessRecord()
     {
