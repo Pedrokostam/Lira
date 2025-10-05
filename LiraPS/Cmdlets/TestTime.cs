@@ -16,28 +16,28 @@ namespace LiraPS.Cmdlets
 
         [Parameter]
         [DateTimeOffsetDateTransformerAttribute(mode: DateMode.Start)]
-        [ArgumentCompleter(typeof(JqlDateStartArgumentCompletionAttribute))]
+        [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
         public DateTimeOffset DateStart { get; set; } = default;
         [Parameter]
         [DateTimeOffsetDateTransformerAttribute(mode: DateMode.End)]
-        [ArgumentCompleter(typeof(JqlDateEndArgumentCompletionAttribute))]
+        [ArgumentCompleter(typeof(JqlDateEndArgumentCompleter))]
         public DateTimeOffset DateEnd { get; set; } = default;
         [Parameter]
         [DateTimeOffsetDateTransformerAttribute(mode: DateMode.Current)]
-        [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
+        [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompleter))]
         public DateTimeOffset DateCurrent { get; set; } = default;
 
         [Parameter]
         [JqlDateTransformerAttribute(mode: DateMode.Start)]
-        [ArgumentCompleter(typeof(JqlDateStartArgumentCompletionAttribute))]
+        [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
         public IJqlDate JqlStart { get; set; } = default!;
         [Parameter]
         [JqlDateTransformerAttribute(mode: DateMode.End)]
-        [ArgumentCompleter(typeof(JqlDateEndArgumentCompletionAttribute))]
+        [ArgumentCompleter(typeof(JqlDateEndArgumentCompleter))]
         public IJqlDate JqlEnd { get; set; } = default!;
         [Parameter]
         [JqlDateTransformerAttribute(mode: DateMode.Current)]
-        [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
+        [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompleter))]
         public IJqlDate JqlCurrent { get; set; } = default!;
 
         [Parameter]
@@ -50,7 +50,7 @@ namespace LiraPS.Cmdlets
         }
         protected override void ProcessRecord()
         {
-            var q = Prompt("Dawaj datę, frajerze", new LiraPS.Completers.JqlDateCurrentArgumentCompletionAttribute());
+            var q = Prompt("Dawaj datę, frajerze", new LiraPS.Completers.JqlDateCurrentArgumentCompleter());
             WriteObject(q);
             if (TestBoundParameter(nameof(DateCurrent)))
             { WriteObject(DateCurrent); }

@@ -19,14 +19,15 @@ namespace LiraPS.Cmdlets
     public class AddWorklog : LiraCmdlet
     {
         [Parameter(ValueFromPipelineByPropertyName = true)]
+        [ArgumentCompleter(typeof(RecentIssuesCompleter))]
         [AllowEmptyString]
         [AllowNull]
         [Alias("Key")]
         public string Issue { get; set; } = string.Empty;
         [Parameter]
-        [Alias("DateType")]
+        [Alias("Date")]
         [DateTimeOffsetDateTransformer(mode: DateMode.Current)]
-        [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompletionAttribute))]
+        [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompleter))]
         public DateTimeOffset Started { get; set; } = default;
         [Parameter]
         [Alias("Time", "TimeSpan")]
@@ -45,7 +46,9 @@ namespace LiraPS.Cmdlets
             {
                 while (true)
                 {
-                    var id = InteractiveStringMenu.CreateNonWhitespace("Enter issue id", LiraSession.LastAddedLogId).Show();
+                    var ismen = InteractiveStringMenu.CreateNonWhitespace("Enter issue id", LiraSession.LastAddedLogId);
+                    ismen.Completer = RecentIssuesCompleter.Instance;
+                    var id = ismen.Show();
                     if (string.IsNullOrWhiteSpace(id))
                     {
                         WriteWarning("Issue id cannot be empty");
@@ -145,6 +148,7 @@ namespace LiraPS.Cmdlets
                 LiraSession.CacheWorklog(added);
                 LiraSession.Logger.LogInformation("Added worklog {id}", added.ID);
                 WriteObject(added);
+                RecentIssues.Add(added.Issue);
             }
             else
             {

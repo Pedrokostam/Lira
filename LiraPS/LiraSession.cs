@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -160,7 +161,6 @@ public static class LiraSession
         }
         return false;
     }
-
     internal static void CloseSession()
     {
         Client?.Dispose();

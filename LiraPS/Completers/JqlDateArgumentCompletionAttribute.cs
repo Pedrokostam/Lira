@@ -76,7 +76,7 @@ public class JqlDateArgumentCompleter : JqlDateArgumentCompletionBase
 }
 /// <inheritdoc />
 /// <remarks>String-based dates without time component will assume the start of the day.</remarks>
-public class JqlDateStartArgumentCompletionAttribute : JqlDateArgumentCompletionBase
+public class JqlDateStartArgumentCompleter : JqlDateArgumentCompletionBase
 {
     public override DateMode Mode => DateMode.Start;
 
@@ -84,14 +84,14 @@ public class JqlDateStartArgumentCompletionAttribute : JqlDateArgumentCompletion
 }
 /// <inheritdoc />
 /// <remarks>String-based dates without time component will assume the end of the day.</remarks>
-public class JqlDateEndArgumentCompletionAttribute : JqlDateArgumentCompletionBase
+public class JqlDateEndArgumentCompleter : JqlDateArgumentCompletionBase
 {
     public override DateMode Mode => DateMode.End;
     public override bool WrapStringsWithSpaces => true;
 }
 /// <inheritdoc />
 /// <remarks>String-based dates without time component will assume the time of parsing.</remarks>
-public class JqlDateCurrentArgumentCompletionAttribute : JqlDateArgumentCompletionBase
+public class JqlDateCurrentArgumentCompleter : JqlDateArgumentCompletionBase
 {
     public override DateMode Mode => DateMode.Current;
     public override bool WrapStringsWithSpaces => true;
