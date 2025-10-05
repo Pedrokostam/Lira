@@ -546,10 +546,12 @@ namespace LiraPS.Cmdlets
         /// <exception cref="InvalidOperationException"></exception>
         protected void ENSURE_TESTING(string issue)
         {
+#if DEBUG
             if (!"AVP-425".Equals(issue, StringComparison.OrdinalIgnoreCase))
             {
                 throw new PSInvalidOperationException("DO NOT TEST ON ANYTHING BUT AVP-425!!!!");
             }
+#endif
         }
 
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
