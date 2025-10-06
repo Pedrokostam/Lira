@@ -21,7 +21,7 @@ if ($LASTEXITCODE) {
 $modulePath = "$versionedFolder/$ModuleName.psd1"
 $newLines = Get-Content $modulePath | ForEach-Object { $_ -replace '^\s*ModuleVersion\s?=.*', "ModuleVersion = '$Version'" } 
 $newLines | Set-Content $modulePath
-$nugetPresent = Get-Command nuget
+$nugetPresent = Get-Command nuget -ea SilentlyContinue
 if ($nugetPresent) {
     Push-Location 'published'
     $nuspecPath = 'LastNuspec.nuspec'
