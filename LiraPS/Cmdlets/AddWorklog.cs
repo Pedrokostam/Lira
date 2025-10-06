@@ -46,7 +46,7 @@ namespace LiraPS.Cmdlets
             {
                 while (true)
                 {
-                    var ismen = InteractiveStringMenu.CreateNonWhitespace("Enter issue id", LiraSession.LastAddedLogId);
+                    var ismen = InteractiveStringMenu.CreateNonWhitespace("Enter issue id");
                     ismen.Completer = RecentIssuesCompleter.Instance;
                     var id = ismen.Show();
                     if (string.IsNullOrWhiteSpace(id))
