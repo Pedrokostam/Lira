@@ -26,7 +26,7 @@ public class UpdateWorklog : LiraCmdlet
 
     [Parameter()]
     [Alias("NewDate", "Started", "Date")]
-    [DateTimeOffsetDateTransformerAttribute(mode: DateMode.Current)]
+    [DateTimeOffsetDateTransformer(mode: DateMode.Current)]
     [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompleter))]
     public DateTimeOffset NewStarted { get; set; } = default;
     [Parameter]

@@ -33,7 +33,9 @@ public record IssueLite : IssueCommon
         Updated = donor.Fields.Updated;
         Description = donor.Fields.Description;
         Fetched = DateTimeOffset.UtcNow;
-
+        Labels = donor.Fields.Labels;
+        Components = [.. donor.Fields.Components.Select(x => x.Name).OfType<string>()];
+        Status = donor.Fields.Status.Name;
     }
 
     internal readonly List<IssueStem> _shallowSubtasks;

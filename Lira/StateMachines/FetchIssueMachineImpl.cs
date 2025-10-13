@@ -12,10 +12,7 @@ using Lira.Objects;
 using Serilog.Filters;
 
 namespace Lira.StateMachines;
-
-public class GetIssueStateMachine(LiraClient client) : GetIssueMachineImpl<Issue>(client) { }
-public class GetIssueLiteStateMachine(LiraClient client) : GetIssueMachineImpl<IssueLite>(client) { }
-public class GetIssueMachineImpl<T>(LiraClient client) : StateMachine<GetIssueMachineImpl<T>.State, GetIssueMachineImpl<T>.Steps>(client)
+public class FetchIssueMachineImpl<T>(LiraClient client) : StateMachine<FetchIssueMachineImpl<T>.State, FetchIssueMachineImpl<T>.Steps>(client)
     where T : IssueCommon
 {
     public enum Steps
@@ -25,7 +22,7 @@ public class GetIssueMachineImpl<T>(LiraClient client) : StateMachine<GetIssueMa
         GetIssue,
         GetSubTasks,
         LoadWorklogs,
-        End
+        End,
     }
     public readonly record struct State(string IssueId, Steps FinishedStep = Steps.None, IssueLite? IssueLite = null, T? Issue = null) : IState<Steps, State>
     {

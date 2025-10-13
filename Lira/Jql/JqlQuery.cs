@@ -14,24 +14,34 @@ public class JqlQuery : IEquatable<JqlQuery>
     ///// Jira function returning currently logged user
     ///// </summary>
     //public const string CurrentUser = "currentUser()";
-    public RequiredRejectedTesterString<Issue> IssueId { get; set; }
+    public RequiredRejectedTesterString<IssueCommon> IssueId { get; set; }
         = new("issue", i => i.Key);
-    public RequiredRejectedTesterUserDetails<Issue> IssueAssignee { get; set; } 
+    public RequiredRejectedTesterString<IssueCommon> IssueStatus { get; set; }
+        = new("status", i => i.Status);
+    public RequiredRejectedTesterManyStrings<IssueCommon> IssueLabels { get; set; }
+        = new("labels", i => i.Labels);
+    public RequiredRejectedTesterManyStrings<IssueCommon> IssueComponents { get; set; }
+        = new("component", i => i.Components);
+    public RequiredRejectedTesterUserDetails<IssueCommon> IssueAssignee { get; set; }
         = new("assignee", i => i.Assignee);
-    public RequiredRejectedTesterUserDetails<Issue> IssueReporter { get; set; } 
+    public RequiredRejectedTesterUserDetails<IssueCommon> IssueReporter { get; set; }
         = new("reporter", i => i.Reporter);
-    public RequiredRejectedTesterUserDetails<Issue> IssueCreator { get; set; } 
+    public RequiredRejectedTesterUserDetails<IssueCommon> IssueCreator { get; set; }
         = new("creator", i => i.Creator);
-    public StartEndDateTester<Issue> IssueUpdatedDate { get; set; } 
+    public StartEndDateTester<IssueCommon> IssueUpdatedDate { get; set; }
         = new("updated", i => i.Updated);
-    public StartEndDateTester<Issue> IssueCreatedDate { get; set; } 
+    public StartEndDateTester<IssueCommon> IssueCreatedDate { get; set; }
         = new("created", i => i.Created);
-    public RequiredRejectedTesterUserDetails<Worklog> WorklogAuthor { get; set; } 
+    public RequiredRejectedTesterUserDetails<Worklog> WorklogAuthor { get; set; }
         = new("worklogAuthor", w => w.Author);
     public StartEndDateTester<Worklog> WorklogDate { get; set; }
         = new("worklogDate", w => w.Started);
+
     private IEnumerable<IJqlQueryItem> AllFields => [
         IssueId,
+        IssueStatus,
+        IssueLabels,
+        IssueComponents,
         IssueAssignee,
         IssueReporter,
         IssueCreator,
@@ -69,7 +79,7 @@ public class JqlQuery : IEquatable<JqlQuery>
     {
         foreach (var item in items)
         {
-            if(item == null)
+            if (item == null)
             {
                 continue;
             }
@@ -88,6 +98,41 @@ public class JqlQuery : IEquatable<JqlQuery>
     public JqlQuery WhereIssueIsNot(params string[] issueId)
     {
         IssueId.Bad = issueId;
+        return this;
+    }
+    public JqlQuery WhereIssueStatusIs(params string[] statuses)
+    {
+        IssueStatus.Good = statuses;
+        return this;
+    }
+
+    public JqlQuery WhereIssueStatusIsNot(params string[] statuses)
+    {
+        IssueStatus.Bad = statuses;
+        return this;
+    }
+
+    public JqlQuery WhereIssueLabelsAre(params string[] labels)
+    {
+        IssueLabels.Good = labels;
+        return this;
+    }
+
+    public JqlQuery WhereIssueLabelsAreNot(params string[] labels)
+    {
+        IssueLabels.Bad = labels;
+        return this;
+    }
+
+    public JqlQuery WhereIssueComponentsAre(params string[] components)
+    {
+        IssueComponents.Good = components;
+        return this;
+    }
+
+    public JqlQuery WhereIssueComponentsAreNot(params string[] components)
+    {
+        IssueComponents.Bad = components;
         return this;
     }
     public JqlQuery WhereWorklogAuthorIs(params string[] authorId)
@@ -164,10 +209,14 @@ public class JqlQuery : IEquatable<JqlQuery>
 
     public bool Equals(JqlQuery? other)
     {
+        if (other is null)
+        {
+            return false;
+        }
         throw new NotImplementedException();
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return Equals(obj as JqlQuery);
     }

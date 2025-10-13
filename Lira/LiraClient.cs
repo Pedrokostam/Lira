@@ -196,22 +196,22 @@ public partial class LiraClient : IDisposable
     }
 
     #region StateMachines
-    private readonly UsersStateMachine _usersMachine;
-    private readonly WorklogStateMachine _worklogMachine;
+    private readonly FetchUsersStateMachine _usersMachine;
+    private readonly FindWorklogByQueryStateMachine _worklogMachine;
     private readonly PaginationStateMachine<Issue> _issuePaginationMachine;
-    private readonly GetIssueStateMachine _issueMachine;
-    private readonly GetIssueLiteStateMachine _issueLiteMachine;
+    private readonly FetchIssueStateMachine _issueMachine;
+    private readonly FetchIssueLiteStateMachine _issueLiteMachine;
     private readonly AddWorklogStateMachine _addWorklogMachine;
-    private readonly CurrentUserStateMachine _currentUserMachine;
+    private readonly FetchCurrentUserStateMachine _currentUserMachine;
     private readonly RemoveWorklogStateMachine _removeWorklogMachine;
     private readonly UpdateWorklogStateMachine _updateWorklogMachine;
-    public UsersStateMachine GetUsersStateMachine() => _usersMachine;
-    public WorklogStateMachine GetWorklogStateMachine() => _worklogMachine;
+    public FetchUsersStateMachine GetUsersStateMachine() => _usersMachine;
+    public FindWorklogByQueryStateMachine GetFindWorklogStateMachine() => _worklogMachine;
     internal PaginationStateMachine<Issue> GetIssuePaginationStateMachine() => _issuePaginationMachine;
-    public GetIssueStateMachine GetIssueStateMachine() => _issueMachine;
-    public GetIssueLiteStateMachine GetIssueLiteStateMachine() => _issueLiteMachine;
+    public FetchIssueStateMachine GetFetchIssueStateMachine() => _issueMachine;
+    public FetchIssueLiteStateMachine GetFetchIssueLiteStateMachine() => _issueLiteMachine;
     public AddWorklogStateMachine GetAddWorklogMachine() => _addWorklogMachine;
-    public CurrentUserStateMachine GetCurrentUserMachine() => _currentUserMachine;
+    public FetchCurrentUserStateMachine GetCurrentUserMachine() => _currentUserMachine;
     public RemoveWorklogStateMachine GetRemoveWorklogMachine() => _removeWorklogMachine;
     public UpdateWorklogStateMachine GetUpdateWorklogMachine() => _updateWorklogMachine;
     #endregion StateMachines
@@ -316,24 +316,24 @@ public partial class LiraClient : IDisposable
     }
     public async Task<Issue?> GetIssue(string issueId)
     {
-        var machine = GetIssueStateMachine();
+        var machine = GetFetchIssueStateMachine();
         var state = machine.GetStartState(issueId);
         state = await ThisMachine(machine, state).ConfigureAwait(false);
         return state.Issue;
     }
     public async Task<IssueLite?> GetIssueLite(string issueId)
     {
-        var machine = GetIssueLiteStateMachine();
+        var machine = GetFetchIssueLiteStateMachine();
         var state = machine.GetStartState(issueId);
         state = await ThisMachine(machine, state).ConfigureAwait(false);
         return state.Issue;
     }
     public async Task<IList<Worklog>> GetWorklogs(JqlQuery query)
     {
-        var machine = GetWorklogStateMachine();
+        var machine = GetFindWorklogStateMachine();
         var state = machine.GetStartState(query);
         state = await ThisMachine(machine, state).ConfigureAwait(false);
-        return state.Worklogs;
+        return state.Payload;
     }
     public Task<Worklog?> AddWorklog(string issueKey, DateTimeOffset started, TimeSpan timeSpent, string? comment) => AddWorklog(issueKey, new(started, timeSpent, comment));
     public async Task<Worklog?> AddWorklog(string issueKey, WorklogToAdd worklogToAdd)
@@ -423,7 +423,7 @@ public partial class LiraClient : IDisposable
     /// Return all worklogs that match the <paramref name="query"/>
     /// </summary>
     /// <remarks>
-    /// This method is a wrapper along <see cref="WorklogStateMachine"/>. If you want to inject additional work between steps of the workflow, use the machine.</remarks>
+    /// This method is a wrapper along <see cref="FindWorklogStateMachine"/>. If you want to inject additional work between steps of the workflow, use the machine.</remarks>
     /// <param name="query"></param>
     /// <returns></returns>
 

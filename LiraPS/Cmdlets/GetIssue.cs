@@ -46,7 +46,7 @@ namespace LiraPS.Cmdlets
         protected override void ProcessRecord()
         {
             int percentComplete = 0;
-            var machine = LiraSession.Client.GetIssueStateMachine();
+            var machine = LiraSession.Client.GetFetchIssueStateMachine();
             foreach (var issueId in Id)
             {
                 if (ForceRefresh.IsPresent)
@@ -60,7 +60,7 @@ namespace LiraPS.Cmdlets
                     var t = machine.Process(state).GetAwaiter();
                     state = t.GetResult();
                     var subtaskCount = state.IssueLite?.ShallowSubtasks.Count ?? 0;
-                    if (state.NextStep == GetIssueStateMachine.Steps.LoadWorklogs && subtaskCount > 0)
+                    if (state.NextStep == FetchIssueStateMachine.Steps.LoadWorklogs && subtaskCount > 0)
                     {
                         WriteProgress(new ProgressRecord(SubActivityId, $"Fetching subtasks of {issueId}...", $"{subtaskCount} subtasks") { ParentActivityId = ActivityId });
                     }

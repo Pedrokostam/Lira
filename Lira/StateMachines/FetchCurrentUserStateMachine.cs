@@ -5,7 +5,7 @@ using Lira.Objects;
 
 namespace Lira.StateMachines;
 
-public class CurrentUserStateMachine(LiraClient client) : StateMachine<CurrentUserStateMachine.State, CurrentUserStateMachine.Steps>(client)
+public class FetchCurrentUserStateMachine(LiraClient client) : StateMachine<FetchCurrentUserStateMachine.State, FetchCurrentUserStateMachine.Steps>(client)
 {
 
     public enum Steps

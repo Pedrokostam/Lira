@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Lira.Jql;
 
-public abstract class RequiredRejectedTesterBase<TObject,TProperty> : JqlQueryItem<TObject,TProperty>
+public abstract class RequiredRejectedTesterBase<TObject, TProperty> : JqlQueryItem<TObject, TProperty>, IEquatable<RequiredRejectedTesterBase<TObject, TProperty>>
 {
     private readonly Func<TObject, TProperty> _accessor;
 
@@ -14,7 +14,7 @@ public abstract class RequiredRejectedTesterBase<TObject,TProperty> : JqlQueryIt
     protected abstract bool Test(TProperty property, string item);
     public override bool Filter(TObject? item, LiraClient client)
     {
-        if(item == null)
+        if (item == null)
         {
             return false;
         }
@@ -23,7 +23,7 @@ public abstract class RequiredRejectedTesterBase<TObject,TProperty> : JqlQueryIt
         bool isInBad = false;
         foreach (var requested in Good)
         {
-            isInGood |= Test(property,requested);
+            isInGood |= Test(property, requested);
             if (isInGood)
             {
                 break;
@@ -50,15 +50,15 @@ public abstract class RequiredRejectedTesterBase<TObject,TProperty> : JqlQueryIt
     {
         var requested = Good switch
         {
-        [] => null,
-        [string user] => $"{FieldName} = \"{user}\"",
-        [..] => $"{FieldName} IN {CreateArray(Good)}",
+            [] => null,
+            [string user] => $"{FieldName} = \"{user}\"",
+            [..] => $"{FieldName} IN {CreateArray(Good)}",
         };
         var denied = Bad switch
         {
-        [] => null,
-        [string user] => $"{FieldName} != \"{user}\"",
-        [..] => $"{FieldName} NOT IN {CreateArray(Bad)}",
+            [] => null,
+            [string user] => $"{FieldName} != \"{user}\"",
+            [..] => $"{FieldName} NOT IN {CreateArray(Bad)}",
         };
         return (requested, denied) switch
         {
@@ -67,5 +67,23 @@ public abstract class RequiredRejectedTesterBase<TObject,TProperty> : JqlQueryIt
             (not null, null) => requested,
             (null, not null) => denied,
         };
+    }
+
+    public bool Equals(RequiredRejectedTesterBase<TObject, TProperty>? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+        return FieldName.Equals(other.FieldName, StringComparison.OrdinalIgnoreCase)
+            && Bad.SequenceEqual(other.Bad, StringComparer.OrdinalIgnoreCase)
+            && Good.SequenceEqual(other.Good, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public override bool Equals(object? obj)=>Equals(obj as RequiredRejectedTesterBase<TObject, TProperty>);
+
+    public override int GetHashCode()
+    {
+        return base.GetHashCode();
     }
 }

@@ -21,7 +21,7 @@ public abstract record IssueCommon : IssueStem
     public UserDetails? Assignee { get; init; }
     public required UserDetails Reporter { get; init; }
     public required UserDetails Creator { get; init; }
-
+    public IList<string> Labels { get; init; } = [];
     public DateTimeOffset Created { get; init; }
     public DateTimeOffset Updated { get; init; }
     internal void AppendNewWorklog(Worklog worklog)
@@ -46,6 +46,10 @@ public abstract record IssueCommon : IssueStem
     /// Time noted in this issue's worklogs, excluding time spent on Subtasks.
     /// </summary>
     public TimeSpan TimeSpent => Worklogs.Select(x => x.TimeSpent).Sum();
+
+    public IList<string> Components { get; init; } = [];
+
+    public string? Status { get; init; }
     public override string ToString() => Key;
 
     /// <summary>

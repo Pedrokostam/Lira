@@ -179,6 +179,24 @@ namespace LiraPS.Cmdlets
             return replacement;
         }
 
+        protected (string[] Good, string[] Bad) DivideConditionCollection(IEnumerable<string> items)
+        {
+            List<string> good = [];
+            List<string> bad = [];  
+            foreach (var item in items)
+            {
+                var trim = item.Trim();
+                if (trim.StartsWith('!')){
+                    bad.Add(trim.TrimStart('!').TrimStart());
+                }
+                else
+                {
+                    good.Add(trim);
+                }
+            }
+            return (good.ToArray(), bad.ToArray());
+        }
+
         protected record MenuItem
         {
             private string? tooltip;

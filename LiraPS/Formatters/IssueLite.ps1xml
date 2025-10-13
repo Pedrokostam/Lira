@@ -14,6 +14,9 @@
 						<Label>Key</Label>
 					</TableColumnHeader>
 					<TableColumnHeader>
+						<Label>Status</Label>
+					</TableColumnHeader>
+					<TableColumnHeader>
 						<Label>Assignee</Label>
 						<Alignment>Center</Alignment>
 					</TableColumnHeader>
@@ -54,6 +57,15 @@
 						<TableColumnItems>
 							<TableColumnItem>
 								<PropertyName>Key</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if($_.Status -eq $null){
+									"`e[2m`e[3mNo status`e[0m"
+									} else {
+									$_.Status
+									}
+								</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>
@@ -118,12 +130,42 @@
 								<PropertyName>Key</PropertyName>
 							</ListItem>
 							<ListItem>
+								<Label>Status</Label>
+								<ScriptBlock>
+									if($_.Status -eq $null){
+									"`e[2m`e[3mNo status`e[0m"
+									} else {
+									$_.Status
+									}
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
 								<Label>Summary</Label>
 								<PropertyName>SummaryPlain</PropertyName>
 							</ListItem>
 							<ListItem>
 								<Label>Link</Label>
 								<PropertyName>WebLink</PropertyName>
+							</ListItem>
+							<ListItem>
+								<Label>Labels</Label>
+								<ScriptBlock>
+									if($_.Labels.Count -eq 0){
+									"`e[2m`e[3mNones`e[0m"
+									} else {
+									$_.Labels -join ", "
+									}
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Components</Label>
+								<ScriptBlock>
+									if($_.Components.Count -eq 0){
+									"`e[2m`e[3mNne`e[0m"
+									} else {
+									$_.Components -join ", "
+									}
+								</ScriptBlock>
 							</ListItem>
 							<ListItem>
 								<Label>Assignee</Label>
@@ -173,16 +215,6 @@
 								</ItemSelectionCondition>
 								<ScriptBlock>
 									($_.ShallowSubtasks | % Key) -join ", "
-								</ScriptBlock>
-							</ListItem>
-							<ListItem>
-								<Label>Description</Label>
-								<ScriptBlock>
-									if([String]::IsNullOrWhitespace($_.DescriptionPlain)){
-									"`e[2m`e[3mEmpty description`e[0m"
-									} else {
-									$_.DescriptionPlain
-									}
 								</ScriptBlock>
 							</ListItem>
 						</ListItems>

@@ -22,8 +22,8 @@ public static partial class FormattingExtensions
 
     public static string OnelineUserDetails(this UserDetails ud)
     {
-        var tz = ud.TimeZone is null ? "" : $" ({ud.TimeZone.DisplayName})";
-        return $"${ud.Name} - {ud.DisplayName}{tz}";
+        var tz = ud.TimeZone is null ? "" : $" {ud.TimeZone.DisplayName}";
+        return $"{ud.Name} - {ud.DisplayName}{tz}";
     }
 
     //[GeneratedRegex(@"^\s*\[.*\]\s*")]

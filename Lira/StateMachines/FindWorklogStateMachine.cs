@@ -16,7 +16,7 @@ using Lira.Jql;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
-public class WorklogStateMachine : StateMachine<WorklogStateMachine.State, WorklogStateMachine.Steps>
+public class FindWorklogStateMachine : StateMachine<FindWorklogStateMachine.State, FindWorklogStateMachine.Steps>
 {
     public enum Steps
     {
@@ -195,7 +195,7 @@ public class WorklogStateMachine : StateMachine<WorklogStateMachine.State, Workl
             _ => Task.FromResult(state),
         };
     }
-    public WorklogStateMachine(LiraClient client) : base(client)
+    public FindWorklogStateMachine(LiraClient client) : base(client)
     {
         _pagination = new PaginationStateMachine<IssueLite>(LiraClient, LiraClient.SearchEndpoint, "issues");
     }
