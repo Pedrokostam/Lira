@@ -63,7 +63,6 @@ namespace LiraPS.Cmdlets
             LiraSession.LastAddedLogId = Issue;
             if (Started == default)
             {
-                var now = DateTimeOffset.Now;
                 var dateMenu = new InteractiveMenu<DateTimeOffset>(
                     new DateTimeOffsetDateTransformerAttribute(DateMode.Current) { UseLastLogDate=true},
                     "Enter date of work",

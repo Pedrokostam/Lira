@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 namespace LiraPS.Extensions;
+
 public static partial class TimeExtensions
 {
     public const string DateFormatString = "yyyy-MM-dd HH:mm zzz";
@@ -58,31 +59,31 @@ public static partial class TimeExtensions
         "d MMMM yy H:m",
 
         // Date + time + offset
-        "yyyy-M-d H:m zzz",
-        "d-M-yy H:m zzz",
-        "d-M-yyyy H:m zzz",
-        "d-MMM-yyyy H:m zzz",
-        "d-MMMM-yyyy H:m zzz",
+        "yyyy M d H:m zzz",
+        "d M yy H:m zzz",
+        "d M yyyy H:m zzz",
+        "d MMM yyyy H:m zzz",
+        "d MMMM yyyy H:m zzz",
         "MMM d yyyy H:m zzz",
         "MMMM d yyyy H:m zzz",
-        "yyyy-MMM-d H:m zzz",
-        "yyyy-MMMM-d H:m zzz",
-        "d-MMM-yy H:m zzz",
-        "d-MMMM-yy H:m zzz",
+        "yyyy MMM d H:m zzz",
+        "yyyy MMMM d H:m zzz",
+        "d MMM yy H:m zzz",
+        "d MMMM yy H:m zzz",
 
 
         // Date + offset
-        "yyyy-M-d zzz",
-        "d-M-yy zzz",
-        "d-M-yyyy zzz",
-        "d-MMM-yyyy zzz",
-        "d-MMMM-yyyy zzz",
-        "MMM-d-yyyy zzz",
-        "MMMM-d-yyyy zzz",
-        "yyyy-MMM-d zzz",
-        "yyyy-MMMM-d zzz",
-        "d-MMM-yy zzz",
-        "d-MMMM-yy zzz",
+        "yyyy M d zzz",
+        "d M yy zzz",
+        "d M yyyy zzz",
+        "d MMM yyyy zzz",
+        "d MMMM yyyy zzz",
+        "MMM d yyyy zzz",
+        "MMMM d yyyy zzz",
+        "yyyy MMM d zzz",
+        "yyyy MMMM d zzz",
+        "d MMM yy zzz",
+        "d MMMM yy zzz",
 
         // Today + time
         "H:m",
@@ -94,7 +95,9 @@ public static partial class TimeExtensions
         ParseFormatters.Where(x=>x.Contains("H:m",StringComparison.Ordinal)).Select(x=>x.Replace("H:m","HHmm",StringComparison.Ordinal)))];
     public static bool TryParseDateTimeOffset(string value, out DateTimeOffset dto)
     {
-        value = DateTimeCorrecter().Replace(value, TimePartSeparator);
+        value = DateTimeCorrecter().Replace(value, TimePartSeparator); // Replace everything except colon with space
+        value = SpacingCorrecter().Replace(value, TimePartSeparator); // replace multiple spaces with single space
+        value = TimezoneCorrecter().Replace(value, m => m.Groups["Sign"].Value + m.Groups["Min"].Value); // Remove colon from timezone offset
         return DateTimeOffset.TryParseExact(value, NormalizedParseFormatters, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out dto);
     }
     private static string Pad(int pad)
@@ -119,6 +122,10 @@ public static partial class TimeExtensions
         return $"{Pad(pad)}{s}{Pad(pad)}";
     }
     public static string PrettyDate(this DateTimeOffset dto) => PrettyDate(dto, 0);
-    [GeneratedRegex(@"[\/\\\.\- :](?!\d?\d:?\d\d)$", RegexOptions.ExplicitCapture, 250)]
+    [GeneratedRegex(@"[\/\\\.\- ]", RegexOptions.ExplicitCapture, 250)]
     private static partial Regex DateTimeCorrecter();
+    [GeneratedRegex(TimePartSeparator + "{2,}", RegexOptions.ExplicitCapture, 250)]
+    private static partial Regex SpacingCorrecter();
+    [GeneratedRegex(@"(?<Sign>[+-]):(?<Min>\d+)$", RegexOptions.ExplicitCapture, 250)]
+    private static partial Regex TimezoneCorrecter();
 }

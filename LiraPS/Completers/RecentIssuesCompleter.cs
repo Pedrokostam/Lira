@@ -11,9 +11,10 @@ using System.Threading.Tasks;
 using ConsoleMenu;
 
 namespace LiraPS.Completers;
+
 internal class RecentIssuesCompleter : IArgumentCompleter, ISimpleArgumentCompleter, ICompleter
 {
-    public static RecentIssuesCompleter Instance = new RecentIssuesCompleter();
+    public static RecentIssuesCompleter Instance = new();
     public IEnumerable<ICompleter.Completion> Complete(string item)
     {
         return CompleteArgument(item).Select(x => new ICompleter.Completion(x.CompletionText, x.ListItemText, x.ToolTip));
@@ -26,9 +27,13 @@ internal class RecentIssuesCompleter : IArgumentCompleter, ISimpleArgumentComple
 
     public IEnumerable<CompletionResult> CompleteArgument(string wordToComplete)
     {
+        wordToComplete = wordToComplete?.Trim() ?? string.Empty;
         foreach (var item in RecentIssues.GetRecentIDs())
         {
-            yield return new CompletionResult(item.Key,item.Key,CompletionResultType.ParameterValue,item.Summary);
+            if (string.IsNullOrWhiteSpace(wordToComplete) || item.Key.Contains(wordToComplete, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return new CompletionResult(item.Key, item.Key, CompletionResultType.ParameterValue, item.Summary);
+            }
         }
     }
 }

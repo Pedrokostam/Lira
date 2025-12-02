@@ -16,6 +16,7 @@ using Lira.Jql;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
+
 public class FindWorklogByQueryStateMachine(LiraClient client) : FindByQueryStateMachineImpl<Worklog>(client)
 {
     protected override bool IsCached(State state, out State newState)
@@ -112,20 +113,54 @@ public class FindIssueStateMachine(LiraClient client) : FindByQueryStateMachineI
         return false;
     }
 
-    protected override Task<State> LoadPayload(State state)
+    protected override async Task<State> LoadPayload(State state)
     {
         var loadedLogs = await LoadWorklogsImpl(state.PaginationState.Values).ConfigureAwait(false);
         var allWorklogs = state.PaginationState.Values.SelectMany(x => x.Worklogs);
         // Log.Information("Filtering worklogs");
-        var worklogs = state.Query.FilterItems(loadedLogs, LiraClient).ToImmutableList();
-        LiraClient.AddToCache(state.Query.BuildQueryString(LiraClient), worklogs);
+        var worklogs = state.Query.FilterItems(loadedLogs, LiraClient).Select(x=>x.Issue).OfType<Issue>().ToImmutableList();
+        //LiraClient.AddToCache(state.Query.BuildQueryString(LiraClient), worklogs);
         return state.Advance() with
         {
             Payload = worklogs,
         };
     }
+    /// <summary>
+    /// Gather all worklogs of all issues and prepared them for filtering
+    /// </summary>
+    /// <param name="issueLites"></param>
+    /// <returns></returns>
+    private async Task<List<Worklog>> LoadWorklogsImpl(IEnumerable<IssueLite> issueLites)
+    {
+        List<IssueLite> uncachedLites = [];
+        List<Worklog> worklogs = [];
+        foreach (var potentiallyUncached in issueLites)
+        {
+            var updatedOn = potentiallyUncached.Updated;
+            if (LiraClient.TryGetCachedIssue(potentiallyUncached.Key, out Issue? issue) && issue.Fetched > updatedOn)
+            {
+                worklogs.AddRange(issue.Worklogs);
+            }
+            else if (LiraClient.TryGetCachedIssue(potentiallyUncached.Key, out IssueLite? cachedLite) && cachedLite.Fetched > updatedOn)
+            {
+                worklogs.AddRange(cachedLite.Worklogs);
+            }
+            else
+            {
+                uncachedLites.Add(potentiallyUncached);
+            }
+        }
+        await uncachedLites.LoadWorklogs(LiraClient).ConfigureAwait(false);
+        foreach (var issue in uncachedLites)
+        {
+            worklogs.AddRange(issue.Worklogs);
+            LiraClient.AddToCache(issue);
+        }
+        return worklogs;
+    }
 }
-public abstract class FindByQueryStateMachineImpl<T> : StateMachine<FindByQueryStateMachineImpl<T>.State, FindByQueryStateMachineImpl<T>.Steps> { 
+public abstract class FindByQueryStateMachineImpl<T> : StateMachine<FindByQueryStateMachineImpl<T>.State, FindByQueryStateMachineImpl<T>.Steps>
+{
     public enum Steps
     {
         None,
@@ -243,7 +278,7 @@ public abstract class FindByQueryStateMachineImpl<T> : StateMachine<FindByQueryS
             PaginationState = pagiState,
         };
     }
-   
+
     protected abstract Task<State> LoadPayload(State state);
     //{
     //    var loadedLogs = await LoadWorklogsImpl(state.PaginationState.Values).ConfigureAwait(false);

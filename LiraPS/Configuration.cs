@@ -190,7 +190,8 @@ public class Configuration
             throw new ArgumentNullException(nameof(typeName));
         }
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-        foreach (var assembly in assemblies.Reverse())
+        assemblies.Reverse();
+        foreach (var assembly in assemblies)
         {
             var type = assembly.GetType(typeName);
             if (type is not null)

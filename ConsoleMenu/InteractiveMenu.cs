@@ -3,6 +3,7 @@ using System.Text;
 using static ConsoleMenu.ICompleter;
 
 namespace ConsoleMenu;
+
 public class ColFirstMatrix<T>
 {
     public IList<T> Items { get; }
@@ -138,7 +139,7 @@ public class InteractiveMenu<T> : MenuBase<T>
     /// <inheritdoc cref="MenuBase{T}.Show"/>
     /// <exception cref="PromptTransformException"/>
     public override T Show() => Show(true);
-    public  T Show(bool showInitialCompletions)
+    public T Show(bool showInitialCompletions)
     {
         try
         {
@@ -174,7 +175,7 @@ public class InteractiveMenu<T> : MenuBase<T>
             SetCursor(true);
         }
     }
-    private void DrawValidation(string value, bool dim=false)
+    private void DrawValidation(string value, bool dim = false)
     {
         if (!Hints.HasFlag(Hint.Validation))
         {
@@ -193,10 +194,10 @@ public class InteractiveMenu<T> : MenuBase<T>
             isValid = Validator?.Validate(value) ?? Transformer.TryTransform(value, out _);
         }
         string validateChar = isValid ? "OK" : "INVALID";
-        if (!string.IsNullOrEmpty(value))
-        {
-            Append(' ');
-        }
+        Append(' ');
+        //if (!string.IsNullOrEmpty(value))
+        //{
+        //}
         ConsoleColor color = isValid ? ConsoleColor.Green : ConsoleColor.Red;
         var mode = GraphicModes.Bold;
         if (dim)
@@ -222,7 +223,7 @@ public class InteractiveMenu<T> : MenuBase<T>
             Append(Prompt);
             Append(": ");
             var selectedCompletion = _completions.ElementAtOrDefault(_completionIndex);
-            if (!string.IsNullOrWhiteSpace(PlaceholderValue) && currentInput.Length==0)
+            if (!string.IsNullOrWhiteSpace(PlaceholderValue) && currentInput.Length == 0)
             {
                 currentInput = PlaceholderValue;
                 Append(currentInput, GraphicModes.Dim);
