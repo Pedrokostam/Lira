@@ -113,6 +113,11 @@ public static class RecentIssues
     }
 
     /// <summary>
+    /// Gets or sets the identifier of the most recent log entry that has not been completed. It's auto-nullified when <see cref="Add"/> is called.
+    /// </summary>
+    public static string? LastNotFinishedLogId { get; set; }
+
+    /// <summary>
     /// Persist the current in-memory recents list to the configured storage file.
     /// </summary>
     /// <remarks>
@@ -154,6 +159,7 @@ public static class RecentIssues
             counter++;
         }
         _ids = newlist;
+        LastNotFinishedLogId = null;
         Save();
     }
 

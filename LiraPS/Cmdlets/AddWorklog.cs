@@ -46,7 +46,8 @@ namespace LiraPS.Cmdlets
             {
                 while (true)
                 {
-                    var ismen = InteractiveStringMenu.CreateNonWhitespace("Enter issue id");
+                    var ismen = InteractiveStringMenu.CreateNonWhitespace("Enter issue id", RecentIssues.LastNotFinishedLogId);
+                    // placeholder is null, so that the most recent issue will be preselected
                     ismen.Completer = RecentIssuesCompleter.Instance;
                     var id = ismen.Show();
                     if (string.IsNullOrWhiteSpace(id))
@@ -60,7 +61,7 @@ namespace LiraPS.Cmdlets
                     }
                 }
             }
-            LiraSession.LastAddedLogId = Issue;
+            RecentIssues.LastNotFinishedLogId = Issue;
             if (Started == default)
             {
                 var dateMenu = new InteractiveMenu<DateTimeOffset>(

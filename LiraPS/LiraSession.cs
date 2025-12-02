@@ -22,14 +22,16 @@ public static class LiraSession
 {
     private static readonly Dictionary<string, Worklog> _worklogCache = new Dictionary<string, Worklog>(StringComparer.OrdinalIgnoreCase);
     private static Configuration? _config;
-
+    /// <summary>
+    /// Gets the key of the last added log (via <see cref="RecentIssues"/>)
+    /// </summary>
     public static string? LastAddedLogId
     {
         get
         {
             if (RecentIssues.Count > 0)
             {
-                return RecentIssues.GetRecentIDs().First().Summary;
+                return RecentIssues.GetRecentIDs().First().Key;
             }
 
             return null;

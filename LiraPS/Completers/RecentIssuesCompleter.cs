@@ -28,6 +28,10 @@ internal class RecentIssuesCompleter : IArgumentCompleter, ISimpleArgumentComple
     public IEnumerable<CompletionResult> CompleteArgument(string wordToComplete)
     {
         wordToComplete = wordToComplete?.Trim() ?? string.Empty;
+        if (RecentIssues.LastNotFinishedLogId is string notAdded)
+        { 
+            yield return new CompletionResult(notAdded, notAdded, CompletionResultType.ParameterValue, "Key that was last entered and not added");
+        }
         foreach (var item in RecentIssues.GetRecentIDs())
         {
             if (string.IsNullOrWhiteSpace(wordToComplete) || item.Key.Contains(wordToComplete, StringComparison.OrdinalIgnoreCase))
