@@ -414,7 +414,6 @@ namespace LiraPS.Cmdlets
             {
                 Terminate(new PSInvalidOperationException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
             }
-            int bufferLength = 50;
             try
             {
                 Console.TreatControlCAsInput = true;
@@ -428,7 +427,6 @@ namespace LiraPS.Cmdlets
                 Console.WriteLine();
                 int lineCounter = 0;
                 bool showCompletions = false;
-                int completionLinesCount = 0;
                 int lastIterationCompletionLineCount = 0;
                 while (true)
                 {

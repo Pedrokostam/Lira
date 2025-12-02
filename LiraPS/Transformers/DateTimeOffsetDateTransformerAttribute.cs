@@ -3,9 +3,9 @@ using System.Management.Automation;
 using Lira.Jql;
 namespace LiraPS.Transformers;
 
-public sealed class DateTimeOffsetDateTransformerAttribute(DateMode mode) : DateTransformer<DateTimeOffset>(mode)
+public sealed class DateTimeOffsetDateTransformerAttribute(DateMode mode, bool passScriptBlock=false) : DateTransformer<DateTimeOffset>(mode, passScriptBlock)
 {
-    public static DateTimeOffsetDateTransformerAttribute Create(DateMode mode) => new(mode);
+    public static DateTimeOffsetDateTransformerAttribute Create(DateMode mode, bool passScriptBlock = false) => new(mode,passScriptBlock);
     protected override DateTimeOffset WrapUnwrap(object? dateObject)
     {
         return dateObject switch

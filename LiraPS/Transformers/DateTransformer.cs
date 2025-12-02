@@ -24,9 +24,10 @@ public enum DateMode
     End,
 
 }
-public abstract class DateTransformer<T>(DateMode mode) : ArgumentTransformationAttribute(), ITransformer<T>
+public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock=false) : ArgumentTransformationAttribute(), ITransformer<T>
 {
     public DateMode Mode { get; } = mode;
+    public bool PassScriptBlock { get; } = passScriptBlock;
     public bool UseLastLogDate { get; set; } = false;
 
     protected abstract T WrapUnwrap(object? dateObject);
@@ -48,6 +49,10 @@ public abstract class DateTransformer<T>(DateMode mode) : ArgumentTransformation
         if (inputData is PSObject pso)
         {
             inputData = pso.BaseObject;
+        }
+        if (PassScriptBlock && inputData is ScriptBlock sb)
+        {
+            return sb;
         }
         if (inputData is IJqlDate jqlDate)
         {
@@ -71,6 +76,7 @@ public abstract class DateTransformer<T>(DateMode mode) : ArgumentTransformation
         {
             return WrapUnwrap(dateTimeOffset);
         }
+        
 
         throw new ArgumentTransformationMetadataException($"Could not convert {inputData} to IJqlDate");
     }

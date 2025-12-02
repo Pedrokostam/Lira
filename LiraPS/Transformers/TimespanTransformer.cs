@@ -13,7 +13,7 @@ namespace LiraPS.Transformers;
 //{
 //    object? TransformString(string inputData);
 //}
-public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer<TimeSpan>, IReasonableValidator
+public class TimespanTransformer(bool passScriptBlock=false) : ArgumentTransformationAttribute, ITransformer<TimeSpan>, IReasonableValidator
 {
     public static readonly TimespanTransformer Instance = new();
     private ref struct XD
@@ -45,6 +45,8 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer
     }
     private const NumberStyles NumberParseStyle = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.AllowDecimalPoint;
 
+    public bool PassScriptBlock { get; } = passScriptBlock;
+
     private enum TimeUnit
     {
         None,
@@ -58,6 +60,10 @@ public class TimespanTransformer : ArgumentTransformationAttribute, ITransformer
         if (inputData is TimeSpan ts)
         {
             return ts;
+        }
+        if (PassScriptBlock && inputData is ScriptBlock sb)
+        {
+            return sb;
         }
         if (inputData is not string s)
         {
