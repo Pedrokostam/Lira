@@ -103,7 +103,7 @@ public class InteractiveMenu<T> : MenuBase<T>
     //private string _currentInput = string.Empty;
     private List<ICompleter.Completion> _completions = [];
     private List<int> _completionsReorderedIndices = [];
-    private int _completionIndex = 1;
+    private int _completionIndex = 0;
     private bool _showCompletions = false;
     private const string InterItemPad = "  ";
     private ColFirstMatrix<ICompleter.Completion> _displayMatrix = default!;

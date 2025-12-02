@@ -17,12 +17,25 @@ using Serilog;
 using Serilog.Core;
 
 namespace LiraPS;
+
 public static class LiraSession
 {
     private static readonly Dictionary<string, Worklog> _worklogCache = new Dictionary<string, Worklog>(StringComparer.OrdinalIgnoreCase);
     private static Configuration? _config;
 
-    public static string? LastAddedLogId { get; set; }
+    public static string? LastAddedLogId
+    {
+        get
+        {
+            if (RecentIssues.Count > 0)
+            {
+                return RecentIssues.GetRecentIDs().First().Summary;
+            }
+
+            return null;
+        }
+    }
+
     public static IEnumerable<Log> LogQueue => (Logger as IEnumerable<Log>) ?? [];
     public static bool IsActiveSession(Configuration.Information info) => info.Equals(_config?.ToInformation());
     public static LoggingLevelSwitch LogSwitch { get; } = new(Serilog.Events.LogEventLevel.Verbose);
@@ -79,7 +92,7 @@ public static class LiraSession
         }
     }
 
-    public static DateTimeOffset? LastAddedLogDate { get; set; } =null;
+    public static DateTimeOffset? LastAddedLogDate { get; set; } = null;
 
     public static bool HasConfig
     {
@@ -130,7 +143,7 @@ public static class LiraSession
             {
                 Configuration.MarkWrong(Config);
                 Config = null;
-                Logger.LogInformation("Marked config {name} as invalid",Config.Name);
+                Logger.LogInformation("Marked config {name} as invalid", Config.Name);
             }
         }
         if (Client.Authorization is NoAuthorization)
