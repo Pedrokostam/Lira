@@ -28,7 +28,7 @@ public record IssueLite : IssueCommon
         Summary = donor.Fields.Summary;
         Creator = donor.Fields.Creator;
         _worklogs = donor.Fields.Worklog.HasAllWorklogs ? new(donor.Fields.Worklog.InitialWorklogs) : [];
-        _shallowSubtasks = new List<IssueStem>(donor.Fields.Subtasks);
+        _shallowSubtasks = [.. donor.Fields.Subtasks];
         Created = donor.Fields.Created;
         Updated = donor.Fields.Updated;
         Description = donor.Fields.Description;
@@ -42,5 +42,7 @@ public record IssueLite : IssueCommon
     public override string ToString() => Key;
 
     public IReadOnlyList<IssueStem> ShallowSubtasks => _shallowSubtasks.AsReadOnly();
+
+    public override bool HasAllInformation => false;
     //public Issue? Parent { get; set; }
 }

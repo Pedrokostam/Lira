@@ -45,15 +45,20 @@ namespace LiraPS.Cmdlets
         // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called
         protected override void ProcessRecord()
         {
+            FetchIssues(Id, ForceRefresh.IsPresent, _issues, this);
+        }
+
+        internal static void FetchIssues(IList<string> ids, bool forceRefresh, List<Issue> issues, LiraCmdlet cmdlet)
+        {
             int percentComplete = 0;
             var machine = LiraSession.Client.GetFetchIssueStateMachine();
-            foreach (var issueId in Id)
+            foreach (var issueId in ids)
             {
-                if (ForceRefresh.IsPresent)
+                if (forceRefresh)
                 {
                     LiraSession.Client.RemoveFromIssueCache(issueId);
                 }
-                WriteProgress(new ProgressRecord(ActivityId, $"Fetching issues...", issueId) { PercentComplete = percentComplete });
+                cmdlet.WriteProgress(new ProgressRecord(ActivityId, $"Fetching issues...", issueId) { PercentComplete = percentComplete });
                 var state = machine.GetStartState(issueId);
                 while (!state.IsFinished)
                 {
@@ -62,20 +67,21 @@ namespace LiraPS.Cmdlets
                     var subtaskCount = state.IssueLite?.ShallowSubtasks.Count ?? 0;
                     if (state.NextStep == FetchIssueStateMachine.Steps.LoadWorklogs && subtaskCount > 0)
                     {
-                        WriteProgress(new ProgressRecord(SubActivityId, $"Fetching subtasks of {issueId}...", $"{subtaskCount} subtasks") { ParentActivityId = ActivityId });
+                        cmdlet.WriteProgress(new ProgressRecord(SubActivityId, $"Fetching subtasks of {issueId}...", $"{subtaskCount} subtasks") { ParentActivityId = ActivityId });
                     }
-                    PrintLogs();
+                    cmdlet.PrintLogs();
                 }
                 if (state.Issue is null)
                 {
                     continue;
                 }
-                _issues.Add(state.Issue);
-                percentComplete += 100 / Id.Length;
-                WriteProgress(new ProgressRecord(SubActivityId, $"Fetched  subtasks...", "Subtasks fetched") { ParentActivityId = ActivityId, RecordType = ProgressRecordType.Completed });
+                issues.Add(state.Issue);
+                percentComplete += 100 / ids.Count;
+                cmdlet.WriteProgress(new ProgressRecord(SubActivityId, $"Fetched  subtasks...", "Subtasks fetched") { ParentActivityId = ActivityId, RecordType = ProgressRecordType.Completed });
             }
-            WriteProgress(new ProgressRecord(ActivityId, $"Fetched issues...", "All") { RecordType = ProgressRecordType.Completed });
+            cmdlet.WriteProgress(new ProgressRecord(ActivityId, $"Fetched issues...", "All") { RecordType = ProgressRecordType.Completed });
         }
+
         protected override void EndProcessing()
         {
             WriteObject(_issues, enumerateCollection: true);

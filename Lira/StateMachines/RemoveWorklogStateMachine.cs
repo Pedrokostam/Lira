@@ -8,6 +8,7 @@ using System.Xml.Linq;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
+/// <summary>State machine that orchestrates removing a worklog from an issue and updates local cache accordingly.</summary>
 public class RemoveWorklogStateMachine(LiraClient client) : StateMachine<RemoveWorklogStateMachine.State, RemoveWorklogStateMachine.Steps>(client)
 {
 

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Lira.Jql;
@@ -39,10 +41,10 @@ public abstract class RequiredRejectedTesterBase<TObject, TProperty> : JqlQueryI
         }
         return isInGood && !isInBad;
     }
-    public string[] Good { get; set; } = [];
-    public string[] Bad { get; set; } = [];
+    public IList<string> Good { get; set; } = [];
+    public IList<string> Bad { get; set; } = [];
 
-    private static string CreateArray(string[] values)
+    private static string CreateArray(ICollection<string> values)
     {
         return "(" + string.Join(", ", values.Select(x => $"\"{x}\"")) + ")";
     }

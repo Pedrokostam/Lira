@@ -12,6 +12,7 @@ using Lira.Objects;
 using Serilog.Filters;
 
 namespace Lira.StateMachines;
+/// <summary>State machine implementation for fetching an issue (generic over IssueCommon), orchestrates authorization, issue retrieval, worklog loading and subtasks resolution.</summary>
 public class FetchIssueMachineImpl<T>(LiraClient client) : StateMachine<FetchIssueMachineImpl<T>.State, FetchIssueMachineImpl<T>.Steps>(client)
     where T : IssueCommon
 {

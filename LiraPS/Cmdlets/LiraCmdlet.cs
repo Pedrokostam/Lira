@@ -73,7 +73,7 @@ namespace LiraPS.Cmdlets
             TestSession();
         }
 
-        protected void PrintLogs()
+        public void PrintLogs()
         {
             foreach (var item in LiraSession.LogQueue)
             {
@@ -179,7 +179,7 @@ namespace LiraPS.Cmdlets
             return replacement;
         }
 
-        protected (string[] Good, string[] Bad) DivideConditionCollection(IEnumerable<string> items)
+        protected JqlQuery.GoodBadPair DivideConditionCollection(IEnumerable<string> items)
         {
             List<string> good = [];
             List<string> bad = [];  
@@ -194,7 +194,7 @@ namespace LiraPS.Cmdlets
                     good.Add(trim);
                 }
             }
-            return (good.ToArray(), bad.ToArray());
+            return new (good, bad);
         }
 
         protected record MenuItem
@@ -574,7 +574,7 @@ namespace LiraPS.Cmdlets
         protected void UserCancel(string operation)
         {
             var pascalCase = string.Join("", operation.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries).Select(x => char.ToUpperInvariant(x[0]) + x[1..]));
-            Terminate(new PSInvalidOperationException($"User cancelled {operation}"), $"{pascalCase}Cancelled", ErrorCategory.InvalidOperation);
+            Terminate(new PSInvalidOperationException($"Reporter cancelled {operation}"), $"{pascalCase}Cancelled", ErrorCategory.InvalidOperation);
         }
     }
 }

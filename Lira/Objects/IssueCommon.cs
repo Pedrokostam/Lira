@@ -24,6 +24,7 @@ public abstract record IssueCommon : IssueStem
     public IList<string> Labels { get; init; } = [];
     public DateTimeOffset Created { get; init; }
     public DateTimeOffset Updated { get; init; }
+    public abstract bool HasAllInformation { get; }
     internal void AppendNewWorklog(Worklog worklog)
     {
         worklog.Issue = this;
@@ -51,14 +52,14 @@ public abstract record IssueCommon : IssueStem
 
     public string? Status { get; init; }
     public override string ToString() => Key;
+    public bool WorklogsLoaded { get; protected set; } = false;
 
     /// <summary>
     /// 
     /// </summary>
     /// <param name="lira"></param>
-    /// <param name="cache">If provided, all issue whose worklogs have been fetched will be added to it.</param>
     /// <returns></returns>
-    internal async Task LoadWorklogs(LiraClient lira)
+    public async Task LoadWorklogs(LiraClient lira)
     {
         lira.Logger.LoadingWorklogs(this);
         var address = $"{SelfLink}/worklog";
@@ -70,6 +71,8 @@ public abstract record IssueCommon : IssueStem
         {
             log.Issue = this;
         }
+        WorklogsLoaded = true;
     }
+
 
 }

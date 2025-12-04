@@ -16,14 +16,17 @@ namespace LiraPS.Transformers;
 public class TimespanTransformer(bool passScriptBlock=false) : ArgumentTransformationAttribute, ITransformer<TimeSpan>, IReasonableValidator
 {
     public static readonly TimespanTransformer Instance = new();
-    private ref struct XD
+    private ref struct TimeParsingBuffer
     {
         Span<char> Buffer { get; }
         public int Position { get; private set; }
-        public XD(Span<char> buffer)
+        public TimeParsingBuffer(Span<char> buffer)
         {
             Buffer = buffer;
         }
+        /// <summary>
+        /// Check if new characters can be added without exceeding buffer size.
+        /// </summary>
         public readonly bool CanAppend => Position < Buffer.Length;
         public int Append(char c)
         {
@@ -73,7 +76,7 @@ public class TimespanTransformer(bool passScriptBlock=false) : ArgumentTransform
     }
     public static TimeSpan ParseTime(string s)
     {
-        var buffer = new XD(stackalloc char[24]);
+        var buffer = new TimeParsingBuffer(stackalloc char[24]);
         var span = s.AsSpan();
         TimeSpan result = TimeSpan.Zero;
         bool hasParsed = false;
@@ -89,6 +92,7 @@ public class TimespanTransformer(bool passScriptBlock=false) : ArgumentTransform
             };
             if (unit == TimeUnit.None)
             {
+                // If no time unit is present, append a valid character and skip to next iteration.
                 if (buffer.CanAppend && (char.IsDigit(czar) || czar == '.'))
                 {
                     buffer.Append(czar);
@@ -97,6 +101,7 @@ public class TimespanTransformer(bool passScriptBlock=false) : ArgumentTransform
             }
             if (double.TryParse(buffer.GetString(), NumberParseStyle, CultureInfo.InvariantCulture, out var number))
             {
+                // this happens only if a time unit has just been added
                 hasParsed |= true;
                 result += unit switch
                 {

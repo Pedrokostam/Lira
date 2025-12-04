@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 using Lira.Objects;
 
 namespace Lira.Jql;
-public class JqlQuery : IEquatable<JqlQuery>
+public class JqlQuery 
 {
+    public readonly record struct GoodBadPair(IList<string> Good, IList<string> Bad) { }
     ///// <summary>
     ///// Jira function returning currently logged user
     ///// </summary>
@@ -100,6 +101,14 @@ public class JqlQuery : IEquatable<JqlQuery>
         IssueId.Bad = issueId;
         return this;
     }
+
+    public JqlQuery WhereIssueMatches(GoodBadPair conditions)
+    {
+        IssueId.Good = conditions.Good;
+        IssueId.Bad = conditions.Bad;
+        return this;
+    }
+
     public JqlQuery WhereIssueStatusIs(params string[] statuses)
     {
         IssueStatus.Good = statuses;
@@ -109,6 +118,13 @@ public class JqlQuery : IEquatable<JqlQuery>
     public JqlQuery WhereIssueStatusIsNot(params string[] statuses)
     {
         IssueStatus.Bad = statuses;
+        return this;
+    }
+
+    public JqlQuery WhereIssueStatusMatches(GoodBadPair conditions)
+    {
+        IssueStatus.Good = conditions.Good;
+        IssueStatus.Bad = conditions.Bad;
         return this;
     }
 
@@ -124,6 +140,13 @@ public class JqlQuery : IEquatable<JqlQuery>
         return this;
     }
 
+    public JqlQuery WhereIssueLabelsMatch(GoodBadPair conditions)
+    {
+        IssueLabels.Good = conditions.Good;
+        IssueLabels.Bad = conditions.Bad;
+        return this;
+    }
+
     public JqlQuery WhereIssueComponentsAre(params string[] components)
     {
         IssueComponents.Good = components;
@@ -135,94 +158,136 @@ public class JqlQuery : IEquatable<JqlQuery>
         IssueComponents.Bad = components;
         return this;
     }
+
+    public JqlQuery WhereIssueComponentsMatch(GoodBadPair conditions)
+    {
+        IssueComponents.Good = conditions.Good;
+        IssueComponents.Bad = conditions.Bad;
+        return this;
+    }
+
     public JqlQuery WhereWorklogAuthorIs(params string[] authorId)
     {
         WorklogAuthor.Good = authorId;
         return this;
     }
+
     public JqlQuery WhereWorklogAuthorIsNot(params string[] authorId)
     {
         WorklogAuthor.Bad = authorId;
         return this;
     }
+
+    public JqlQuery WhereWorklogAuthorMatches(GoodBadPair conditions)
+    {
+        WorklogAuthor.Good = conditions.Good;
+        WorklogAuthor.Bad = conditions.Bad;
+        return this;
+    }
+
     public JqlQuery WhereIssueAssigneeIs(params string[] authorId)
     {
         IssueAssignee.Good = authorId;
         return this;
     }
+
     public JqlQuery WhereIssueAssigneeIsNot(string[] authorId)
     {
         IssueAssignee.Bad = authorId;
         return this;
     }
+
+    public JqlQuery WhereIssueAssigneeMatches(GoodBadPair conditions)
+    {
+        IssueAssignee.Good = conditions.Good;
+        IssueAssignee.Bad = conditions.Bad;
+        return this;
+    }
+
     public JqlQuery WhereIssueReporterIs(params string[] authorId)
     {
         IssueReporter.Good = authorId;
         return this;
     }
+
     public JqlQuery WhereIssueReporterIsNot(params string[] authorId)
     {
         IssueReporter.Bad = authorId;
         return this;
     }
+
+    public JqlQuery WhereIssueReporterMatches(GoodBadPair conditions)
+    {
+        IssueReporter.Good = conditions.Good;
+        IssueReporter.Bad = conditions.Bad;
+        return this;
+    }
+
     public JqlQuery WhereIssueCreatorIs(params string[] authorId)
     {
         IssueCreator.Good = authorId;
         return this;
     }
+
     public JqlQuery WhereIssueCreatorIsNot(params string[] authorId)
     {
         IssueCreator.Bad = authorId;
         return this;
     }
+
+    public JqlQuery WhereIssueCreatorMatches(GoodBadPair conditions)
+    {
+        IssueCreator.Good = conditions.Good;
+        IssueCreator.Bad = conditions.Bad;
+        return this;
+    }
+
     public JqlQuery WithWorklogsAfter(IJqlDate? date)
     {
         WorklogDate.StartDate = date;
         return this;
     }
+
     public JqlQuery WithWorklogsBefore(IJqlDate? date)
     {
         WorklogDate.EndDate = date;
         return this;
     }
+
     public JqlQuery WhereIssueCreatedAfter(IJqlDate? date)
     {
         IssueCreatedDate.StartDate = date;
         return this;
     }
+
     public JqlQuery WhereIssueCreatedBefore(IJqlDate? date)
     {
         IssueCreatedDate.EndDate = date;
         return this;
     }
+
+    public JqlQuery WhereIssueCreatedOn(IJqlDate? date)
+    {
+        IssueCreatedDate.StartDate = date;
+        IssueCreatedDate.EndDate = date;
+        return this;
+    }
+
     public JqlQuery WhereIssueUpdatedAfter(IJqlDate? date)
     {
         IssueUpdatedDate.StartDate = date;
         return this;
     }
+
     public JqlQuery WhereIssueUpdatedBefore(IJqlDate? date)
     {
         IssueUpdatedDate.EndDate = date;
         return this;
     }
-
-
-    public bool Equals(JqlQuery? other)
+    public JqlQuery WhereIssueUpdatedOn(IJqlDate? date)
     {
-        if (other is null)
-        {
-            return false;
-        }
-        throw new NotImplementedException();
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as JqlQuery);
-    }
-
-    public override int GetHashCode()
-    {
-        throw new NotImplementedException();
+        IssueUpdatedDate.StartDate = date;
+        IssueUpdatedDate.EndDate = date;
+        return this;
     }
 }

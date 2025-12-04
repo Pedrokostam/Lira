@@ -43,8 +43,6 @@ namespace LiraPS.Cmdlets
         [Parameter(ParameterSetName = "MANUALDATE")]
         public IJqlDate? EndDate { get; set; } = null;
 
-
-
         [Parameter(ValueFromPipeline = true)]
         [UserDetailsToStringTransformer]
         [ValidateNotNullOrEmpty]
@@ -100,28 +98,18 @@ namespace LiraPS.Cmdlets
             var query = new JqlQuery()
                 .WithWorklogsAfter(StartDate)
                 .WithWorklogsBefore(EndDate)
-
-                .WhereWorklogAuthorIs(users.Good)
-                .WhereWorklogAuthorIsNot(users.Bad)
-
-                .WhereIssueIs(issue.Good)
-                .WhereIssueIsNot(issue.Bad)
-
-                .WhereIssueComponentsAre(components.Good)
-                .WhereIssueComponentsAreNot(components.Bad)
-
-                .WhereIssueStatusIs(status.Good)
-                .WhereIssueStatusIsNot(status.Bad)
-
-                .WhereIssueLabelsAre(labels.Good)
-                .WhereIssueLabelsAreNot(labels.Bad)
+                .WhereWorklogAuthorMatches(users)
+                .WhereIssueMatches(issue)
+                .WhereIssueComponentsMatch(components)
+                .WhereIssueStatusMatches(status)
+                .WhereIssueLabelsMatch(labels)
                 ;
             WriteVerbose($"Running query: {query.BuildQueryString(LiraSession.Client)}");
             if (ForceRefresh.IsPresent)
             {
                 LiraSession.Client.RemoveFromQueryCache(query.BuildQueryString(LiraSession.Client));
             }
-            var machine = new FindWorklogStateMachine(LiraSession.Client) { QueryLimit = Chunk };
+            var machine = new FindWorklogByQueryStateMachine(LiraSession.Client) { QueryLimit = Chunk };
             var state = machine.GetStartState(query);
             while (!state.IsFinished)
             {
@@ -130,7 +118,7 @@ namespace LiraPS.Cmdlets
                 PrintLogs();
                 CommentState(in state);
             }
-            _worklogs.AddRange(state.Worklogs);
+            _worklogs.AddRange(state.Payload);
         }
         protected override void EndProcessing()
         {
@@ -159,26 +147,26 @@ namespace LiraPS.Cmdlets
         }
 
 
-        private void CommentState(in FindWorklogStateMachine.State currState)
+        private void CommentState(in FindWorklogByQueryStateMachine.State currState)
         {
             WriteVerbose($"{currState.FinishedStep} => {currState.NextStep}");
-            if (currState.FinishedStep < FindWorklogStateMachine.Steps.QueryForIssues && currState.FinishedStep == FindWorklogStateMachine.Steps.QueryForIssues)
+            if (currState.FinishedStep < FindWorklogByQueryStateMachine.Steps.QueryForIssues && currState.FinishedStep == FindWorklogByQueryStateMachine.Steps.QueryForIssues)
             {
                 long issueCount = currState.PaginationState.Pagination.Total;
                 string issuePlural = issueCount == 1 ? "issue" : "issues";
                 WriteVerbose($"Received query response. Found {issueCount} {issuePlural} matching query.");
             }
-            if (currState.NextStep == FindWorklogStateMachine.Steps.QueryForIssues)
+            if (currState.NextStep == FindWorklogByQueryStateMachine.Steps.QueryForIssues)
             {
                 WritePaginationProgress(in currState, false);
             }
-            if (currState.NextStep > FindWorklogStateMachine.Steps.QueryForIssues)
+            if (currState.NextStep > FindWorklogByQueryStateMachine.Steps.QueryForIssues)
             {
                 WritePaginationProgress(in currState, true);
             }
         }
 
-        private void WritePaginationProgress(in FindWorklogStateMachine.State currState, bool finished)
+        private void WritePaginationProgress(in FindWorklogByQueryStateMachine.State currState, bool finished)
         {
             var got = currState.PaginationState.Pagination.EndsAt;
             long totalCount = currState.PaginationState.Pagination.Total;

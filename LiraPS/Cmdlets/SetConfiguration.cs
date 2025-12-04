@@ -94,15 +94,15 @@ public class SetConfiguration : LiraCmdlet
                     Authorization = new PersonalAccessToken(pat);
                     break;
                 case ConfigurationType.Credentials:
-                    var username = ReadInput("User username");
+                    var username = ReadInput("Reporter username");
                     EnsureNotEmpty(username, "Username");
                     var passwordC = ReadInput("Password", asSecure: true);
                     EnsureNotEmpty(passwordC, "Password");
                     Authorization = new CookieProvider(username, passwordC);
                     break;
                 case ConfigurationType.AttlasianApiKey:
-                    var userEmail = ReadInput("User email");
-                    EnsureNotEmpty(userEmail, "User Email");
+                    var userEmail = ReadInput("Reporter email");
+                    EnsureNotEmpty(userEmail, "Reporter Email");
                     var passwordA = ReadInput("Atlassian API key", asSecure: true);
                     EnsureNotEmpty(passwordA, "Password");
                     Authorization = new AtlassianApiKey(userEmail, passwordA);

@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Lira.StateMachines;
+/// <summary>Base class for state machines that orchestrate multi-step operations against the Jira REST API.</summary>
 
 public abstract class StateMachine<TState, TStep>(LiraClient client) : IStateMachine<TState>
     where TState : struct, IState<TStep, TState>

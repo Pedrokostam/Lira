@@ -43,4 +43,6 @@ public record Issue : IssueCommon
     internal readonly List<Issue> _subtasks = [];
     public IReadOnlyList<IssueStem> Subtasks => _subtasks.AsReadOnly();
     public TimeSpan TotalTimeSpent => AllWorklogs.Select(x => x.TimeSpent).Sum();
+
+    public override bool HasAllInformation => true;
 }

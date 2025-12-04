@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Lira.Objects;
 
 namespace Lira.Extensions;
-internal static class CollectionExtensions
+public static class CollectionExtensions
 {
     public static ImmutableList<T> AddRangeNotNull<T>(this ImmutableList<T> list, IEnumerable<T>? range)
     {
@@ -29,7 +29,7 @@ internal static class CollectionExtensions
         }
         return list.AddRange(range);
     }
-    private static async Task LoadWorklogsImpl(IEnumerable<IssueLite> issues, LiraClient lira, Func<IssueLite, LiraClient, Task> functor)
+    private static async Task LoadWorklogsImpl(IEnumerable<IssueCommon> issues, LiraClient lira, Func<IssueCommon, LiraClient, Task> functor)
     {
         int parallelism = 20;
         ParallelOptions parallelOptions = new()
@@ -37,7 +37,7 @@ internal static class CollectionExtensions
             CancellationToken = lira.CancellationTokenSource.Token,
             MaxDegreeOfParallelism = parallelism,
         };
-        await Parallel.ForEachAsync(issues, parallelOptions,
+        await Parallel.ForEachAsync(issues.Where(x=>!x.WorklogsLoaded), parallelOptions,
             async (x, token) => await functor(x, lira).ConfigureAwait(false)).ConfigureAwait(false);
     }
 
@@ -68,7 +68,7 @@ internal static class CollectionExtensions
 
     //#endif
     //    }
-    public static async Task LoadWorklogs(this IList<IssueLite> issues, LiraClient lira)
+    public static async Task LoadWorklogs(this IEnumerable<IssueCommon> issues, LiraClient lira)
     {
         await LoadWorklogsImpl(issues, lira, (i, l) => i.LoadWorklogs(l)).ConfigureAwait(false);
     }

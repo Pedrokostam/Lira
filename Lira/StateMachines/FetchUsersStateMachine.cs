@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Lira.Objects;
 
 namespace Lira.StateMachines;
+/// <summary>State machine that searches for users matching a provided username fragment.</summary>
 public class FetchUsersStateMachine(LiraClient client) : StateMachine<FetchUsersStateMachine.State,FetchUsersStateMachine.Steps>(client) 
 {
     public enum Steps

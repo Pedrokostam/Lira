@@ -5,6 +5,7 @@ using Lira.Objects;
 
 namespace Lira.StateMachines;
 
+/// <summary>State machine responsible for retrieving details about the current authenticated user.</summary>
 public class FetchCurrentUserStateMachine(LiraClient client) : StateMachine<FetchCurrentUserStateMachine.State, FetchCurrentUserStateMachine.Steps>(client)
 {
 

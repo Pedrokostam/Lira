@@ -1,0 +1,226 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Configuration
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd">
+	<ViewDefinitions>
+		<!-- TABLE view for IssueCommon (handles both Issue and IssueLite via scriptblocks) -->
+		<View>
+			<Name>Default</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Objects.IssueCommon</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Label>Key</Label>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Assignee</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Reporter</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Creator</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Subtasks</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Created</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Updated</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Time</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>TotalTime</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Summary</Label>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>Key</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ($_.Assignee -eq $null) {
+										"`e[2m`e[3mUnassigned`e[0m"
+									} else {
+										$_.Assignee.Name
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>$_.Reporter.Name</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>$_.Creator.Name</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ($_.HasAllInformation) {
+										$_.Subtasks.Count
+									} else {
+										$_.ShallowSubtasks.Count
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Created,1)</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Updated,1)</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent,1)
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ($_.HasAllInformation) {
+										[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TotalTimeSpent,1)
+									} else {
+										"`e[2m`e[3mIssue not loaded`e[0m"
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>SummaryPlain</PropertyName>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
+
+		<!-- LIST view for IssueCommon (handles both Issue and IssueLite via scriptblocks) -->
+		<View>
+			<Name>Default</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Objects.IssueCommon</TypeName>
+			</ViewSelectedBy>
+			<ListControl>
+				<ListEntries>
+					<ListEntry>
+						<ListItems>
+							<ListItem>
+								<Label>Warning</Label>
+								<ItemSelectionCondition>
+									<ScriptBlock>
+										-Not $_.HasAllInformation
+									</ScriptBlock>
+								</ItemSelectionCondition>
+								<ScriptBlock>"`e[1mThis is not a fully loaded Issue - load it with Get-LiraIssue`e[0m"</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Key</Label>
+								<PropertyName>Key</PropertyName>
+							</ListItem>
+
+							<ListItem>
+								<Label>Summary</Label>
+								<PropertyName>SummaryPlain</PropertyName>
+							</ListItem>
+
+							<ListItem>
+								<Label>Link</Label>
+								<PropertyName>WebLink</PropertyName>
+							</ListItem>
+
+							<ListItem>
+								<Label>Assignee</Label>
+								<ScriptBlock>
+									if ($_.Assignee -eq $null) {
+										"`e[2m`e[3mUnassigned`e[0m"
+									} else {
+										[LiraPS.Extensions.FormattingExtensions]::OnelineUserDetails($_.Assignee)
+									}
+								</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Reporter</Label>
+								<ScriptBlock>[LiraPS.Extensions.FormattingExtensions]::OnelineUserDetails($_.Reporter)</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Creator</Label>
+								<ScriptBlock>[LiraPS.Extensions.FormattingExtensions]::OnelineUserDetails($_.Creator)</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Created</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::UnambiguousForm($_.Created)</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Updated</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::UnambiguousForm($_.Updated)</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Time</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TimeSpent)</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Total Time</Label>
+								<ItemSelectionCondition>
+									<ScriptBlock>
+										($_.HasAllInformation) -and ($_.Subtasks.Count -gt 0 ) 
+									</ScriptBlock>
+								</ItemSelectionCondition>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TotalTimeSpent)</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Subtasks</Label>
+								<ItemSelectionCondition>
+									<ScriptBlock>
+										if ($_.HasAllInformation) { $_.Subtasks.Count -gt 0 } else { $_.ShallowSubtasks.Count -gt 0 }
+									</ScriptBlock>
+								</ItemSelectionCondition>
+								<ScriptBlock>
+									if ($_.HasAllInformation) {
+										($_.Subtasks | % Key) -join ", "
+									} else {
+										($_.ShallowSubtasks | % Key) -join ", "
+									}
+								</ScriptBlock>
+							</ListItem>
+
+							<ListItem>
+								<Label>Description</Label>
+								<ScriptBlock>
+									if ([String]::IsNullOrWhitespace($_.DescriptionPlain)) {
+										"`e[2m`e[3mEmpty description`e[0m"
+									} else {
+										$_.DescriptionPlain
+									}
+								</ScriptBlock>
+							</ListItem>
+
+						</ListItems>
+					</ListEntry>
+				</ListEntries>
+			</ListControl>
+		</View>
+	</ViewDefinitions>
+</Configuration>
