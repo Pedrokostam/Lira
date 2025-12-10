@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Clear, "LiraIssueCache", DefaultParameterSetName = "MANUAL")]
-public class ClearIssueCache : LiraCmdlet
+public sealed class ClearIssueCache : LiraCmdlet
 {
     [Alias("Key")]
     [Parameter(
@@ -20,6 +20,7 @@ public class ClearIssueCache : LiraCmdlet
     public SwitchParameter All { get; set; }
     protected override void BeginProcessing()
     {
+        Console.CancelKeyPress += DumpLogEvent;
         // No need to load anything here. No session - no cache.
         //base.BeginProcessing();
     }

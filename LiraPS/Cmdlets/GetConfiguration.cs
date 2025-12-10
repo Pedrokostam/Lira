@@ -6,7 +6,7 @@ namespace LiraPS.Cmdlets
 {
     [Cmdlet(VerbsCommon.Get, "LiraConfiguration")]
     [OutputType(typeof(LiraPS.Configuration.Information))]
-    public class GetLiraConfiguration : LiraCmdlet
+    public sealed class GetLiraConfiguration : LiraCmdlet
     {
         protected override void ProcessRecord()
         {

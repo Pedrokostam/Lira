@@ -12,14 +12,14 @@ using Microsoft.Extensions.Logging;
 namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Remove, "LiraWorklog")]
 [Alias("Remove-Worklog")]
-public class RemoveWorklog : LiraCmdlet
+public sealed class RemoveWorklog : LiraCmdlet
 {
     [Parameter(ValueFromPipeline = true, Mandatory = true, Position=0)]
     [CachedWorklogTransformer]
     public Worklog[] Worklogs { get; set; } = [];
     [Parameter]
     public SwitchParameter Force { get; set; }
-    private List<Worklog> _worklogsAccumulated = [];
+    private readonly List<Worklog> _worklogsAccumulated = [];
     protected override void ProcessRecord()
     {
         _worklogsAccumulated.AddRange(Worklogs);

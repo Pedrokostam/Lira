@@ -22,8 +22,8 @@ public static class LiraSession
 {
     // --- Internal state -----------------------------------------------------------------------
 
-    private static readonly Dictionary<string, Worklog> _worklogCache = new Dictionary<string, Worklog>(StringComparer.OrdinalIgnoreCase);
-    private static Configuration? _config;
+    private static readonly Dictionary<string, Worklog> WorklogCache = new(StringComparer.OrdinalIgnoreCase);
+    private static Configuration? Configuration;
 
     // --- Recent / last-added log helpers ------------------------------------------------------
 
@@ -56,7 +56,7 @@ public static class LiraSession
     /// <param name="id">Worklog identifier to look up.</param>
     /// <param name="log">When this method returns, contains the cached <see cref="Worklog"/> if found; otherwise null.</param>
     /// <returns>True if a cached worklog was found; otherwise false.</returns>
-    public static bool TryGetCachedWorklog(string id, [NotNullWhen(true)] out Worklog? log) => _worklogCache.TryGetValue(id, out log);
+    public static bool TryGetCachedWorklog(string id, [NotNullWhen(true)] out Worklog? log) => WorklogCache.TryGetValue(id, out log);
 
     /// <summary>
     /// Adds or updates the given <see cref="Worklog"/> in the session cache.
@@ -64,7 +64,7 @@ public static class LiraSession
     /// <param name="log">Worklog to cache.</param>
     public static void CacheWorklog(Worklog log)
     {
-        _worklogCache[log.ID] = log;
+        WorklogCache[log.ID] = log;
         Logger.LogDebug("Added worklog {id} to session cache", log.ID);
     }
 
@@ -74,7 +74,7 @@ public static class LiraSession
     /// <param name="log">Worklog to remove from cache.</param>
     public static void UncacheWorklog(Worklog log)
     {
-        if (_worklogCache.Remove(log.ID))
+        if (WorklogCache.Remove(log.ID))
         {
             Logger.LogDebug("Removed worklog {id} from session cache", log.ID);
         }
@@ -85,7 +85,7 @@ public static class LiraSession
     /// </summary>
     public static void ValidateWorklogCache()
     {
-        List<Worklog> cached = [.. _worklogCache.Values];
+        List<Worklog> cached = [.. WorklogCache.Values];
         foreach (var c in cached)
         {
             if (Client.TryGetCachedIssue(c.ID, out _))
@@ -99,7 +99,7 @@ public static class LiraSession
     // --- Configuration access and state -------------------------------------------------------
 
     /// <summary>
-    /// Gets or sets the active <see cref="Configuration"/> for the session.
+    /// Gets or sets the active <see cref="LiraPS.Configuration"/> for the session.
     /// The getter lazily loads the configuration and marks it as the last-used configuration.
     /// The setter will close any active session if the configuration changes and mark the new config as last.
     /// </summary>
@@ -108,25 +108,25 @@ public static class LiraSession
     {
         get
         {
-            if (_config is null)
+            if (Configuration is null)
             {
-                _config = Configuration.Load();
-                Configuration.MarkLast(_config);
+                Configuration = Configuration.Load();
+                Configuration.MarkLast(Configuration);
                 Logger.LogDebug("Loaded configuration");
 
             }
-            return _config;
+            return Configuration;
         }
         set
         {
-            if (_config != value && _config is not null)
+            if (Configuration != value && Configuration is not null)
             {
                 CloseSession();
-                _config = value;
+                Configuration = value;
             }
-            if (_config is not null)
+            if (Configuration is not null)
             {
-                Configuration.MarkLast(_config);
+                Configuration.MarkLast(Configuration);
             }
         }
     }
@@ -138,7 +138,7 @@ public static class LiraSession
     {
         get
         {
-            return _config is not null && _config.IsInitialized;
+            return Configuration is not null && Configuration.IsInitialized;
         }
     }
 
@@ -147,7 +147,7 @@ public static class LiraSession
     /// </summary>
     /// <param name="info">Configuration information to compare against the active session.</param>
     /// <returns>True if the provided information matches the active session configuration; otherwise false.</returns>
-    public static bool IsActiveSession(Configuration.Information info) => info.Equals(_config?.ToInformation());
+    public static bool IsActiveSession(Configuration.Information info) => info.Equals(Configuration?.ToInformation());
 
     /// <summary>
     /// Tests whether session configuration data is available and initialized.
@@ -190,7 +190,7 @@ public static class LiraSession
     /// <summary>
     /// Logger instance used by the session and helpers.
     /// </summary>
-    public static ILogger<LiraClient> Logger { get; }
+    public static IPSLogger<LiraClient> Logger { get; }
 
     /// <summary>
     /// Static constructor. Initializes logging infrastructure for the session.
@@ -205,7 +205,7 @@ public static class LiraSession
         //#endif
         //             .CreateLogger();
         //Logger = new SerilogLoggerFactory(serilogger).CreateLogger<LiraClient>();
-        Logger = new PSLogger<LiraClient>("log.log");
+        Logger = new PSLogger<LiraClient>();
     }
 
     // --- Client lifecycle --------------------------------------------------------------------

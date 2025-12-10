@@ -14,7 +14,7 @@ namespace LiraPS.Cmdlets
 {
     [Cmdlet(VerbsCommon.Get, "LiraUser")]
     [OutputType(typeof(UserDetails))]
-    public class GetUser : LiraCmdlet
+    public sealed class GetUser : LiraCmdlet
     {
         [Alias("ID", "DisplayName")]
         [AllowEmptyCollection]

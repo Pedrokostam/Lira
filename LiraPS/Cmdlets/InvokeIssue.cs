@@ -11,7 +11,7 @@ using Lira.Objects;
 namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Show, "LiraIssue")]
 [Alias("Invoke-Issue")]
-public class InvokeIssue : LiraCmdlet
+public sealed class InvokeIssue : LiraCmdlet
 {
     [Parameter(Position = 0, ValueFromPipeline = true)]
     public IssueStem[] Item { get; set; } = default!;
@@ -22,7 +22,9 @@ public class InvokeIssue : LiraCmdlet
 
     protected override void BeginProcessing()
     {
-       // base.BeginProcessing();
+        Console.CancelKeyPress += DumpLogEvent;
+
+        // base.BeginProcessing();
     }
     protected override void ProcessRecord()
     {

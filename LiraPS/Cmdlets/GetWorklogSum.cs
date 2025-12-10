@@ -17,7 +17,7 @@ namespace LiraPS.Cmdlets;
 [Alias("logsum", "sum", "Get-WorklogTimespanCalculatedGroup")]
 [Cmdlet(VerbsCommon.Get, "LiraWorklogSum", DefaultParameterSetName = "STRUCT")]
 [OutputType(typeof(WorklogTimespanCalculatedGroup), ParameterSetName = ["STRUCT"])]
-public class GetWorklogSum : LiraCmdlet
+public sealed class GetWorklogSum : LiraCmdlet
 {
     [Parameter(Mandatory = false, ValueFromPipeline = true)]
     public Worklog[] Worklogs { get; set; } = [];
@@ -29,6 +29,8 @@ public class GetWorklogSum : LiraCmdlet
 
     protected override void BeginProcessing()
     {
+        Console.CancelKeyPress += DumpLogEvent;
+
         // no need to test session
         //base.BeginProcessing();
     }
@@ -38,7 +40,7 @@ public class GetWorklogSum : LiraCmdlet
         {
             if (GetGlobal("LiraLastWorklogs") is IEnumerable<Worklog> logs)
             {
-                Worklogs = logs.ToArray();
+                Worklogs = [.. logs];
                 LiraSession.Logger.LogWarning("Using previously fetched logs");
             }
             else

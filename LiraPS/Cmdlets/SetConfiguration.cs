@@ -27,7 +27,7 @@ public enum ConfigurationType
 
 [Cmdlet(VerbsCommon.Set, "LiraConfiguration", DefaultParameterSetName = "MANUAL")]
 [OutputType(typeof(UserDetails))]
-public class SetConfiguration : LiraCmdlet
+public sealed class SetConfiguration : LiraCmdlet
 {
     [Parameter(ParameterSetName = "MANUAL")]
     public ConfigurationType Type { get; set; } = ConfigurationType.ManualChoice;
@@ -53,6 +53,8 @@ public class SetConfiguration : LiraCmdlet
     private IAuthorization Authorization { get; set; } = default!;
     protected override void BeginProcessing()
     {
+        Console.CancelKeyPress += DumpLogEvent;
+
         // don't load anything yet
         //base.BeginProcessing();
     }

@@ -18,7 +18,7 @@ namespace LiraPS.Cmdlets
     [Cmdlet(VerbsCommon.Get, "LiraIssue")]
     [OutputType(typeof(Issue))]
     [Alias("Get-Issue")]
-    public class GetLiraIssue : LiraCmdlet
+    public sealed class GetLiraIssue : LiraCmdlet
 
     {
         private const int ActivityId = 1379;

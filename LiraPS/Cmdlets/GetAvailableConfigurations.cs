@@ -8,10 +8,12 @@ using System.Text;
 namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Get, "LiraAvailableConfigurations")]
 [OutputType(typeof(LiraPS.Configuration.Information))]
-public class GetAvailableConfigurations : LiraCmdlet
+public sealed class GetAvailableConfigurations : LiraCmdlet
 {
     protected override void BeginProcessing()
     {
+        Console.CancelKeyPress += DumpLogEvent;
+
         //base.BeginProcessing();
     }
     protected override void ProcessRecord()

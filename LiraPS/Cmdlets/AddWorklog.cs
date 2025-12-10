@@ -16,7 +16,7 @@ namespace LiraPS.Cmdlets
     [Cmdlet(VerbsCommon.Add, "LiraWorklog")]
     [OutputType(typeof(Worklog))]
     [Alias("Add-Worklog")]
-    public class AddWorklog : LiraCmdlet
+    public sealed class AddWorklog : LiraCmdlet
     {
         [Parameter(ValueFromPipelineByPropertyName = true)]
         [ArgumentCompleter(typeof(RecentIssuesCompleter))]

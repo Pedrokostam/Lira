@@ -10,7 +10,7 @@ using LiraPS.Completers;
 namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Switch, "LiraConfiguration")]
 [OutputType(typeof(LiraPS.Configuration.Information))]
-public class SwitchConfiguration : LiraCmdlet
+public sealed class SwitchConfiguration : LiraCmdlet
 {
     [Parameter(Position = 0, Mandatory = true)]
     [ArgumentCompleter(typeof(ConfigurationCompletionAttribute))]
@@ -19,6 +19,8 @@ public class SwitchConfiguration : LiraCmdlet
 
     protected override void BeginProcessing()
     {
+        Console.CancelKeyPress += DumpLogEvent;
+
         //base.BeginProcessing();
     }
     protected override void ProcessRecord()

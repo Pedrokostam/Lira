@@ -17,7 +17,7 @@ namespace LiraPS.Cmdlets;
 
 [Cmdlet(VerbsData.Update, "LiraWorklog")]
 [Alias("Update-Worklog")]
-public class UpdateWorklog : LiraCmdlet
+public sealed class UpdateWorklog : LiraCmdlet
 {
     public readonly record struct Change(string Name, object Old, object Updated) { }
 
@@ -51,9 +51,9 @@ public class UpdateWorklog : LiraCmdlet
         WriteHost("");
         WriteHost(changeName, ConsoleColor.Cyan);
         PrettyPrint("From:", GraphicModes.Italics);
-        WriteHost("    " + from, ConsoleColor.DarkYellow);
+        WriteHost("     " + from, ConsoleColor.DarkYellow);
         PrettyPrint("To:", GraphicModes.Italics);
-        WriteHost("    " + to, ConsoleColor.Green);
+        WriteHost("     " + to, ConsoleColor.Green);
     }
     protected override void ProcessRecord()
     {

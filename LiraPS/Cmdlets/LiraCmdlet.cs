@@ -68,23 +68,34 @@ namespace LiraPS.Cmdlets
             return MyInvocation.BoundParameters.ContainsKey(name);
         }
 
-        protected override void BeginProcessing()
+        public static void DumpLog()
         {
-            TestSession();
+            Debug.WriteLine("Dumping remaining log to file...");
+            LiraSession.Logger.UpdateFileLogs().GetAwaiter().GetResult();
+            //LiraSession.Logger.PrintToStd(this);
+        }
+        public static void DumpLogEvent(object? s, ConsoleCancelEventArgs e)
+        {
+            Debug.WriteLine("Caught Ctrl-C...");
+            LiraSession.Logger.LogError("Operation cancelled by user (Ctrl-C)");
+            DumpLog();
+            e.Cancel = false;
         }
 
+        protected override void BeginProcessing()
+        {
+            Console.CancelKeyPress += DumpLogEvent;
+            TestSession();
+        }
         public void PrintLogs()
         {
-            foreach (var item in LiraSession.LogQueue)
-            {
-                Print(item);
-            }
+            LiraSession.Logger.PrintToStd(this);
         }
         protected override void EndProcessing()
         {
             base.EndProcessing();
             LiraSession.ValidateWorklogCache();
-            PrintLogs();
+            DumpLog();
         }
 
         ///// <summary>
@@ -132,35 +143,14 @@ namespace LiraPS.Cmdlets
             else
             {
                 // Otherwise, use WriteInformation to write to the information stream
-                WriteInformation(message, new string[] { "PSHOST" });
+                WriteInformation(message, ["PSHOST"]);
             }
         }
-        protected void Print(Log log)
-        {
-            var txt = log.Message;
-            switch (log.Level)
-            {
-                case LogLevel.Trace:
-                case LogLevel.Debug:
-                    WriteDebug(txt);
-                    break;
-                case LogLevel.Information:
-                    WriteVerbose(txt);
-                    break;
-                case LogLevel.Warning:
-                    WriteWarning(txt);
-                    break;
-                case LogLevel.Error:
-                    WriteError(new ErrorRecord(log.Exception ?? new Exception(), txt, ErrorCategory.NotSpecified, null));
-                    break;
-                case LogLevel.Critical:
-                    Terminate(log.Exception ?? new Exception(), txt, ErrorCategory.NotSpecified);
-                    break;
-            }
-        }
+
         [System.Diagnostics.CodeAnalysis.DoesNotReturn]
-        protected void Terminate<T>(T error, string id, ErrorCategory category = ErrorCategory.InvalidArgument, object? target = null) where T : Exception
+        public void Terminate<T>(T error, string id, ErrorCategory category = ErrorCategory.InvalidArgument, object? target = null) where T : Exception
         {
+            DumpLog();
             ThrowTerminatingError(
                    new ErrorRecord(
                        error,
@@ -179,14 +169,15 @@ namespace LiraPS.Cmdlets
             return replacement;
         }
 
-        protected JqlQuery.GoodBadPair DivideConditionCollection(IEnumerable<string> items)
+        protected static JqlQuery.GoodBadPair DivideConditionCollection(IEnumerable<string> items)
         {
             List<string> good = [];
-            List<string> bad = [];  
+            List<string> bad = [];
             foreach (var item in items)
             {
                 var trim = item.Trim();
-                if (trim.StartsWith('!')){
+                if (trim.StartsWith('!'))
+                {
                     bad.Add(trim.TrimStart('!').TrimStart());
                 }
                 else
@@ -194,22 +185,22 @@ namespace LiraPS.Cmdlets
                     good.Add(trim);
                 }
             }
-            return new (good, bad);
+            return new(good, bad);
         }
 
         protected record MenuItem
         {
-            private string? tooltip;
+            private string? _tooltip;
 
             public required string Name { get; init; }
             public string? Tooltip
             {
-                get => tooltip; init
+                get => _tooltip; init
                 {
                     TooltipLines = value?.Split(["\n", "\r\n", "\r"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
                     TooltipHeight = TooltipLines.Length;
                     TooltipWidth = TooltipLines.Length == 0 ? 0 : TooltipLines.Max(x => x.Length);
-                    tooltip = string.Join(Environment.NewLine, TooltipLines);
+                    _tooltip = string.Join(Environment.NewLine, TooltipLines);
                 }
             }
             public string[] TooltipLines { get; private init; } = [];
@@ -440,7 +431,6 @@ namespace LiraPS.Cmdlets
                     Console.WriteLine(interactiveLine.PadRight(Console.BufferWidth - 2));
                     lineCounter++;
 
-                    int currentCompletionLineCount = 0;
                     // Print completions
                     if (completions.Count > 0 && showCompletions)
                     {
@@ -560,7 +550,7 @@ namespace LiraPS.Cmdlets
         /// </summary>
         /// <param name="issue"></param>
         /// <exception cref="InvalidOperationException"></exception>
-        protected void ENSURE_TESTING(string issue)
+        protected static void ENSURE_TESTING(string issue)
         {
 #if DEBUG
             if (!"AVP-425".Equals(issue, StringComparison.OrdinalIgnoreCase))

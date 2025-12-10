@@ -10,7 +10,7 @@ using LiraPS.Completers;
 namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Remove, "LiraConfiguration", DefaultParameterSetName = "MANUAL")]
 [OutputType(typeof(LiraPS.Configuration.Information))]
-public class RemoveConfiguration : LiraCmdlet
+public sealed class RemoveConfiguration : LiraCmdlet
 {
     [Parameter(Position = 0, Mandatory = true, ParameterSetName = "MANUAL")]
     [ArgumentCompleter(typeof(ConfigurationCompletionAttribute))]
@@ -21,6 +21,8 @@ public class RemoveConfiguration : LiraCmdlet
 
     protected override void BeginProcessing()
     {
+        Console.CancelKeyPress += DumpLogEvent;
+
         //base.BeginProcessing();
     }
     protected override void ProcessRecord()

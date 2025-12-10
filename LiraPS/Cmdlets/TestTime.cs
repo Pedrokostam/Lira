@@ -11,7 +11,7 @@ namespace LiraPS.Cmdlets
 {
     [Cmdlet(VerbsDiagnostic.Test, "Time")]
     [Alias("tt")]
-    public class TestTime : LiraCmdlet
+    public sealed class TestTime : LiraCmdlet
     {
 
         [Parameter]
@@ -46,6 +46,8 @@ namespace LiraPS.Cmdlets
 
         protected override void BeginProcessing()
         {
+            Console.CancelKeyPress += DumpLogEvent;
+
             //base.BeginProcessing();
         }
         protected override void ProcessRecord()

@@ -19,13 +19,13 @@ namespace LiraPS.Cmdlets;
 
 
 [Alias("Find-Issue")]
-public class FindIssue : LiraCmdlet
+public sealed class FindIssue : LiraCmdlet
 {
     const int IssuePaginationProgressId = 1742;
 
     private string[] _reporter = [];
     private string[] _assignee = [];
-    private List<IssueCommon> _issues = [];
+    private readonly List<IssueCommon> _issues = [];
 
     [AllowNull]
     [JqlDateTransformer(mode: DateMode.Start)]

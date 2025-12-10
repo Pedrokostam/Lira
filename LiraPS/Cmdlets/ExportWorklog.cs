@@ -33,7 +33,7 @@ public enum Separator
 }
 [Alias("Export-Worklog")]
 [Cmdlet(VerbsData.Export, "LiraWorklog")]
-public class ExportWorklog : LiraCmdlet, IDynamicParameters
+public sealed class ExportWorklog : LiraCmdlet, IDynamicParameters
 {
     [Parameter(Position = 0)]
     public ExportMode As { get; set; } = ExportMode.Json;
@@ -44,7 +44,7 @@ public class ExportWorklog : LiraCmdlet, IDynamicParameters
     [Parameter(Mandatory = true, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true)]
     public Worklog[] Worklogs { get; set; } = [];
 
-    private List<Worklog> _allWorklogs = [];
+    private readonly List<Worklog> _allWorklogs = [];
 
     private CsvDynamicParameters? _csvDynamicParameters;
     private JsonDynamicParameters? _jsonDynamicParameters;
@@ -66,6 +66,8 @@ public class ExportWorklog : LiraCmdlet, IDynamicParameters
 
     protected override void BeginProcessing()
     {
+        Console.CancelKeyPress += DumpLogEvent;
+
         //base.BeginProcessing();
     }
     protected override void ProcessRecord()

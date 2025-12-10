@@ -26,7 +26,7 @@ namespace LiraPS.Cmdlets
     [Cmdlet(VerbsCommon.Get, "LiraWorklog", DefaultParameterSetName = "PERIOD")]
     [OutputType(typeof(Worklog))]
     [Alias("Get-Worklog", "Get-Worklogs", "Get-LiraWorklogs")]
-    public class GetLiraWorklog : LiraCmdlet
+    public sealed class GetLiraWorklog : LiraCmdlet
 
     {
         [Parameter(Position = 0, ParameterSetName = "PERIOD")]

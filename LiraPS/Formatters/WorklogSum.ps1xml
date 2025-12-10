@@ -46,7 +46,11 @@
 							</TableColumnItem>
 							<TableColumnItem>
 								<ScriptBlock>
+									if ($_.ColumnValuesTexts){
 									$_.ColumnValuesTexts -join "`e[2m => `e[0m"
+									}else{
+									"`e[2m Total Sum `e[0m"
+									}
 								</ScriptBlock>
 							</TableColumnItem>
 						</TableColumnItems>
