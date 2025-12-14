@@ -38,11 +38,11 @@ public readonly partial record struct JqlKeywordDate : IJqlDate
     public static readonly JqlKeywordDate EndOfMonth = new(Keywords.EndOfMonth);
     public static readonly JqlKeywordDate StartOfYear = new(Keywords.StartOfYear);
     public static readonly JqlKeywordDate EndOfYear = new(Keywords.EndOfYear);
-    public Keywords Keyword { get; }
+    public Keywords Keyword { get; init; }
     /// <summary>
     /// Offset expressed in the default unit represented by the <paramref name="keyword"/> (so, weeks for <see cref="Keywords.EndOfWeek"/>, years for <see cref="Keywords.StartOfYear"/>).
     /// </summary>
-    public int Offset { get; } = 0;
+    public int Offset { get; init; } = 0;
     /// <summary>
     /// 
     /// </summary>

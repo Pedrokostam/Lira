@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 using Lira.Objects;
 
 namespace LiraPS.Transformers;
+/// <summary>
+/// Converts strings, numbers and UserDetails into strings representing user names.
+/// </summary>
 public class UserDetailsToStringTransformerAttribute : ArgumentTransformationAttribute
 {
     public static readonly UserDetailsToStringTransformerAttribute Instance = new ();

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Lira.Objects;
 using Lira.StateMachines;
+using LiraPS.Transformers;
 using Microsoft.Extensions.Logging;
 using Serilog.Events;
 using Serilog.Formatting.Display;
@@ -17,6 +18,7 @@ namespace LiraPS.Cmdlets
     public sealed class GetUser : LiraCmdlet
     {
         [Alias("ID", "DisplayName")]
+        [UserDetailsToStringTransformer]
         [AllowEmptyCollection]
         [Parameter(
             Mandatory = false,

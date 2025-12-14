@@ -35,13 +35,13 @@ namespace LiraPS.Cmdlets
         [JqlDateTransformer(mode: DateMode.Start)]
         [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
         [Parameter(ParameterSetName = "MANUALDATE")]
-        public IJqlDate? StartDate { get; set; } = null;
+        public IJqlDate? DateFrom { get; set; } = null;
 
         [AllowNull]
         [JqlDateTransformer(mode: DateMode.Start)]
         [ArgumentCompleter(typeof(JqlDateEndArgumentCompleter))]
         [Parameter(ParameterSetName = "MANUALDATE")]
-        public IJqlDate? EndDate { get; set; } = null;
+        public IJqlDate? DateTo { get; set; } = null;
 
         [Parameter(ValueFromPipeline = true)]
         [UserDetailsToStringTransformer]
@@ -96,8 +96,8 @@ namespace LiraPS.Cmdlets
             var status = DivideConditionCollection(Status);
             var labels = DivideConditionCollection(Labels);
             var query = new JqlQuery()
-                .WithWorklogsAfter(StartDate)
-                .WithWorklogsBefore(EndDate)
+                .WithWorklogsAfter(DateFrom)
+                .WithWorklogsBefore(DateTo)
                 .WhereWorklogAuthorMatches(users)
                 .WhereIssueMatches(issue)
                 .WhereIssueComponentsMatch(components)
@@ -142,8 +142,8 @@ namespace LiraPS.Cmdlets
                 Period.LastYear => (JqlKeywordDate.StartOfYear.WithOffset(-1), JqlKeywordDate.EndOfYear.WithOffset(-1)),
                 _ => throw new PSNotSupportedException(),
             };
-            StartDate = start;
-            EndDate = end;
+            DateFrom = start;
+            DateTo = end;
         }
 
 

@@ -13,7 +13,9 @@ using LiraPS.Extensions;
 using Lira.Jql;
 using ConsoleMenu;
 using System.Diagnostics.CodeAnalysis;
+using Lira.Extensions;
 namespace LiraPS.Transformers;
+
 public enum DateMode
 {
     /// <summary>
@@ -24,13 +26,14 @@ public enum DateMode
     End,
 
 }
-public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock=false) : ArgumentTransformationAttribute(), ITransformer<T>
+public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock = false) : ArgumentTransformationAttribute(), ITransformer<T>
 {
     public DateMode Mode { get; } = mode;
     public bool PassScriptBlock { get; } = passScriptBlock;
     public bool UseLastLogDate { get; set; } = false;
+    public bool CheckForBoundary { get; set; } = true;
 
-    protected abstract T WrapUnwrap(object? dateObject);
+    protected abstract T WrapUnwrap(object? dateObject, JqlDateBoundary? boundary);
 
     public override object? Transform(EngineIntrinsics engineIntrinsics, object inputData) => Transform(inputData);
     public object? Transform(object inputData)
@@ -44,7 +47,7 @@ public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock=fal
                 DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, i),
                 _ => null,
             };
-            return WrapUnwrap(todayo);
+            return WrapUnwrap(todayo, null);
         }
         if (inputData is PSObject pso)
         {
@@ -54,9 +57,13 @@ public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock=fal
         {
             return sb;
         }
+        if (inputData is IBoundedJqlDate boundedJqlDate)
+        {
+            return WrapUnwrap(boundedJqlDate, boundedJqlDate.DateBoundary);
+        }
         if (inputData is IJqlDate jqlDate)
         {
-            return WrapUnwrap(jqlDate);
+            return WrapUnwrap(jqlDate, null);
         }
         if (inputData is string s)
         {
@@ -74,15 +81,33 @@ public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock=fal
         }
         if (dateTimeOffset != default)
         {
-            return WrapUnwrap(dateTimeOffset);
+            return WrapUnwrap(dateTimeOffset, null);
         }
-        
+
 
         throw new ArgumentTransformationMetadataException($"Could not convert {inputData} to IJqlDate");
     }
     public T Transform(string s)
     {
         s = s.Trim();
+        JqlDateBoundary? boundary = null;
+        if (CheckForBoundary)
+        {
+            if (s.StartsWith('^'))
+            {
+                boundary = JqlDateBoundary.Exclusive;
+                s = s.TrimStart('^').Trim();
+            }
+            else if (s.StartsWith('='))
+            {
+                boundary = JqlDateBoundary.Exact;
+                s = s.TrimStart('=').Trim();
+            }
+            else
+            {
+                boundary = JqlDateBoundary.Inclusive;
+            }
+        }
         if (string.IsNullOrWhiteSpace(s))
         {
             throw new ArgumentNullException(nameof(s));
@@ -96,7 +121,7 @@ public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock=fal
                 DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, -1),
                 _ => null,
             };
-            return WrapUnwrap(yesterday);
+            return WrapUnwrap(yesterday, boundary);
         }
         if (s.Equals(DateCompletionHelper.TodayKeyword, StringComparison.OrdinalIgnoreCase))
         {
@@ -107,27 +132,27 @@ public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock=fal
                 DateMode.End => JqlKeywordDate.EndOfDay,
                 _ => null,
             };
-            return WrapUnwrap(todayo);
+            return WrapUnwrap(todayo, boundary);
         }
         if (s.Equals(DateCompletionHelper.NowKeyword, StringComparison.OrdinalIgnoreCase))
         {
-            return WrapUnwrap(new JqlManualDate(DateTimeOffset.Now));
+            return WrapUnwrap(new JqlManualDate(DateTimeOffset.Now), boundary);
         }
         if (UseLastLogDate && s.StartsWith(DateCompletionHelper.LastLogDateKeyword, StringComparison.OrdinalIgnoreCase) && LiraSession.LastAddedLogDate is DateTimeOffset lastDto)
         {
             var llc = DateCompletionHelper.GetLastLogCompletion(s, lastDto, true);
             if (llc.HasValue && llc.Value.IsValid)
             {
-                return WrapUnwrap(llc.Value.ParsedDate);
+                return WrapUnwrap(llc.Value.ParsedDate, boundary);
             }
         }
-        if (DateCompletionHelper.GetDateFromNonPositiveInt(s, Mode, out var date, out _))
+        if (DateCompletionHelper.GetRelativeDate(s, Mode,  out var relativeDate))
         {
-            return WrapUnwrap(date);
+            return WrapUnwrap(relativeDate, boundary);
         }
         if (JqlKeywordDate.TryParse(s.Replace(" ", ""), out var keywordDate))
         {
-            return WrapUnwrap(keywordDate);
+            return WrapUnwrap(keywordDate, boundary);
         }
         if (TimeExtensions.TryParseDateTimeOffset(s, out var parsedDate))
         {
@@ -141,7 +166,7 @@ public abstract class DateTransformer<T>(DateMode mode, bool passScriptBlock=fal
                     _ => throw new PSNotImplementedException(),
                 };
             }
-            return WrapUnwrap(parsedDate);
+            return WrapUnwrap(parsedDate, boundary);
         }
         else
         {

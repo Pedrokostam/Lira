@@ -12,11 +12,11 @@ public record JqlManualDate : IJqlDate
         Date = date;
     }
 
-    public DateTimeOffset Date { get; }
+    public DateTimeOffset Date { get; init; }
 
     public string GetJqlValue(TimeZoneInfo accountTimezone)
     {
-        return ToAccountDatetime(accountTimezone).ToString(@"yyyy-MM-dd",formatProvider:System.Globalization.CultureInfo.InvariantCulture);
+        return "\""+ToAccountDatetime(accountTimezone).ToString("yyyy-MM-dd HH:mm",formatProvider:System.Globalization.CultureInfo.InvariantCulture)+"\"";
     }
 
     public DateTimeOffset ToAccountDatetime(TimeZoneInfo accountTimezone)

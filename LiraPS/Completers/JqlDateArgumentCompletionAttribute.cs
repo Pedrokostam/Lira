@@ -46,9 +46,9 @@ public abstract class JqlDateArgumentCompletionBase : IArgumentCompleter, ISimpl
                 yield return item;
             }
         }
-        if (DateCompletionHelper.GetIntCompletions(wordToComplete, Mode, out var intCompletion, !WrapStringsWithSpaces))
+        foreach (var item in DateCompletionHelper.GetRelativeCompletions(wordToComplete, !WrapStringsWithSpaces))
         {
-            yield return intCompletion;
+            yield return item;
         }
         if (wordToComplete.Length == 0 || wordToComplete.All(x => char.IsDigit(x)))
         {

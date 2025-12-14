@@ -16,8 +16,6 @@ namespace LiraPS.Cmdlets;
 [Cmdlet(VerbsCommon.Find, "LiraIssue", DefaultParameterSetName = "NoFullFetch")]
 [OutputType(typeof(IssueCommon), ParameterSetName = ["NoFullFetch"])]
 [OutputType(typeof(Issue), ParameterSetName = ["FullFetch"])]
-
-
 [Alias("Find-Issue")]
 public sealed class FindIssue : LiraCmdlet
 {
@@ -28,15 +26,25 @@ public sealed class FindIssue : LiraCmdlet
     private readonly List<IssueCommon> _issues = [];
 
     [AllowNull]
+    [Parameter(ValueFromPipeline = true)]
     [JqlDateTransformer(mode: DateMode.Start)]
     [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
-    [Parameter(ParameterSetName = "MANUALDATE")]
-    public IJqlDate? DateStarted { get; set; } = null;
+    public IJqlDate? ReportedDateFrom { get; set; } = null;
     [AllowNull]
+    [Parameter(ValueFromPipeline = true)]
+    [JqlDateTransformer(mode: DateMode.End)]
+    [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
+    public IJqlDate? ReportedDateTo { get; set; } = null;
+    [AllowNull]
+    [Parameter(ValueFromPipeline = true)]
     [JqlDateTransformer(mode: DateMode.Start)]
     [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
-    [Parameter(ParameterSetName = "MANUALDATE")]
-    public IJqlDate? DateModified { get; set; } = null;
+    public IJqlDate? ModifiedDateFrom { get; set; } = null;
+    [AllowNull]
+    [Parameter(ValueFromPipeline = true)]
+    [JqlDateTransformer(mode: DateMode.End)]
+    [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
+    public IJqlDate? ModifiedDateTo { get; set; } = null;
 
     [Parameter(ValueFromPipeline = true)]
     [UserDetailsToStringTransformer]
@@ -82,8 +90,10 @@ public sealed class FindIssue : LiraCmdlet
         var status = DivideConditionCollection(Status);
         var labels = DivideConditionCollection(Labels);
         var query = new JqlQuery()
-            .WhereIssueCreatedOn(DateStarted)
-            .WhereIssueUpdatedOn(DateModified)
+            .WhereIssueReportedAfter(ReportedDateFrom)
+            .WhereIssueReportedBefore(ReportedDateTo)
+            .WhereIssueUpdatedAfter(ModifiedDateFrom)
+            .WhereIssueUpdatedBefore(ModifiedDateTo)
             .WhereIssueCreatorMatches(reporters)
             .WhereIssueAssigneeMatches(assignees)
             .WhereIssueComponentsMatch(components)
@@ -101,14 +111,14 @@ public sealed class FindIssue : LiraCmdlet
             CommentState(in state);
         }
         _issues.AddRange(state.Payload);
-        Lira.Extensions.CollectionExtensions.LoadWorklogs(_issues,LiraSession.Client).GetAwaiter().GetResult();
+        Lira.Extensions.CollectionExtensions.LoadWorklogs(_issues, LiraSession.Client).GetAwaiter().GetResult();
     }
     protected override void EndProcessing()
     {
 
         if (FullFetch.IsPresent)
         {
-            List<Issue> issues= [];
+            List<Issue> issues = [];
             List<string> idsOfLite = [];
             foreach (var item in _issues)
             {
@@ -130,7 +140,7 @@ public sealed class FindIssue : LiraCmdlet
             var sorted = _issues.OrderBy(x => x.Created).ToList();
             WriteObject(sorted, enumerateCollection: true);
         }
-            base.EndProcessing();
+        base.EndProcessing();
     }
     private void CommentState(in FindIssueStateMachine.State currState)
     {

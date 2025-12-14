@@ -5,8 +5,8 @@ namespace LiraPS.Transformers;
 
 public sealed class DateTimeOffsetDateTransformerAttribute(DateMode mode, bool passScriptBlock=false) : DateTransformer<DateTimeOffset>(mode, passScriptBlock)
 {
-    public static DateTimeOffsetDateTransformerAttribute Create(DateMode mode, bool passScriptBlock = false) => new(mode,passScriptBlock);
-    protected override DateTimeOffset WrapUnwrap(object? dateObject)
+    public static DateTimeOffsetDateTransformerAttribute Create(DateMode mode, bool passScriptBlock = false) => new(mode, passScriptBlock) { CheckForBoundary=false };
+    protected override DateTimeOffset WrapUnwrap(object? dateObject, JqlDateBoundary? boundary)
     {
         return dateObject switch
         {

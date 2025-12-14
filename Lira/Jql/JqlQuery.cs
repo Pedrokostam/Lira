@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 using Lira.Objects;
 
 namespace Lira.Jql;
-public class JqlQuery 
+
+public class JqlQuery
 {
     public readonly record struct GoodBadPair(IList<string> Good, IList<string> Bad) { }
     ///// <summary>
@@ -254,22 +255,29 @@ public class JqlQuery
         return this;
     }
 
-    public JqlQuery WhereIssueCreatedAfter(IJqlDate? date)
+    public JqlQuery WhereIssueReportedAfter(IJqlDate? date)
     {
         IssueCreatedDate.StartDate = date;
         return this;
     }
 
-    public JqlQuery WhereIssueCreatedBefore(IJqlDate? date)
+    public JqlQuery WhereIssueReportedBefore(IJqlDate? date)
     {
         IssueCreatedDate.EndDate = date;
         return this;
     }
 
-    public JqlQuery WhereIssueCreatedOn(IJqlDate? date)
+    public JqlQuery WhereIssueReportedOn(IJqlDate? date)
     {
-        IssueCreatedDate.StartDate = date;
-        IssueCreatedDate.EndDate = date;
+        if (date is not null)
+        {
+            IssueCreatedDate.StartDate = new BoundedJqlDate(date, JqlDateBoundary.Exact);
+        }
+        else
+        {
+            IssueCreatedDate.StartDate = null;
+        }
+        IssueCreatedDate.EndDate = null;
         return this;
     }
 
@@ -286,8 +294,16 @@ public class JqlQuery
     }
     public JqlQuery WhereIssueUpdatedOn(IJqlDate? date)
     {
-        IssueUpdatedDate.StartDate = date;
-        IssueUpdatedDate.EndDate = date;
+        if (date is not null)
+        {
+            IssueUpdatedDate.StartDate = new BoundedJqlDate(date, JqlDateBoundary.Exact);
+        }
+        else
+        {
+            IssueUpdatedDate.StartDate = null;
+
+        }
+        IssueUpdatedDate.EndDate = null;
         return this;
     }
 }

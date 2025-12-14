@@ -24,7 +24,7 @@ namespace LiraPS.Cmdlets
         private const int ActivityId = 1379;
         private const int SubActivityId = 1380;
 
-        [Alias("Key")]
+        [Alias("Key","Issue")]
         [Parameter(
             Mandatory = true,
             Position = 0,

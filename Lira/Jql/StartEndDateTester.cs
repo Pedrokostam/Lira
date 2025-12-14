@@ -10,7 +10,7 @@ namespace Lira.Jql;
 /// The property has to be before than <see cref="EndDate"/> (automatically passed if <see cref="EndDate"/> is <see langword="null"/>.
 /// </summary>
 /// <typeparam name="TObject"></typeparam>
-public class StartEndDateTester<TObject> : JqlQueryItem<TObject,DateTimeOffset>
+public class StartEndDateTester<TObject> : JqlQueryItem<TObject, DateTimeOffset>
 {
     private readonly Func<TObject, DateTimeOffset> _accessor;
 
@@ -21,7 +21,7 @@ public class StartEndDateTester<TObject> : JqlQueryItem<TObject,DateTimeOffset>
     public override bool Filter(TObject? item, LiraClient client)
     {
         if (item == null)
-        { 
+        {
             return false;
         }
         var value = _accessor(item);
@@ -30,19 +30,38 @@ public class StartEndDateTester<TObject> : JqlQueryItem<TObject,DateTimeOffset>
         return isAfterStart && isBeforeEnd;
 
     }
+    /// <summary>
+    /// Gets or sets the start date used to filter results. Respect date boundary if <see cref="IBoundedJqlDate"/> is used.
+    /// </summary>
     public IJqlDate? StartDate { get; set; }
+    /// <summary>
+    /// Gets or sets the end date used to filter results. Respect date boundary if <see cref="IBoundedJqlDate"/> is used.
+    /// </summary>
     public IJqlDate? EndDate { get; set; }
-
+    private static string DateBoundaryString(JqlDateBoundary dateBoundary, bool isStart)
+    {
+        return dateBoundary switch
+        {
+            JqlDateBoundary.Inclusive => isStart ? ">=" : "<=",
+            JqlDateBoundary.Exclusive => isStart ? ">" : "<",
+            JqlDateBoundary.Exact => "=",
+            _ => throw new ArgumentOutOfRangeException(nameof(dateBoundary), dateBoundary, null)
+        };
+    }
+    private static string DateBoundedString(IJqlDate date, LiraClient client, bool isStart) { 
+    var boundary = date is IBoundedJqlDate boundedDate ? boundedDate.DateBoundary : JqlDateBoundary.Inclusive;
+        return $"{DateBoundaryString(boundary, isStart)} {date.GetJqlValue(client.AccountTimezone)}";
+    }
     public override string? GetJqlQuery(LiraClient client)
     {
         var start = StartDate switch
         {
-            IJqlDate date => $"{FieldName} >= {date.GetJqlValue(client.AccountTimezone)}",
+            IJqlDate date => $"{FieldName} {DateBoundedString(date,client,isStart:true)}",
             _ => null,
         };
         var end = EndDate switch
         {
-            IJqlDate date => $"{FieldName} <= {date.GetJqlValue(client.AccountTimezone)}",
+            IJqlDate date => $"{FieldName} {DateBoundedString(date, client, isStart: false)}",
             _ => null,
         };
         return (start, end) switch

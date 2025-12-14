@@ -242,47 +242,42 @@ internal static partial class DateCompletionHelper
     /// <summary>
     /// Attempts to parse a non-positive integer as a relative date (e.g., "0" for today, "-1" for yesterday).
     /// </summary>
-    public static bool GetDateFromNonPositiveInt(string s, DateMode mode, out DateTimeOffset date, out int number)
-    {
-        if (int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out number) && number <= 0)
-        {
-            IJqlDate? todayo = null;
-            try
-            {
-                todayo = mode switch
-                {
-                    DateMode.Current => new JqlManualDate(DateTimeOffset.Now.AddDays(number)),
-                    DateMode.Start => new JqlKeywordDate(JqlKeywordDate.Keywords.StartOfDay, number),
-                    DateMode.End => new JqlKeywordDate(JqlKeywordDate.Keywords.EndOfDay, number),
-                    _ => null,
-                };
-            }
-            catch (Exception)
-            {
-                todayo = null;
-            }
-            date = todayo?.ToAccountDatetime(TimeZoneInfo.Local) ?? default;
-            return todayo is not null;
-        }
-        number = default;
-        date = default;
-        return false;
-    }
+    public static bool GetRelativeDate(string s, DateMode mode, out JqlRelativeDate relativeDate) => JqlRelativeDate.TryParse(s, out relativeDate);
+
     /// <summary>
     /// Attempts to generate a completion result for a non-positive integer date input.
     /// </summary>
-    public static bool GetIntCompletions(string wordToComplete, DateMode mode, [NotNullWhen(true)] out CompletionResult? completionResult, bool noWrap)
+    public static IEnumerable<CompletionResult> GetRelativeCompletions(string wordToComplete, bool noWrap)
     {
-        completionResult = null;
-        if (GetDateFromNonPositiveInt(wordToComplete, mode, out var desiredDate, out int number))
+        var wordToCompleteSpan = ((ReadOnlySpan<char>)wordToComplete).Trim('"').Trim('\'');
+        if (!wordToCompleteSpan.ContainsAnyInRange('A', 'z'))
         {
-            var unambiguous = desiredDate.UnambiguousForm();
-            var completion = desiredDate.NumericalForm();
-            var tooltip = number == 0 ? "Today" : $"{-number} days ago";
-            completionResult = CreateCompletion(completion, unambiguous, CompletionResultType.ParameterValue, tooltip, noWrap);
-            return true;
+            var x = wordToCompleteSpan.Trim().ToString();
+            foreach (var item in Enum.GetValues<JqlRelativeDate.Unit>())
+            {
+                var tempWord = $"{x}{JqlRelativeDate.UnitToString(item)}";
+
+                if (JqlRelativeDate.TryParse(tempWord, out var relativeDate))
+                {
+                    var unambiguous = relativeDate.GetJqlValue();
+                    var completion = relativeDate.GetJqlValue();
+                    var tooltip = relativeDate.ToAccountDatetime(TimeZoneInfo.Local).UnambiguousForm() + " (" + relativeDate.PrettyForm() + ")";
+                    var completionResult = CreateCompletion(completion, unambiguous, CompletionResultType.ParameterValue, tooltip, noWrap);
+                    yield return completionResult;
+                }
+            }
         }
-        return false;
+        else
+        {
+            if (JqlRelativeDate.TryParse(wordToCompleteSpan, out var relativeDate))
+            {
+                var unambiguous = relativeDate.GetJqlValue();
+                var completion = relativeDate.GetJqlValue();
+                var tooltip = relativeDate.PrettyForm();
+                var completionResult = CreateCompletion(completion, unambiguous, CompletionResultType.ParameterValue, tooltip, noWrap);
+                yield return completionResult;
+            }
+        }
     }
     /// <summary>
     /// Return null only if 
@@ -380,4 +375,5 @@ internal static partial class DateCompletionHelper
             }
         }
     }
+
 }
