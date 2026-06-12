@@ -75,6 +75,7 @@ public sealed class UpdateWorklog : LiraCmdlet
         {
             Terminate(new PSInvalidOperationException("There is no change in the worklog to commit"), "NoChangeEditWorklog", ErrorCategory.InvalidOperation);
         }
+        WriteHost($"Worklog from {Worklog.Started} for issue {Worklog.IssueId} - {Worklog.ID}");
         if (payload.Started is DateTimeOffset payloadDate)
         {
             bool showTimezones = Worklog.Started.Offset != TimeZoneInfo.Local.BaseUtcOffset || payloadDate.Offset != TimeZoneInfo.Local.BaseUtcOffset;
