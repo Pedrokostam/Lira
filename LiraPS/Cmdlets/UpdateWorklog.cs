@@ -69,7 +69,9 @@ public sealed class UpdateWorklog : LiraCmdlet
             worklogToUpdate: out var payload,
             newDate: date,
             newDuration: time,
-            addedDuration: null, newComment: comment))
+            addedDuration: AddDuration is TimeSpan add ? add : null,
+            newComment: comment
+            ))
         {
             Terminate(new PSInvalidOperationException("There is no change in the worklog to commit"), "NoChangeEditWorklog", ErrorCategory.InvalidOperation);
         }
