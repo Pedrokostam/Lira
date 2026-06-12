@@ -15,7 +15,7 @@ using LiraPS.Transformers;
 
 namespace LiraPS.Cmdlets;
 
-[Cmdlet(VerbsData.Update, "LiraWorklog")]
+[Cmdlet(VerbsData.Update, "LiraWorklog", DefaultParameterSetName = "DEFAULT")]
 [Alias("Update-Worklog")]
 public sealed class UpdateWorklog : LiraCmdlet
 {
@@ -27,13 +27,17 @@ public sealed class UpdateWorklog : LiraCmdlet
 
     [Parameter()]
     [Alias("NewDate", "Started", "Date")]
-    [DateTimeOffsetDateTransformer(mode: DateMode.Current,passScriptBlock:true)]
+    [DateTimeOffsetDateTransformer(mode: DateMode.Current, passScriptBlock: true)]
     [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompleter))]
     public object? NewStarted { get; set; } = default;
-    [Parameter]
+    [Parameter(ParameterSetName = "DEFAULT")]
     [Alias("Time", "NewTime")]
     [TimespanTransformer(true)]
     public object? NewDuration { get; set; } = default!;
+    [Parameter(ParameterSetName = "ADDTIME")]
+    [Alias("AddTime")]
+    [TimespanTransformer(true)]
+    public object? AddDuration { get; set; } = default!;
     [Parameter()]
     [AllowNull]
     [AllowEmptyString]
@@ -59,9 +63,13 @@ public sealed class UpdateWorklog : LiraCmdlet
     {
         DateTimeOffset? date = GetDate();
         TimeSpan? time = GetDuration();
-        string? comment =GetComment();
+        string? comment = GetComment();
 
-        if (!Worklog.GetUpdatePackage(out var payload, date, time, comment))
+        if (!Worklog.GetUpdatePackage(
+            worklogToUpdate: out var payload,
+            newDate: date,
+            newDuration: time,
+            addedDuration: null, newComment: comment))
         {
             Terminate(new PSInvalidOperationException("There is no change in the worklog to commit"), "NoChangeEditWorklog", ErrorCategory.InvalidOperation);
         }
@@ -134,7 +142,8 @@ public sealed class UpdateWorklog : LiraCmdlet
             }
             throw new PSInvalidOperationException($"ScriptBlock did not return a valid {typeof(T).Name}");
         }
-        finally {
+        finally
+        {
             Debug.WriteLine($"Script run resulted in value {first ?? "<NONE>"} of type {first?.GetType().FullName ?? "null"}");
         }
     }
