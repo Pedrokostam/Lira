@@ -59,6 +59,17 @@ public static class LiraSession
     public static bool TryGetCachedWorklog(string id, [NotNullWhen(true)] out Worklog? log) => WorklogCache.TryGetValue(id, out log);
 
     /// <summary>
+    /// Return all worklogs whose ID contains the given pattern (case-insensitive) from the session cache.
+    /// </summary>
+    /// <param name="pattern"></param>
+    /// <param name="log"></param>
+    /// <returns></returns>
+    public static IEnumerable<Worklog> GetMatchingCachedWorklogs(string? pattern)
+    {
+        return WorklogCache.Values.Where(w => w.ID.Contains(pattern ?? string.Empty, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
     /// Adds or updates the given <see cref="Worklog"/> in the session cache.
     /// </summary>
     /// <param name="log">Worklog to cache.</param>
@@ -67,6 +78,11 @@ public static class LiraSession
         WorklogCache[log.ID] = log;
         Logger.LogDebug("Added worklog {id} to session cache", log.ID);
     }
+
+    /// <summary>
+    /// Clears all cached queries
+    /// </summary>
+    public static void ClearQueryCache() => Client.ClearQueryCache();
 
     /// <summary>
     /// Removes the given <see cref="Worklog"/> from the session cache if present.

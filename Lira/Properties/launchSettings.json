@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Lira": {
+      "commandName": "Project",
+      "commandLineArgs": "pwsh"
+    },
+    "Profile 1": {
+      "commandName": "Executable",
+      "executablePath": "pwsh",
+      "commandLineArgs": "-NoLogo -Noprofile"
+    }
+  }
+}

@@ -217,11 +217,11 @@ namespace LiraPS.Cmdlets
             }
         }
 
-        protected const string Reset = "\u001b[0m";
-        protected const string Invert = "\u001b[7m";
-        protected const string Bold = "\u001b[1m";
-        protected const string Dim = "\u001b[2m";
-        protected const string Italics = "\u001b[3m";
+        public const string Reset = "\u001b[0m";
+        public const string Invert = "\u001b[7m";
+        public const string Bold = "\u001b[1m";
+        public const string Dim = "\u001b[2m";
+        public const string Italics = "\u001b[3m";
         protected bool MenuYesNo(string header)
         {
             return (bool)Menu(header, new MenuItem("Yes", true), new MenuItem("No", false))!;
@@ -261,8 +261,8 @@ namespace LiraPS.Cmdlets
             {
                 settings = ChoiceSettings.YesNo;
             }
-            var yes = new ChoiceDescription("&Yes");
-            var no = new ChoiceDescription("&No");
+            var yes = new ChoiceDescription("&Yes", "Send this log to the Jira server.");
+            var no = new ChoiceDescription("&No", "Abort addition. Nothing will be send to the Jira server.");
             var yesAll = new ChoiceDescription("Yes to &All");
             var cancel = new ChoiceDescription("&Cancel");
             List<ChoiceOptions> outputs = [ChoiceOptions.Yes];
@@ -290,6 +290,25 @@ namespace LiraPS.Cmdlets
                 _ => -1,
             };
             var ch = Host.UI.PromptForChoice(header, message ?? "\n", options, startIndex);
+            return outputs[ch];
+
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="header"></param>
+        /// <param name="preselection"></param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        protected ChoiceOptions ChoiceYesNo(string header, string YesMessage, string NoMessage, string? message = null)
+        {
+            var yes = new ChoiceDescription("&Yes", YesMessage ?? "Yes");
+            var no = new ChoiceDescription("&No", NoMessage ?? "No");
+            List<ChoiceOptions> outputs = [ChoiceOptions.Yes, ChoiceOptions.No];
+            var options = new System.Collections.ObjectModel.Collection<ChoiceDescription>() {
+                yes, no
+            };
+            var ch = Host.UI.PromptForChoice(header, message ?? "\n", options, -1);
             return outputs[ch];
 
         }

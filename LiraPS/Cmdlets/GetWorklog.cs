@@ -118,6 +118,10 @@ namespace LiraPS.Cmdlets
                 PrintLogs();
                 CommentState(in state);
             }
+            foreach (var item in state.Payload)
+            {
+                LiraSession.CacheWorklog(item);
+            }
             _worklogs.AddRange(state.Payload);
         }
         protected override void EndProcessing()

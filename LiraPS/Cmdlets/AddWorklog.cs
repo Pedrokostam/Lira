@@ -125,7 +125,7 @@ namespace LiraPS.Cmdlets
                 string com = string.IsNullOrWhiteSpace(worklogToAdd.Comment) ? $"{Dim}None{Reset}" : worklogToAdd.Comment;
                 WriteHost($"   Comment: {Bold}{com}{Reset}");
                 WriteHost("");
-                var choice = ChoiceYesNo($"Is the worklog correct?", null, ChoiceSettings.YesNo);
+                var choice = ChoiceYesNo($"Is the worklog correct?","Sent this log to the Jira server","Abort and send nothing to the Jira server");
                 if (choice == ChoiceOptions.No)
                 {
                     UserCancel("worklog adding");
@@ -145,6 +145,7 @@ namespace LiraPS.Cmdlets
 
             if (state.AddedWorklog is Worklog added)
             {
+                LiraSession.ClearQueryCache();
                 LiraSession.CacheWorklog(added);
                 LiraSession.Logger.LogInformation("Added worklog {id}", added.ID);
                 WriteObject(added);

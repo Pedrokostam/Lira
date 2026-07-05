@@ -22,6 +22,7 @@ public sealed class UpdateWorklog : LiraCmdlet
     public readonly record struct Change(string Name, object Old, object Updated) { }
 
     [Parameter(Mandatory = true, ValueFromPipeline = true, Position = 0)]
+    [ArgumentCompleter(typeof(CachedWorklogCompleter))]
     [CachedWorklogTransformer]
     public Worklog Worklog { get; set; } = default!;
 
@@ -30,21 +31,26 @@ public sealed class UpdateWorklog : LiraCmdlet
     [DateTimeOffsetDateTransformer(mode: DateMode.Current, passScriptBlock: true)]
     [ArgumentCompleter(typeof(JqlDateCurrentArgumentCompleter))]
     public object? NewStarted { get; set; } = default;
+
     [Parameter(ParameterSetName = "DEFAULT")]
     [Alias("Time", "NewTime")]
     [TimespanTransformer(true)]
     public object? NewDuration { get; set; } = default!;
+
     [Parameter(ParameterSetName = "ADDTIME")]
     [Alias("AddTime")]
     [TimespanTransformer(true)]
     public object? AddDuration { get; set; } = default!;
+
     [Parameter()]
     [AllowNull]
     [AllowEmptyString]
     [Alias("Comment")]
     public object? NewComment { get; set; }
+
     [Parameter]
     public SwitchParameter Force { get; set; }
+
     private void PrettyPrint(string text, GraphicModes mode = GraphicModes.None, ConsoleColor? color = null)
     {
         var s = Part.GetConsoleString(text, mode, color);
@@ -61,6 +67,30 @@ public sealed class UpdateWorklog : LiraCmdlet
     }
     protected override void ProcessRecord()
     {
+        //if (Worklog is null)
+        //{
+        //    var lastWorklog = LiraSession.GetMatchingCachedWorklogs(null).OrderByDescending(w => w.Started).FirstOrDefault();
+        //    while (true)
+        //    {
+        //        var ismen = InteractiveStringMenu.CreateNonWhitespace("Enter worklog id", lastWorklog?.ID ?? string.Empty);
+        //        // placeholder is null, so that the most recent issue will be preselected
+        //        ismen.Completer = CachedWorklogCompleter.Instance;
+        //        var id = ismen.Show();
+        //        if (string.IsNullOrWhiteSpace(id))
+        //        {
+        //            WriteWarning("Worklog id cannot be empty");
+        //        }
+        //        else
+        //        {
+        //            if (LiraSession.TryGetCachedWorklog(id, out var log))
+        //            { 
+        //                Worklog= log;   
+        //            }
+        //            break;
+        //        }
+        //    }
+        //}
+
         DateTimeOffset? date = GetDate();
         TimeSpan? time = GetDuration();
         string? comment = GetComment();
