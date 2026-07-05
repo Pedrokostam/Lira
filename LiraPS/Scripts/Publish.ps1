@@ -3,18 +3,25 @@
 param (
     [Parameter()]
     [string]
-    $ModuleName = (Split-Path $PSScriptRoot -Leaf),
+    $ModuleName = (Split-Path (Split-Path $PSScriptRoot) -Leaf),
     [Parameter()]
     [string]
-    $ProjectName = (Split-Path $PSScriptRoot -Leaf)
+    $ProjectName = (Split-Path (Split-Path $PSScriptRoot) -Leaf)
 )
-Push-Location $PSScriptRoot
+Push-Location (Split-Path $PSScriptRoot)
 $csprojXmlProperties = ([xml](Get-Content "$ProjectName.csproj")).Project.PropertyGroup
 $version = $csprojXmlProperties.Version ?? '0.0.1'
-$versionedFolder = "$PSScriptRoot/published/$version"
+$versionedFolder = "$PSScriptRoot/../Published/$version"
 New-Item -ItemType Directory -Path $versionedFolder -Force
 Write-Host "Building $ProjectName with version $version"
 dotnet publish -o $versionedFolder -f net8.0 -c Release --self-contained
+
+$docDir = Measure-PlatyPSMarkdown -Path .\Docs\*.md | ? FileType -Match "CommandHelp"  |
+Import-MarkdownCommandHelp -Path {$_.FilePath} | Export-MamlCommandHelp -output $versionedFolder -force
+Rename-Item $docDir.Directory -NewName "en-US"
+
+write-host  "$versionedFolder/$ProjectName - $versionedFolder/en-US"
+
 if ($LASTEXITCODE) {
     Write-Error -ea stop 'COULD NOT BUILD'
 }

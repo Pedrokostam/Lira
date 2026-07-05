@@ -92,6 +92,10 @@
 		</None>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Published\" />
+	</ItemGroup>
+
 	<!--<Target Name="PostBuild" AfterTargets="Build">
 		<Exec Command="pwsh -executionpolicy bypass -noprofile -file &quot;$(ProjectDir)build_scripts\postbuild.ps1&quot; -OutputDir &quot;$(ProjectDir)$(OutDir)&quot; -Name $(AssemblyName) -Version $(Version) -ProjectDir $(ProjectDir)" />
 	</Target>-->
