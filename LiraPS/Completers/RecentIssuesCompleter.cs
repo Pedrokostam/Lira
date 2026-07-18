@@ -28,7 +28,7 @@ internal class RecentIssuesCompleter : IArgumentCompleter, ISimpleArgumentComple
     public IEnumerable<CompletionResult> CompleteArgument(string wordToComplete)
     {
         wordToComplete = wordToComplete?.Trim() ?? string.Empty;
-        if (RecentIssues.LastNotFinishedLogId is string notAdded)
+        if (RecentIssues.LastNotFinishedLogId is string notAdded && notAdded.Contains(wordToComplete, StringComparison.OrdinalIgnoreCase))
         { 
             yield return new CompletionResult(notAdded, notAdded, CompletionResultType.ParameterValue, "Key that was last entered and not added");
         }

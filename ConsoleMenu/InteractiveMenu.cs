@@ -223,7 +223,7 @@ public class InteractiveMenu<T> : MenuBase<T>
             Append(Prompt);
             Append(": ");
             var selectedCompletion = _completions.ElementAtOrDefault(_completionIndex);
-            if (!string.IsNullOrWhiteSpace(PlaceholderValue) && currentInput.Length == 0)
+            if (!string.IsNullOrWhiteSpace(PlaceholderValue) && currentInput.Length == 0 && selectedCompletion is null)
             {
                 currentInput = PlaceholderValue;
                 Append(currentInput, GraphicModes.Dim);
