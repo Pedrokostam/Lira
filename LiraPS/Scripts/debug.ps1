@@ -1,27 +1,31 @@
 ﻿#"Write-Host $pwd;Import-Module ./LiraPS.psd1 -verbose"
 [CmdletBinding()]
 param (
-	[Parameter()]
-	[string]
-	$Framework
+  [Parameter()]
+  [string]
+  $Framework
 )
 
 $version = $PSVersionTable.PSVersion
 Write-Host "Debugging session: PS $($version.ToString())"
 
-if ($Framework -eq '') {
-	if ($version.Major -eq 5) {
-		$framework = 'netstandard2.0'
-	} else {
-		$framework = 'net8.0'
-	}
+if ($Framework -eq '')
+{
+  if ($version.Major -eq 5)
+  {
+    $framework = 'netstandard2.0'
+  }
+  else
+  {
+    $framework = 'net8.0'
+  }
 }
 $releaseAParams = @(
-	'publish',
-	'-c',
-	'Debug',
-	'-f'
-	$framework
+  'publish',
+  '-c',
+  'Debug',
+  '-f'
+  $framework
 )
 Write-Host "Using build params: $($releaseAParams -join ' ')"
 $output = @()

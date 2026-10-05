@@ -53,7 +53,6 @@ public sealed class SetConfiguration : LiraCmdlet
     private IAuthorization Authorization { get; set; } = default!;
     protected override void BeginProcessing()
     {
-        Console.CancelKeyPress += DumpLogEvent;
 
         // don't load anything yet
         //base.BeginProcessing();

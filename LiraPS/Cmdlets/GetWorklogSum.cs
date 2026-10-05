@@ -29,7 +29,6 @@ public sealed class GetWorklogSum : LiraCmdlet
 
     protected override void BeginProcessing()
     {
-        Console.CancelKeyPress += DumpLogEvent;
 
         // no need to test session
         //base.BeginProcessing();

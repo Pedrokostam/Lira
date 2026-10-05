@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -26,7 +27,7 @@ using Serilog.Formatting.Display;
 
 namespace LiraPS.Cmdlets
 {
-    public abstract class LiraCmdlet : PSCmdlet
+    public abstract class LiraCmdlet : PSCmdlet, IDisposable
     {
         protected void EnsureNotEmpty(string text, string name)
         {
@@ -35,10 +36,22 @@ namespace LiraPS.Cmdlets
                 Terminate(new PSArgumentException($"{name} cannot be empty"), $"Empty{name}");
             }
         }
+        static LiraCmdlet()
+        {
+            Console.CancelKeyPress += DumpLogEvent;
+        }
+        private static int _active;
         protected LiraCmdlet() : base()
         {
-
+            // Drop logs left unprinted by a previous invocation (e.g. interrupted with Ctrl-C).
+            // Only the outermost invocation clears; nested/pipelined Lira cmdlets share the queue.
+            if (Interlocked.Increment(ref _active) == 1)
+            {
+                LiraSession.Logger.ClearStd();
+            }
         }
+        // PowerShell disposes cmdlets when the pipeline ends, including when stopped with Ctrl-C.
+        public void Dispose() => Interlocked.Decrement(ref _active);
         protected void SetGlobal(string name, object data)
         {
             var variable = new PSVariable(name, data, ScopedItemOptions.AllScope);
@@ -84,7 +97,6 @@ namespace LiraPS.Cmdlets
 
         protected override void BeginProcessing()
         {
-            Console.CancelKeyPress += DumpLogEvent;
             TestSession();
         }
         public void PrintLogs()

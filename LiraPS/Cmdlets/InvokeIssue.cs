@@ -22,7 +22,6 @@ public sealed class InvokeIssue : LiraCmdlet
 
     protected override void BeginProcessing()
     {
-        Console.CancelKeyPress += DumpLogEvent;
 
         // base.BeginProcessing();
     }

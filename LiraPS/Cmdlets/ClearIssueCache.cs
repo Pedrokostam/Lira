@@ -20,7 +20,6 @@ public sealed class ClearIssueCache : LiraCmdlet
     public SwitchParameter All { get; set; }
     protected override void BeginProcessing()
     {
-        Console.CancelKeyPress += DumpLogEvent;
         // No need to load anything here. No session - no cache.
         //base.BeginProcessing();
     }

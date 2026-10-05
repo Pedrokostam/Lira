@@ -19,7 +19,6 @@ public sealed class SwitchConfiguration : LiraCmdlet
 
     protected override void BeginProcessing()
     {
-        Console.CancelKeyPress += DumpLogEvent;
 
         //base.BeginProcessing();
     }

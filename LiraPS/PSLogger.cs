@@ -86,9 +86,10 @@ public class PSLogger<T> : IPSLogger<T>
             PSLogger<T>.Print1Log2Std(log, cmdlet);
         }
     }
+    public void ClearStd() => _stdQueue.Clear();
     private static void Print1Log2Std(Log log, LiraCmdlet cmdlet)
     {
-        var txt = log.Message;
+        var txt = log.Message ?? "";
         switch (log.Level)
         {
             case LogLevel.Trace:
@@ -102,10 +103,10 @@ public class PSLogger<T> : IPSLogger<T>
                 cmdlet.WriteWarning(txt);
                 break;
             case LogLevel.Error:
-                cmdlet.WriteError(new ErrorRecord(log.Exception ?? new Exception(), txt, ErrorCategory.NotSpecified, null));
+                cmdlet.WriteError(new ErrorRecord(log.Exception ?? new Exception(txt), txt, ErrorCategory.NotSpecified, null));
                 break;
             case LogLevel.Critical:
-                cmdlet.Terminate(log.Exception ?? new Exception(), txt, ErrorCategory.NotSpecified);
+                cmdlet.Terminate(log.Exception ?? new Exception(txt), txt, ErrorCategory.NotSpecified);
                 break;
         }
     }

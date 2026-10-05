@@ -66,7 +66,6 @@ public sealed class ExportWorklog : LiraCmdlet, IDynamicParameters
 
     protected override void BeginProcessing()
     {
-        Console.CancelKeyPress += DumpLogEvent;
 
         //base.BeginProcessing();
     }

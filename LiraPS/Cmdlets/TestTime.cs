@@ -46,7 +46,6 @@ namespace LiraPS.Cmdlets
 
         protected override void BeginProcessing()
         {
-            Console.CancelKeyPress += DumpLogEvent;
 
             //base.BeginProcessing();
         }

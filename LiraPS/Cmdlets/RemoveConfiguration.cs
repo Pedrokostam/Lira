@@ -21,7 +21,6 @@ public sealed class RemoveConfiguration : LiraCmdlet
 
     protected override void BeginProcessing()
     {
-        Console.CancelKeyPress += DumpLogEvent;
 
         //base.BeginProcessing();
     }
