@@ -8,21 +8,11 @@ param (
   [string]
   $ProjectName = (Split-Path (Split-Path $PSScriptRoot) -Leaf)
 )
+$ErrorActionPreference = 'Stop'
+
+Write-Debug "Module name: $ModuleName"
+Write-Debug "Project name: $ProjectName"
+
 $info = . $PSScriptRoot/Publish.ps1 -Module $ModuleName -Project $ProjectName
-$paths = $env:PSModulePath -split ';'
-foreach ($path in $paths)
-{
-  try
-  {
-    $installedModulePath = Join-Path $path $ModuleName
-    New-Item -ItemType Directory -Path $installedModulePath -Force -ea Stop
-    Copy-Item -Path $info.Path -Destination $installedModulePath -Recurse -Verbose -Force -ea stop
-    Write-Host "Installed moduled in $path"
-    return
-  }
-  catch
-  {
-    <#Do this if a terminating exception happens#>
-  }
-}
-Write-Error -ea Stop 'Could not install module'
+$installScript = Join-Path (Split-Path $info.Path) 'Install-Lira.ps1'
+. $installScript

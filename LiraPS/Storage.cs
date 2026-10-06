@@ -30,7 +30,6 @@ public static class Storage
         }
         return authBase64Bytes;
     }
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "MA0144:Use System.OperatingSystem to check the current OS", Justification = "Standard dont have it")]
     public static T? Deobfuscate<T>(byte[] data)
     {
         byte[] itemBytes = DeobfuscateBytes(data);
@@ -39,6 +38,7 @@ public static class Storage
         return item;
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "MA0144:Use System.OperatingSystem to check the current OS", Justification = "Standard dont have it")]
     public static byte[] DeobfuscateBytes(byte[] data)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

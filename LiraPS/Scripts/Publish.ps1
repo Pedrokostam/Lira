@@ -6,12 +6,17 @@ param (
   $ModuleName = (Split-Path (Split-Path $PSScriptRoot) -Leaf),
   [Parameter()]
   [string]
-  $ProjectName = (Split-Path (Split-Path $PSScriptRoot) -Leaf)
+  $ProjectName = (Split-Path (Split-Path $PSScriptRoot) -Leaf),
+  [Parameter()]
+  [Switch]
+  $Nuget
 )
+$ErrorActionPreference = 'Stop'
 Push-Location (Split-Path $PSScriptRoot)
 $csprojXmlProperties = ([xml](Get-Content "$ProjectName.csproj")).Project.PropertyGroup
 $version = $csprojXmlProperties.Version ?? '0.0.1'
-$versionedFolder = "$PSScriptRoot/../Published/$version"
+$publishedFolder = "$PSScriptRoot/../Published/"
+$versionedFolder = "$publishedFolder/$version"
 New-Item -ItemType Directory -Path $versionedFolder -Force
 Write-Host "Building $ProjectName with version $version"
 dotnet publish -o $versionedFolder -f net8.0 -c Release --self-contained
@@ -35,9 +40,16 @@ if ($LASTEXITCODE)
 $modulePath = "$versionedFolder/$ModuleName.psd1"
 $newLines = Get-Content $modulePath | ForEach-Object { $_ -replace '^\s*ModuleVersion\s?=.*', "ModuleVersion = '$Version'" } 
 $newLines | Set-Content $modulePath
-$nugetPresent = Get-Command nuget -ea SilentlyContinue
-if ($nugetPresent)
+
+Copy-Item $PSScriptRoot/Install-Lira.ps1 -Destination $publishedFolder
+
+if ($Nuget.IsPresent)
 {
+  $nugetPresent = Get-Command nuget -ea SilentlyContinue
+  if (-not $nugetPresent)
+  {
+    Write-Error "Nuget is not installed"
+  }
   Push-Location 'published'
   $nuspecPath = 'LastNuspec.nuspec'
   '' > $nuspecPath
@@ -74,7 +86,7 @@ if ($nugetPresent)
   $xmlWriter.WriteStartElement('files')
 
   $xmlWriter.WriteStartElement('file')
-  $src = (Join-Path $versionedFolder '**') -replace '\\', '/'
+  $src = (Join-Path (Resolve-Path $versionedFolder) '**') -replace '\\', '/'
   $xmlWriter.WriteAttributeString('src', $src)
   $xmlWriter.WriteAttributeString('target', "content/$ModuleName")
   $xmlWriter.WriteEndElement()
