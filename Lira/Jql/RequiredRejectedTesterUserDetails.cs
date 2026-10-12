@@ -5,6 +5,7 @@ namespace Lira.Jql;
 
 public class RequiredRejectedTesterUserDetails<TObject>(string fieldName, Func<TObject, UserDetails?> accessor) : RequiredRejectedTesterBase<TObject, UserDetails?>(fieldName, accessor)
 {
+    protected override bool IsEmpty(UserDetails? property) => property is null;
     protected override bool Test(UserDetails? property, string item)
     {
        return property?.NameMatches(item) ?? false;

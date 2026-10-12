@@ -14,6 +14,7 @@ public abstract class RequiredRejectedTesterBase<TObject, TProperty> : JqlQueryI
         _accessor = accessor;
     }
     protected abstract bool Test(TProperty property, string item);
+    protected abstract bool IsEmpty(TProperty property);
     public override bool Filter(TObject? item, LiraClient client)
     {
         if (item == null)
@@ -21,7 +22,13 @@ public abstract class RequiredRejectedTesterBase<TObject, TProperty> : JqlQueryI
             return false;
         }
         var property = _accessor(item);
-        bool isInGood = false;
+        // Jira's != and NOT IN never match an empty field (SQL NULL semantics), so neither does the local filter.
+        if (Bad.Count > 0 && IsEmpty(property))
+        {
+            return false;
+        }
+        // no required values means no restriction, matching the JQL which then omits the condition
+        bool isInGood = Good.Count == 0;
         bool isInBad = false;
         foreach (var requested in Good)
         {
@@ -46,20 +53,24 @@ public abstract class RequiredRejectedTesterBase<TObject, TProperty> : JqlQueryI
 
     private static string CreateArray(ICollection<string> values)
     {
-        return "(" + string.Join(", ", values.Select(x => $"\"{x}\"")) + ")";
+        return "(" + string.Join(", ", values.Select(Quote)) + ")";
+    }
+    private static string Quote(string value)
+    {
+        return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
     }
     public override string? GetJqlQuery(LiraClient client)
     {
         var requested = Good switch
         {
             [] => null,
-            [string user] => $"{FieldName} = \"{user}\"",
+            [string user] => $"{FieldName} = {Quote(user)}",
             [..] => $"{FieldName} IN {CreateArray(Good)}",
         };
         var denied = Bad switch
         {
             [] => null,
-            [string user] => $"{FieldName} != \"{user}\"",
+            [string user] => $"{FieldName} != {Quote(user)}",
             [..] => $"{FieldName} NOT IN {CreateArray(Bad)}",
         };
         return (requested, denied) switch

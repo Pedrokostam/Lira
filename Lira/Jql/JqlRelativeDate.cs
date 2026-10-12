@@ -28,7 +28,18 @@ public readonly record struct JqlRelativeDate : IJqlDate
     }
     public Unit TimeUnit { get; init; }
     public int Offset { get; init; }
-    public string GetJqlValue(TimeZoneInfo accountTimezone) => GetJqlValue();
+    public string GetJqlValue(TimeZoneInfo accountTimezone)
+    {
+        // JQL relative dates on fields only support w, d, h and m, so months and years are sent as an absolute date.
+        if (TimeUnit is Unit.Month or Unit.Year)
+        {
+            return new JqlManualDate(ToAccountDatetime(accountTimezone)).GetJqlValue(accountTimezone);
+        }
+        return GetJqlValue();
+    }
+    /// <summary>
+    /// User-facing form (e.g. "-2M"), parseable by <see cref="TryParse"/>. Not valid JQL for months and years; use <see cref="GetJqlValue(TimeZoneInfo)"/> for queries.
+    /// </summary>
     public string GetJqlValue()
     {
         string num = Offset.ToString(System.Globalization.CultureInfo.InvariantCulture);

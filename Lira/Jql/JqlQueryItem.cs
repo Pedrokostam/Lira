@@ -17,9 +17,9 @@ public abstract class JqlQueryItem<TObject,TProperty>(string fieldName) : IJqlQu
     public abstract string? GetJqlQuery(LiraClient client);
     public bool Filter(object? item, LiraClient client)
     {
-        if (item?.GetType() == typeof(TObject))
+        if (item is TObject typed)
         {
-            return Filter((TObject)item, client);
+            return Filter(typed, client);
         }
         return true;
     }

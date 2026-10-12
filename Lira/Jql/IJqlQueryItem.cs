@@ -20,7 +20,7 @@ public interface IJqlQueryItem
     /// <returns></returns>
     string? GetJqlQuery(LiraClient client);
 }
-public interface IJqlQueryItem<TObject> : IJqlQueryItem
+public interface IJqlQueryItem<in TObject> : IJqlQueryItem
 {
     bool Filter(TObject? item, LiraClient client);
 }

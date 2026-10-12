@@ -78,9 +78,16 @@ public static class DateTimeExtensions
     {
         return ISOWeek.GetWeekOfYear(dto.Date);
     }
+    /// <summary>
+    /// ISO week-numbering year, which differs from the calendar year around New Year (e.g. 2024-12-30 is in week 1 of 2025).
+    /// </summary>
+    public static int WeekYear(this DateTimeOffset dto)
+    {
+        return ISOWeek.GetYear(dto.Date);
+    }
     public static DateTimeOffset WeekStart(this DateTimeOffset dto)
     {
-       return new DateTimeOffset(ISOWeek.ToDateTime(dto.Year, dto.WeekNumber(), DayOfWeek.Monday),dto.Offset);
+       return new DateTimeOffset(ISOWeek.ToDateTime(dto.WeekYear(), dto.WeekNumber(), DayOfWeek.Monday),dto.Offset);
     }
     public static TimeSpan Sum(this IEnumerable<TimeSpan> timeSpans) => new TimeSpan(timeSpans.Sum(x => x.Ticks));
 }

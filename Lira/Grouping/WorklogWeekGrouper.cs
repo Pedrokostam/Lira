@@ -14,7 +14,7 @@ public sealed class WorklogWeekGrouper(DateSelector date) : WorklogDateGrouperBa
     public override int GetGenericPropertyValue(Worklog? obj)
     {
         var AccDate = GetDate(obj);
-        return AccDate.Year * 100 + AccDate.WeekNumber();
+        return AccDate.WeekYear() * 100 + AccDate.WeekNumber();
     }
     public override int CompareProperties(int x, int y) => x.CompareTo(y);
     public override string GetDisplay(Worklog? obj)

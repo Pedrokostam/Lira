@@ -263,7 +263,7 @@ public partial class LiraClient : IDisposable
     // TODO tests
     public static Uri GetJiraServerUrl(string serverAddress)
     {
-        var urlMatch = UrlValidator().Match(serverAddress);
+        var urlMatch = UrlValidator().Match(serverAddress.Trim());
         string scheme = "https";
         if (!urlMatch.Success)
         {
@@ -274,7 +274,14 @@ public partial class LiraClient : IDisposable
         {
             scheme = protocolGroup.Value;
         }
-        return new Uri($"{scheme}://{host}", UriKind.Absolute);
+        string port = urlMatch.Groups["port"].Value;
+        string authority = port.Length > 0 ? $"{host}:{port}" : host;
+        // TryCreate rejects out-of-range ports like 99999
+        if (!Uri.TryCreate($"{scheme}://{authority}", UriKind.Absolute, out var uri))
+        {
+            throw new InvalidOperationException($"Specified address: \"{serverAddress}\" is invalid");
+        }
+        return uri;
 
     }
 
@@ -526,7 +533,7 @@ public partial class LiraClient : IDisposable
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
-    [GeneratedRegex(@"^((?<scheme>https?):\/\/)?(?<domain>[A-Z0-9\.\-]+\.[A-Z0-9\-]+)((?<subpath>\/.*))?", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, 250)]
+    [GeneratedRegex(@"^((?<scheme>https?):\/\/)?(?<domain>[A-Z0-9\.\-]+\.[A-Z0-9\-]+)(:(?<port>[0-9]{1,5}))?(?=$|[/?#])",RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture, 250)]
     private static partial Regex UrlValidator();
     //public async Task GetAsync(Uri requestUri)
     //{

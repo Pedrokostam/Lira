@@ -63,6 +63,8 @@ public static class DurationParser
         TimeSpan result = TimeSpan.Zero;
         bool hasParsed = false;
         bool negateParse = false;
+        // Set when whitespace follows a number, so "1 2h" is not read as "12h".
+        bool numberClosed = false;
         for (int i = 0; i < text.Length; i++)
         {
             char czar = text[i];
@@ -78,48 +80,59 @@ public static class DurationParser
             // If this character is not a unit, it must be either a digit, or a separator.
             if (unit == TimeUnit.None)
             {
-                // check for the dash char, mark the result for negation if so
-                if (buffer.CanAppend && czar == '-')
+                if (char.IsWhiteSpace(czar))
                 {
-                    // Negation is only allowed once.
-                    if (negateParse)
+                    numberClosed = buffer.Position > 0;
+                    continue;
+                }
+                // check for the dash char, mark the result for negation if so
+                if (czar == '-')
+                {
+                    // Negation is only allowed once, before any number.
+                    if (negateParse || hasParsed || buffer.Position > 0)
                     {
-                        throw new ArgumentException($"At most one negative sign (dash) is expected.", nameof(text));
+                        throw new ArgumentException($"At most one negative sign (dash) is expected, at the start of the input.", nameof(text));
                     }
                     // set the negation flag and skip this character.
                     negateParse = true;
                     continue;
                 }
-                // Append only valid numeric characters to the internal buffer.
-                if (buffer.CanAppend && (char.IsDigit(czar) || czar == '.' || czar == ','))
+                if (!(char.IsDigit(czar) || czar == '.' || czar == ','))
                 {
-                    // Normalize comma to dot so parsing with InvariantCulture works.
-                    if (czar == ',')
-                    {
-                        czar = '.';
-                    }
-                    buffer.Append(czar);
+                    throw new ArgumentException($"Unexpected character '{czar}' at position {i}.", nameof(text));
                 }
-                // Skip the rest of the iteration, do not parse buffer.
+                if (numberClosed)
+                {
+                    throw new ArgumentException($"Number at position {i} is missing a unit.", nameof(text));
+                }
+                // Normalize comma to dot so parsing with InvariantCulture works.
+                if (czar == ',')
+                {
+                    czar = '.';
+                }
+                buffer.Append(czar);
                 continue;
             }
 
             // A unit character was encountered.
-            // We parse the current buffer value, and add the parsed timespand.
-            // Failed parses are ignored. If nothing was parsed at the end of the method
-            // An exception is thrown.
-            if (double.TryParse(buffer.GetString(), NumberParseStyle, CultureInfo.InvariantCulture, out var number))
+            // We parse the current buffer value, and add the parsed timespan.
+            numberClosed = false;
+            if (!double.TryParse(buffer.GetString(), NumberParseStyle, CultureInfo.InvariantCulture, out var number))
             {
-                // Successfully parsed a number just before a unit.
-                hasParsed |= true;
-                result += unit switch
-                {
-                    TimeUnit.Seconds => TimeSpan.FromSeconds(number),
-                    TimeUnit.Minutes => TimeSpan.FromMinutes(number),
-                    TimeUnit.Hours => TimeSpan.FromHours(number),
-                    _ => throw new ArgumentException("Input does not contain any unit", nameof(text)),
-                };
+                throw new ArgumentException($"Unit '{czar}' at position {i} is not preceded by a valid number.", nameof(text));
             }
+            hasParsed = true;
+            result += unit switch
+            {
+                TimeUnit.Seconds => TimeSpan.FromSeconds(number),
+                TimeUnit.Minutes => TimeSpan.FromMinutes(number),
+                TimeUnit.Hours => TimeSpan.FromHours(number),
+                _ => throw new ArgumentException("Input does not contain any unit", nameof(text)),
+            };
+        }
+        if (buffer.Position > 0)
+        {
+            throw new ArgumentException($"Trailing number is missing a unit.", nameof(text));
         }
         if (!hasParsed)
         {

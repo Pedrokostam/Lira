@@ -44,6 +44,7 @@ public class Configuration
     [JsonInclude]
     public string AuthorizationType => Authorization.TypeIdentifier;
     public string ServerAddress { get; set; }
+    public string? TogglApiKey { get; set; } = null;
 
     [JsonIgnore]
     public string SelfPath => Path.Combine(GetConfigFolderPath(), Name + Extension);
@@ -103,7 +104,7 @@ public class Configuration
     }
     private static string CreateConfigPathFromName(string name)
     {
-        return Path.ChangeExtension(Path.Combine(GetConfigFolderPath(), name),Extension);
+        return Path.ChangeExtension(Path.Combine(GetConfigFolderPath(), name), Extension);
     }
     private static string GetConfigFolderPath()
     {
@@ -135,9 +136,9 @@ public class Configuration
         InvalidConfigurationNames.Add(conf.Name);
     }
 
-    public static Configuration Create(IAuthorization auth, string server, string? profile = null)
+    public static Configuration Create(IAuthorization auth, string server, string? profile = null, string? toggl = null)
     {
-        var conf = new Configuration(profile, auth, server);
+        var conf = new Configuration(profile, auth, server, toggl);
         InvalidConfigurationNames.Remove(conf.Name);
         conf.Save();
         return conf;
@@ -173,15 +174,16 @@ public class Configuration
     }
 
     [SetsRequiredMembers]
-    private Configuration(string? profileName = null, IAuthorization? auth = null, string? address = null)
+    private Configuration(string? profileName = null, IAuthorization? auth = null, string? address = null, string? toggl = null)
     {
         Name = profileName;
         ServerAddress = address ?? "";
         Authorization = auth ?? NoAuthorization.Instance;
+        TogglApiKey = string.IsNullOrWhiteSpace(toggl) ? null : toggl;
     }
 
     [SetsRequiredMembers]
-    public Configuration() : this(null, null, null) {}
+    public Configuration() : this(null, null, null) { }
 
     private static Type GetType(string? typeName)
     {
@@ -235,7 +237,7 @@ public class Configuration
 
     public Information ToInformation()
     {
-        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress, Name);
+        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress, Name, !string.IsNullOrWhiteSpace(TogglApiKey));
     }
 
     public readonly record struct Information
@@ -245,12 +247,14 @@ public class Configuration
         public string ServerAddress { get; }
         public string Location { get; }
         public bool IsActive => LiraSession.IsActiveSession(this);
-        internal Information(string location, string type, string serverAddress, string name)
+        public bool Toggl { get; }
+        internal Information(string location, string type, string serverAddress, string name, bool toggl)
         {
             Location = location;
             Type = type;
             ServerAddress = serverAddress;
             Name = name;
+            Toggl = toggl;
         }
     }
 
