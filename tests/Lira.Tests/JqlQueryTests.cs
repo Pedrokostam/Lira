@@ -3,7 +3,7 @@ using System.Net.NetworkInformation;
 using System.Reflection;
 using Lira.Jql;
 
-namespace Lira.Test;
+namespace Lira.Tests;
 
 public class JqlQueryTests
 {

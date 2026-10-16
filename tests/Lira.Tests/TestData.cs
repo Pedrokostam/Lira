@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Lira.Objects;
 
-namespace Lira.Test;
+namespace Lira.Tests;
 
 internal static class TestData
 {

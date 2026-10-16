@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Lira\Lira.csproj" />
+    <ProjectReference Include="..\..\src\Lira\Lira.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-namespace Lira.Test;
+namespace Lira.Tests;
 
 public class ServerAddressTests
 {

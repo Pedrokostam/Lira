@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.10.12201.205 stable
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lira", "Lira\Lira.csproj", "{219ABD1D-0EB8-4B95-B270-AD84FC0F749B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lira", "src\Lira\Lira.csproj", "{219ABD1D-0EB8-4B95-B270-AD84FC0F749B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiraPS", "LiraPS\LiraPS.csproj", "{323B4C2A-8633-4548-90B9-36E3D1FD3044}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiraPS", "src\LiraPS\LiraPS.csproj", "{323B4C2A-8633-4548-90B9-36E3D1FD3044}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lira.Test", "Lira.Test\Lira.Test.csproj", "{856A82BF-A8AC-49A4-9E03-1C388539FD45}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lira.Tests", "tests\Lira.Tests\Lira.Tests.csproj", "{856A82BF-A8AC-49A4-9E03-1C388539FD45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleMenu", "ConsoleMenu\ConsoleMenu.csproj", "{668C4B34-1374-4A99-B9C4-5CA35B68FA0A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleMenu", "src\ConsoleMenu\ConsoleMenu.csproj", "{668C4B34-1374-4A99-B9C4-5CA35B68FA0A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleMenu.Prototype", "ConsoleMenu.Prototype\ConsoleMenu.Prototype.csproj", "{C5F1CAC0-09FD-4135-8ACA-B6E5B79DC385}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleMenu.Prototype", "src\ConsoleMenu.Prototype\ConsoleMenu.Prototype.csproj", "{C5F1CAC0-09FD-4135-8ACA-B6E5B79DC385}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lira.Toggl", "Lira.Toggl\Lira.Toggl.csproj", "{37EE4F72-BC02-4613-AB0E-A3B380D6073D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lira.Toggl", "src\Lira.Toggl\Lira.Toggl.csproj", "{37EE4F72-BC02-4613-AB0E-A3B380D6073D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

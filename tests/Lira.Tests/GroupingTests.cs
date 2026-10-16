@@ -1,8 +1,8 @@
 using Lira.Extensions;
 using Lira.Grouping;
-using static Lira.Test.TestData;
+using static Lira.Tests.TestData;
 
-namespace Lira.Test;
+namespace Lira.Tests;
 
 public class GroupingTests
 {

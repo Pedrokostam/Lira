@@ -1,6 +1,6 @@
 using Lira.Parsing;
 
-namespace Lira.Test;
+namespace Lira.Tests;
 
 public class DurationParserTests
 {

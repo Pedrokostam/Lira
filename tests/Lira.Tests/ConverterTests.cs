@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Lira.Objects;
 
-namespace Lira.Test;
+namespace Lira.Tests;
 
 public class ConverterTests
 {
