@@ -46,10 +46,6 @@ public sealed class SetConfiguration : LiraCmdlet
     [Parameter(DontShow = true, Mandatory = true, ParameterSetName = "ATLASSIAN")]
     public string UserEmail { get; set; } = default!;
 
-    [Parameter]
-    [Alias("Toggl")]
-    public string TogglApiKey { get; set; } = default!;
-
     public SwitchParameter NoSwitch { get; set; }
 
     [Alias("Profile")]
@@ -143,11 +139,7 @@ public sealed class SetConfiguration : LiraCmdlet
         {
             Name = InteractiveStringMenu.Create("Enter name for this configuration", "DefaultConfig", x=>!string.IsNullOrWhiteSpace(x)).Show();
         }
-        if (!TestBoundParameter(nameof(TogglApiKey)) && !string.IsNullOrWhiteSpace(TogglApiKey))
-        {
-            TogglApiKey = ReadInput("Toggl API key (leave empty to skip)", asSecure: true);
-        }
-        var c = Configuration.Create(Authorization, ServerAddress, Name, TogglApiKey);
+        var c = Configuration.Create(Authorization, ServerAddress, Name);
         c.Save();
         if (NoSwitch.IsPresent && LiraSession.HasConfig)
         {

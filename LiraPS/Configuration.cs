@@ -44,7 +44,7 @@ public class Configuration
     [JsonInclude]
     public string AuthorizationType => Authorization.TypeIdentifier;
     public string ServerAddress { get; set; }
-    public string? TogglApiKey { get; set; } = null;
+    public Dictionary<string, string> Addons { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     [JsonIgnore]
     public string SelfPath => Path.Combine(GetConfigFolderPath(), Name + Extension);
@@ -136,9 +136,9 @@ public class Configuration
         InvalidConfigurationNames.Add(conf.Name);
     }
 
-    public static Configuration Create(IAuthorization auth, string server, string? profile = null, string? toggl = null)
+    public static Configuration Create(IAuthorization auth, string server, string? profile = null)
     {
-        var conf = new Configuration(profile, auth, server, toggl);
+        var conf = new Configuration(profile, auth, server);
         InvalidConfigurationNames.Remove(conf.Name);
         conf.Save();
         return conf;
@@ -168,18 +168,24 @@ public class Configuration
             throw new JsonException($"Could not deserialize Authorization");
         }
 
-        var conf = new Configuration(dto.Name, auth, dto.ServerAddress);
+        var conf = new Configuration(dto.Name, auth, dto.ServerAddress, dto.Addons);
 
         return conf;
     }
 
     [SetsRequiredMembers]
-    private Configuration(string? profileName = null, IAuthorization? auth = null, string? address = null, string? toggl = null)
+    private Configuration(string? profileName = null, IAuthorization? auth = null, string? address = null, IDictionary<string, string>? addons = null)
     {
         Name = profileName;
         ServerAddress = address ?? "";
         Authorization = auth ?? NoAuthorization.Instance;
-        TogglApiKey = string.IsNullOrWhiteSpace(toggl) ? null : toggl;
+        if (addons is not null)
+        {
+            foreach (var item in addons)
+            {
+                Addons[item.Key] = item.Value;
+            }
+        }
     }
 
     [SetsRequiredMembers]
@@ -211,7 +217,7 @@ public class Configuration
 
     public void SaveAs(string profileName)
     {
-        var updated = new Configuration(profileName, this.Authorization, this.ServerAddress);
+        var updated = new Configuration(profileName, this.Authorization, this.ServerAddress,this.Addons) ;
         updated.Save();
     }
 
@@ -237,7 +243,7 @@ public class Configuration
 
     public Information ToInformation()
     {
-        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress, Name, !string.IsNullOrWhiteSpace(TogglApiKey));
+        return new Information(SelfPath, Authorization.TypeIdentifier, ServerAddress, Name, Addons.Keys);
     }
 
     public readonly record struct Information
@@ -247,14 +253,14 @@ public class Configuration
         public string ServerAddress { get; }
         public string Location { get; }
         public bool IsActive => LiraSession.IsActiveSession(this);
-        public bool Toggl { get; }
-        internal Information(string location, string type, string serverAddress, string name, bool toggl)
+        public string[] Addons { get; }
+        internal Information(string location, string type, string serverAddress, string name, IEnumerable<string>? addons)
         {
             Location = location;
             Type = type;
             ServerAddress = serverAddress;
             Name = name;
-            Toggl = toggl;
+            Addons = addons?.ToArray() ?? [];
         }
     }
 
@@ -263,5 +269,6 @@ public class Configuration
         public required string ServerAddress { get; init; }
         public required string AuthorizationType { get; init; }
         public required string Name { get; init; }
+        public Dictionary<string, string>? Addons { get; init; }
     }
 }

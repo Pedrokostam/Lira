@@ -120,7 +120,7 @@ public static class LiraSession
     /// The setter will close any active session if the configuration changes and mark the new config as last.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.AllowNull]
-    internal static Configuration Config
+    public static Configuration Config
     {
         get
         {
@@ -133,7 +133,7 @@ public static class LiraSession
             }
             return Configuration;
         }
-        set
+        internal set
         {
             if (Configuration != value && Configuration is not null)
             {

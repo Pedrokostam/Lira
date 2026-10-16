@@ -23,7 +23,7 @@
 						<Label>ServerAddress</Label>
 					</TableColumnHeader>
 					<TableColumnHeader>
-						<Label>Toggl</Label>
+						<Label>Other</Label>
 					</TableColumnHeader>
 					<TableColumnHeader>
 						<Label>Location</Label>
@@ -45,7 +45,7 @@
 								<PropertyName>ServerAddress</PropertyName>
 							</TableColumnItem>
 							<TableColumnItem>								
-								<PropertyName>Toggl</PropertyName>
+								<ScriptBlock>if ($_.Addons -and ($_.Addons.Count -gt 0) ) {[string]::Join(', ',$_.Addons)} else {'-'}</ScriptBlock>
 							</TableColumnItem>
 							<TableColumnItem>
 								<PropertyName>Location</PropertyName>
