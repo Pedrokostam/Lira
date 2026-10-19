@@ -3,7 +3,7 @@
 param (
   [Parameter()]
   [string]
-  $ModuleName = (Get-Item $PSScriptRoot).BaseName
+  $ModuleName = "LiraPS"
 )
 $ErrorActionPreference = 'Stop'
 

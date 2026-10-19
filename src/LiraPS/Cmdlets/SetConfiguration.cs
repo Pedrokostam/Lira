@@ -153,7 +153,7 @@ public sealed class SetConfiguration : LiraCmdlet
     }
     protected override void EndProcessing()
     {
-        if (LiraSession.TestSessionDateAvailable())
+        if (LiraSession.TestSessionDataAvailable())
         {
             LiraSession.StartSession().Wait();
         }

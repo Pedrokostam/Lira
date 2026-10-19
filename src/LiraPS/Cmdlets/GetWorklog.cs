@@ -16,6 +16,7 @@ using Lira.Objects;
 using Lira.StateMachines;
 using LiraPS.Arguments;
 using LiraPS.Completers;
+using LiraPS.Extensions;
 using LiraPS.Transformers;
 using Serilog.Events;
 using Serilog.Formatting.Display;
@@ -35,12 +36,14 @@ namespace LiraPS.Cmdlets
         [JqlDateTransformer(mode: DateMode.Start)]
         [ArgumentCompleter(typeof(JqlDateStartArgumentCompleter))]
         [Parameter(ParameterSetName = "MANUALDATE")]
+        [Alias("From")]
         public IJqlDate? DateFrom { get; set; } = null;
 
         [AllowNull]
         [JqlDateTransformer(mode: DateMode.Start)]
         [ArgumentCompleter(typeof(JqlDateEndArgumentCompleter))]
         [Parameter(ParameterSetName = "MANUALDATE")]
+        [Alias("To")]
         public IJqlDate? DateTo { get; set; } = null;
 
         [Parameter(ValueFromPipeline = true)]
@@ -88,7 +91,9 @@ namespace LiraPS.Cmdlets
             var uniqueUsers = User.Distinct(StringComparer.OrdinalIgnoreCase);
             if (ParameterSetName == "PERIOD")
             {
-                PeriodToDates();
+                Period.ToKeywordDates(out var from, out var to);
+                DateFrom = from;
+                DateTo = to;
             }
             var users = DivideConditionCollection(uniqueUsers);
             var issue = DivideConditionCollection(Issue);
@@ -131,25 +136,6 @@ namespace LiraPS.Cmdlets
             SetGlobal("LiraLastWorklogs", sorted);
             base.EndProcessing();
         }
-
-        private void PeriodToDates()
-        {
-            (JqlKeywordDate start, JqlKeywordDate end) = Period switch
-            {
-                Period.Today => (JqlKeywordDate.StartOfDay, JqlKeywordDate.EndOfDay),
-                Period.ThisWeek => (JqlKeywordDate.StartOfWeek, JqlKeywordDate.EndOfWeek),
-                Period.ThisMonth => (JqlKeywordDate.StartOfMonth, JqlKeywordDate.EndOfMonth),
-                Period.ThisYear => (JqlKeywordDate.StartOfYear, JqlKeywordDate.EndOfYear),
-                Period.Yesterday => (JqlKeywordDate.StartOfDay.WithOffset(-1), JqlKeywordDate.EndOfDay.WithOffset(-1)),
-                Period.LastWeek => (JqlKeywordDate.StartOfWeek.WithOffset(-1), JqlKeywordDate.EndOfWeek.WithOffset(-1)),
-                Period.LastMonth => (JqlKeywordDate.StartOfMonth.WithOffset(-1), JqlKeywordDate.EndOfMonth.WithOffset(-1)),
-                Period.LastYear => (JqlKeywordDate.StartOfYear.WithOffset(-1), JqlKeywordDate.EndOfYear.WithOffset(-1)),
-                _ => throw new PSNotSupportedException(),
-            };
-            DateFrom = start;
-            DateTo = end;
-        }
-
 
         private void CommentState(in FindWorklogByQueryStateMachine.State currState)
         {

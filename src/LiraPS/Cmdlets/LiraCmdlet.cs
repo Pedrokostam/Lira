@@ -29,6 +29,11 @@ namespace LiraPS.Cmdlets
 {
     public abstract class LiraCmdlet : PSCmdlet, IDisposable
     {
+        /// <summary>
+        /// Terminates if the <paramref name="text"/> is empty or whitespace
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="name"></param>
         protected void EnsureNotEmpty(string text, string name)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -97,7 +102,7 @@ namespace LiraPS.Cmdlets
 
         protected override void BeginProcessing()
         {
-            TestSession();
+            TestLiraSession();
         }
         public void PrintLogs()
         {
@@ -132,11 +137,11 @@ namespace LiraPS.Cmdlets
                 return Host.UI.ReadLine();
             }
         }
-        protected void TestSession()
+        protected void TestLiraSession()
         {
-            if (!LiraSession.TestSessionDateAvailable())
+            if (!LiraSession.TestSessionDataAvailable())
             {
-                throw new PSInvalidOperationException("You have to configure jira session parameters first. Call Set-Configuration.");
+                throw new PSInvalidOperationException("You have to configure Jira session parameters first. Call Set-LiraConfiguration.");
             }
             LiraSession.StartSession().Wait();
             PrintLogs();

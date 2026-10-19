@@ -27,16 +27,14 @@ namespace Lira.Toggl
         [JsonPropertyName("project_name")]
         public string? ProjectName { get; set; }
         [JsonPropertyName("tags")]
-        public List<string> Tags { get; set; } = [];
+        public List<string>? Tags { get; set; }
     }
     public class TogglClient
     {
-        private string ApiKey { get; }
         private readonly HttpClient _client;
 
         public TogglClient(string apiKey)
         {
-            ApiKey = apiKey;
             _client = new HttpClient() { BaseAddress= new Uri("https://api.track.toggl.com/api/v9/")};
             string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:api_token"));
             _client.DefaultRequestHeaders.Authorization = new("Basic",token);
@@ -51,6 +49,7 @@ namespace Lira.Toggl
             }
             var content =await payload.Content.ReadAsStringAsync().ConfigureAwait(false);
             var entries = JsonHelper.Deserialize<List<TogglTimeEntry>>(content) ?? [];
+            entries.RemoveAll(x => x.Duration < TimeSpan.Zero);
             return entries;
         }
     }

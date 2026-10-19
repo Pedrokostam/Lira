@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Lira.Jql;
+using LiraPS.Arguments;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Management.Automation;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -128,4 +131,22 @@ public static partial class TimeExtensions
     private static partial Regex SpacingCorrecter();
     [GeneratedRegex(@"(?<Sign>[+-]):(?<Min>\d+)$", RegexOptions.ExplicitCapture, 250)]
     private static partial Regex TimezoneCorrecter();
+
+    public static void ToKeywordDates(this Period period, out JqlKeywordDate from, out JqlKeywordDate to)
+    {
+        (JqlKeywordDate start, JqlKeywordDate end) = period switch
+        {
+            Period.Today => (JqlKeywordDate.StartOfDay, JqlKeywordDate.EndOfDay),
+            Period.ThisWeek => (JqlKeywordDate.StartOfWeek, JqlKeywordDate.EndOfWeek),
+            Period.ThisMonth => (JqlKeywordDate.StartOfMonth, JqlKeywordDate.EndOfMonth),
+            Period.ThisYear => (JqlKeywordDate.StartOfYear, JqlKeywordDate.EndOfYear),
+            Period.Yesterday => (JqlKeywordDate.StartOfDay.WithOffset(-1), JqlKeywordDate.EndOfDay.WithOffset(-1)),
+            Period.LastWeek => (JqlKeywordDate.StartOfWeek.WithOffset(-1), JqlKeywordDate.EndOfWeek.WithOffset(-1)),
+            Period.LastMonth => (JqlKeywordDate.StartOfMonth.WithOffset(-1), JqlKeywordDate.EndOfMonth.WithOffset(-1)),
+            Period.LastYear => (JqlKeywordDate.StartOfYear.WithOffset(-1), JqlKeywordDate.EndOfYear.WithOffset(-1)),
+            _ => throw new PSNotSupportedException(),
+        };
+        from = start;
+        to = end;
+    }
 }

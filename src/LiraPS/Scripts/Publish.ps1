@@ -19,24 +19,27 @@ $publishedFolder = "$PSScriptRoot/../Published/"
 $versionedFolder = "$publishedFolder/$version"
 New-Item -ItemType Directory -Path $versionedFolder -Force
 Write-Host "Building $ProjectName with version $version"
+
 dotnet publish -o $versionedFolder -f net8.0 -c Release --self-contained
-
-$docDir = Measure-PlatyPSMarkdown -Path .\Docs\*.md | Where-Object FileType -Match "CommandHelp"  |
-  Import-MarkdownCommandHelp -Path { $_.FilePath } | Export-MamlCommandHelp -output $versionedFolder -Force
-$outputDocFolder = "$versionedFolder/en-US" 
-$interimDocFolder = "$versionedFolder/$ProjectName" 
-if (Test-Path $outputDocFolder)
-{
-  Remove-Item -Recurse -Force $outputDocFolder 
-}
-Rename-Item $interimDocFolder -NewName "en-US" -Force
-
-Write-Host  "$versionedFolder/$ProjectName - $versionedFolder/en-US"
-
 if ($LASTEXITCODE)
 {
   Write-Error -ea stop 'COULD NOT BUILD'
 }
+
+if (Test-Path .\Docs\*.md)
+{
+  $docDir = Measure-PlatyPSMarkdown -Path .\Docs\*.md | Where-Object FileType -Match "CommandHelp"  |
+      Import-MarkdownCommandHelp -Path { $_.FilePath } | Export-MamlCommandHelp -output $versionedFolder -Force
+  $outputDocFolder = "$versionedFolder/en-US" 
+  $interimDocFolder = "$versionedFolder/$ProjectName" 
+  if (Test-Path $outputDocFolder)
+  {
+      Remove-Item -Recurse -Force $outputDocFolder 
+  }
+  Rename-Item $interimDocFolder -NewName "en-US" -Force
+  Write-Host  "$versionedFolder/$ProjectName - $versionedFolder/en-US"
+}
+
 $modulePath = "$versionedFolder/$ModuleName.psd1"
 $newLines = Get-Content $modulePath | ForEach-Object { $_ -replace '^\s*ModuleVersion\s?=.*', "ModuleVersion = '$Version'" } 
 $newLines | Set-Content $modulePath

@@ -369,3 +369,4 @@ src/LiraPS/published/**
 src/LiraPS/published/*
 /src/LiraPS/LastNuspec.nuspec
 /src/LiraPS/Scripts/published/**
+src/LiraPS.Toggl/published/**

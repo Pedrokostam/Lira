@@ -170,7 +170,7 @@ public static class LiraSession
     /// Attempts to load the profile from disk if necessary.
     /// </summary>
     /// <returns>True if a valid configuration is available; otherwise false.</returns>
-    public static bool TestSessionDateAvailable()
+    public static bool TestSessionDataAvailable()
     {
         if (Config is not null)
         {

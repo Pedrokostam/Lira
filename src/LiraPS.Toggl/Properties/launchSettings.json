@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Pwsh 7": {
+      "commandName": "Executable",
+      "executablePath": "pwsh.exe",
+      "commandLineArgs": "-NoLogo -NoProfile -NoExit -ExecutionPolicy Bypass -File \"$(ProjectDir)Scripts\\debug.ps1\"",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}

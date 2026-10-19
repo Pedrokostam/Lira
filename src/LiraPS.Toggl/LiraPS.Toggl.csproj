@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<AssemblyName>LiraPS.Toggl</AssemblyName>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<Title>LiraPS.Toggl</Title>
+		<Authors>Maciej Krosta</Authors>
+		<Description>Toggl Track addon for LiraPS.</Description>
+		<Copyright>Maciej Krosta</Copyright>
+		<PackageProjectUrl>https://github.com/Pedrokostam/Lira</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Pedrokostam/Lira</RepositoryUrl>
+		<OutputType>Library</OutputType>
+		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<RepositoryType>git</RepositoryType>
+		<Version>1.0.0</Version>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="System.Management.Automation" Version="7.4.6" ExcludeAssets="runtime;native" />
+	</ItemGroup>
+
+	<!-- LiraPS and its dependencies are already loaded through RequiredModules, so they are not shipped -->
+	<ItemGroup>
+		<ProjectReference Include="..\LiraPS\LiraPS.csproj" Private="false" ExcludeAssets="runtime;native" />
+		<ProjectReference Include="..\Lira\Lira.csproj" Private="false" ExcludeAssets="runtime;native" />
+		<ProjectReference Include="..\ConsoleMenu\ConsoleMenu.csproj" Private="false" ExcludeAssets="runtime;native" />
+		<ProjectReference Include="..\Lira.Toggl\Lira.Toggl.csproj" ExcludeAssets="runtime;native" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="LiraPS.Toggl.psd1">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>
