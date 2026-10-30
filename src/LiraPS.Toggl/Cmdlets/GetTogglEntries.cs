@@ -5,11 +5,7 @@ using LiraPS.Completers;
 using LiraPS.Extensions;
 using LiraPS.Transformers;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Management.Automation;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LiraPS.Toggl.Cmdlets
 {
@@ -36,19 +32,19 @@ namespace LiraPS.Toggl.Cmdlets
         [Alias("To")]
         public IJqlDate? DateTo { get; set; } = null;
 
-
-        [System.Diagnostics.CodeAnalysis.AllowNull]
-        string ApiKey { get; set; }
+        [Parameter]
+        [Alias("Refresh", "Force")]
+        public SwitchParameter ForceRefresh { get; set; }
+        public TogglClient Client { get; private set; } = default!;
 
         protected override void BeginProcessing()
         {
             base.BeginProcessing();
-            ApiKey = GetTogglKey();
+            Client = TogglClient.GetTogglClient(GetTogglKey());
         }
 
         protected override void ProcessRecord()
         {
-            var client = new TogglClient(ApiKey);
             if (ParameterSetName == "PERIOD")
             {
                 Period.ToKeywordDates(out var from, out var to);
@@ -57,7 +53,7 @@ namespace LiraPS.Toggl.Cmdlets
             }
             var plainFrom = DateFrom.ToAccountDatetime(LiraSession.Client.AccountTimezone);
             var plainto = DateTo?.ToAccountDatetime(LiraSession.Client.AccountTimezone) ?? DateTimeOffset.Now;
-            var entries = client.GetEntries(plainFrom, plainto).GetAwaiter().GetResult();
+            var entries = Client.GetEntries(plainFrom, plainto, ForceRefresh.IsPresent).GetAwaiter().GetResult();
             WriteObject(entries, enumerateCollection: true);
         }
     }

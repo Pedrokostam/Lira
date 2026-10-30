@@ -64,7 +64,7 @@ public class ChoiceMenu : MenuBase<object?>
         }
     }
 
-    private object? ShowImpl()
+    protected object? ShowImpl()
     {
         int selectedIndex = 0;
         int indexWidth = (int)Math.Log10(_items.Count) + 1;

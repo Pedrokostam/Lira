@@ -1,0 +1,20 @@
+﻿<Types xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Types.xsd">
+	<Type>
+		<Name>Lira.Toggl.TogglTimeEntry</Name>
+		<Members>
+			<ScriptProperty>
+				<Name>ProjectNameTrimmed</Name>
+				<GetScriptBlock>
+					if ($this.ProjectName) { [LiraPS.Extensions.FormattingExtensions]::TrimString($this.ProjectName, 26) }
+				</GetScriptBlock>
+			</ScriptProperty>
+			<ScriptProperty>
+				<Name>ClientNameTrimmed</Name>
+				<GetScriptBlock>
+					if ($this.ClientName) { [LiraPS.Extensions.FormattingExtensions]::TrimString($this.ClientName, 26) }
+				</GetScriptBlock>
+			</ScriptProperty>
+		</Members>
+	</Type>
+</Types>

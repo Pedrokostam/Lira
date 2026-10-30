@@ -1,57 +1,110 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Lira.Exceptions;
+using System.Net;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Lira.Toggl
 {
-    public class TogglDateConverter : JsonConverter<DateTimeOffset>
-    {
-        public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-            => reader.GetDateTimeOffset();
-
-        public override void Write(Utf8JsonWriter writer, DateTimeOffset value, JsonSerializerOptions options)
-            => writer.WriteStringValue(value);
-    }
-    public class TogglTimeEntry {
-        [JsonPropertyName("start")]
-        [JsonConverter(typeof(TogglDateConverter))]
-        public DateTimeOffset Start { get; set; }
-        [JsonPropertyName("duration")]
-        public TimeSpan Duration { get; set; }
-        [JsonPropertyName("description")]
-        public string? Description { get; set; }
-        [JsonPropertyName("project_name")]
-        public string? ProjectName { get; set; }
-        [JsonPropertyName("tags")]
-        public List<string>? Tags { get; set; }
-    }
     public class TogglClient
     {
-        private readonly HttpClient _client;
-
-        public TogglClient(string apiKey)
+        private readonly TogglCache _cache = new();
+        private static readonly object _clientLock = new();
+        private static Dictionary<string, TogglClient> _clients = new(StringComparer.Ordinal);
+        public static TogglClient GetTogglClient(string apiKey)
         {
-            _client = new HttpClient() { BaseAddress= new Uri("https://api.track.toggl.com/api/v9/")};
-            string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:api_token"));
-            _client.DefaultRequestHeaders.Authorization = new("Basic",token);
+            lock (_clientLock)
+            {
+                if (!_clients.TryGetValue(apiKey, out var client))
+                {
+                    client = new TogglClient(apiKey);
+                    _clients[apiKey] = client;
+                }
+                return client;
+            }
         }
 
-        public async Task<List<TogglTimeEntry>> GetEntries(DateTimeOffset from, DateTimeOffset to) {
+        /// <summary>
+        /// Clears cached entries of every created client. If <paramref name="complete"/> is set, also clears projects and clients.
+        /// </summary>
+        public static void ClearAllCaches(bool complete)
+        {
+            lock (_clientLock)
+            {
+                foreach (var client in _clients.Values)
+                {
+                    client.ClearCache(complete);
+                }
+            }
+        }
+
+        private readonly HttpClient _client;
+
+        private TogglClient(string apiKey)
+        {
+            _client = new HttpClient() { BaseAddress = new Uri("https://api.track.toggl.com/api/v9/") };
+            string token = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:api_token"));
+            _client.DefaultRequestHeaders.Authorization = new("Basic", token);
+        }
+
+        public void ClearCache(bool complete)
+        {
+            if (complete)
+            {
+                _cache.Purge(complete: true);
+            }
+            else
+            {
+                _cache.ClearEntries();
+            }
+        }
+
+        public async Task<IReadOnlyList<TogglTimeEntry>> GetEntries(DateTimeOffset from, DateTimeOffset to, bool forceRefresh = false)
+        {
             // toggl has exlusive end dates
             string uri = $"me/time_entries?meta=true&start_date={from:yyyy-MM-dd}&end_date={to.AddDays(1):yyyy-MM-dd}";
-            var payload = await _client.GetAsync(uri).ConfigureAwait(false);
-            if (!(payload?.IsSuccessStatusCode ?? false)) {
-                throw new Exception("todo");
+            if (!forceRefresh && _cache.TryGetCachedEntries(uri, out var cached))
+            {
+                return cached;
             }
-            var content =await payload.Content.ReadAsStringAsync().ConfigureAwait(false);
-            var entries = JsonHelper.Deserialize<List<TogglTimeEntry>>(content) ?? [];
+            var entries = await Get<List<TogglTimeEntry>>(uri).ConfigureAwait(false) ?? [];
             entries.RemoveAll(x => x.Duration < TimeSpan.Zero);
-            return entries;
+            if (!_cache.CanComplete(entries))
+            {
+                await LoadProjectsClients().ConfigureAwait(false);
+            }
+            return _cache.CompleteAndAddEntries(uri, entries);
+        }
+
+        private async Task LoadProjectsClients()
+        {
+            // Both endpoints return everything in one call - never query per project.
+            var projects = await Get<List<TogglDtoProject>>("me/projects?include_archived=true").ConfigureAwait(false) ?? [];
+            var clients = await Get<List<TogglDtoClient>>("me/clients").ConfigureAwait(false) ?? [];
+            _cache.SetProjectsClients(projects, clients);
+        }
+
+        private async Task<T?> Get<T>(string uri)
+        {
+            var payload = await _client.GetAsync(uri).ConfigureAwait(false);
+            if (!payload.IsSuccessStatusCode)
+            {
+                throw await CreateException(payload).ConfigureAwait(false);
+            }
+            var content = await payload.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return JsonHelper.Deserialize<T>(content);
+        }
+
+        private static async Task<BaseHttpException> CreateException(HttpResponseMessage response)
+        {
+            var errorResponse = await BaseHttpException.GetErrorResponse(response).ConfigureAwait(false);
+            return response.StatusCode switch
+            {
+                // Toggl answers an invalid API token with 403, not 401.
+                HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
+                    => new InvalidCredentialsException($"Toggl rejected the API key. Update it with Set-LiraTogglConfiguration. Response: {errorResponse}"),
+                HttpStatusCode.BadRequest => new BadRequestException(errorResponse),
+                HttpStatusCode.TooManyRequests => new BaseHttpException(response.StatusCode, $"Toggl rate limit exceeded. Try again later. Response: {errorResponse}"),
+                _ => new BaseHttpException(response.StatusCode, errorResponse),
+            };
         }
     }
 }
-

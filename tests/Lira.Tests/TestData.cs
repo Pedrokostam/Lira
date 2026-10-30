@@ -15,8 +15,10 @@ internal static class TestData
         SelfLink = new Uri($"https://jira.example.com/rest/api/2/user?username={name}"),
     };
 
-    public static Worklog Worklog(string author, DateTimeOffset started, TimeSpan timeSpent, string issueId = "10000") => new()
+    public static Worklog Worklog(string author, DateTimeOffset started, TimeSpan timeSpent, string issueId = "10000", string issueKey = "TEST-100", string comment = "") => new()
     {
+        Issue = Issue(issueKey),
+        Comment = comment,
         Author = User(author),
         UpdateAuthor = User(author),
         Started = started,
@@ -27,6 +29,14 @@ internal static class TestData
         ID = Guid.NewGuid().ToString(),
         SelfLink = new Uri($"https://jira.example.com/rest/api/2/issue/{issueId}/worklog/1"),
     };
+
+    // IssueLite has only an internal constructor; worklog comparisons only need the Key.
+    public static IssueLite Issue(string key)
+    {
+        var issue = (IssueLite)RuntimeHelpers.GetUninitializedObject(typeof(IssueLite));
+        typeof(IssueStem).GetProperty(nameof(IssueStem.Key))!.SetValue(issue, key);
+        return issue;
+    }
 
     // LiraClient has no public constructor and fetches Myself from the server; the JQL code only needs AccountTimezone.
     public static LiraClient Client(TimeZoneInfo accountTimezone)

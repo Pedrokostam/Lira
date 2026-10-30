@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lira\Lira.csproj" />
+    <ProjectReference Include="..\..\src\Lira.Toggl\Lira.Toggl.csproj" />
   </ItemGroup>
 
   <ItemGroup>

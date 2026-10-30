@@ -30,6 +30,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="TypeData\TypeData.ps1xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Formatters\TogglTimeEntry.ps1xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Formatters\TogglJiraComparison.ps1xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Update="LiraPS.Toggl.psd1">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

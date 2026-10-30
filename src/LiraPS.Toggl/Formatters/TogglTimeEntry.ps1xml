@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Configuration
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd">
+	<ViewDefinitions>
+		<!--TABLE DEFAULT-->
+		<View>
+			<Name>Default</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Toggl.TogglTimeEntry</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Label>Issue</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Project</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Client</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Started</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Time</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Tags</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Description</Label>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ([string]::IsNullOrEmpty($_.JiraIssue)) {
+									"`e[2m`e[3mN/A`e[0m"
+									} else {
+									$_.JiraIssue
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ([string]::IsNullOrWhiteSpace($_.ProjectName)) {
+									"`e[2m`e[3mN/A`e[0m"
+									} else {
+									$_.ProjectNameTrimmed
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ([string]::IsNullOrWhiteSpace($_.ClientName)) {
+									"`e[2m`e[3mN/A`e[0m"
+									} else {
+									$_.ClientNameTrimmed
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Start,1)</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.Duration,1)</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ($_.Tags.Count) {
+									$_.Tags -join ', '
+									} else {
+									"`e[2m`e[3mN/A`e[0m"
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ([string]::IsNullOrWhiteSpace($_.DescriptionWithoutIssue)) {
+									"`e[2m`e[3mNo description`e[0m"
+									} else {
+									$_.DescriptionWithoutIssue
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
+		<!--LIST-->
+		<View>
+			<Name>List</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Toggl.TogglTimeEntry</TypeName>
+			</ViewSelectedBy>
+			<ListControl>
+				<ListEntries>
+					<ListEntry>
+						<ListItems>
+							<ListItem>
+								<Label>Issue</Label>
+								<ScriptBlock>
+									if ([string]::IsNullOrEmpty($_.JiraIssue)) {
+									"`e[2m`e[3mN/A`e[0m"
+									} else {
+									$_.JiraIssue
+									}
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Project</Label>
+								<ScriptBlock>
+									if ([string]::IsNullOrWhiteSpace($_.ProjectName)) {
+									"`e[2m`e[3mN/A`e[0m"
+									} else {
+									$_.ProjectName
+									}
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Client</Label>
+								<ScriptBlock>
+									if ([string]::IsNullOrWhiteSpace($_.ClientName)) {
+									"`e[2m`e[3mN/A`e[0m"
+									} else {
+									$_.ClientName
+									}
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Started</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::UnambiguousForm($_.Start,$true)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Time Spent</Label>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.Duration)</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Tags</Label>
+								<ScriptBlock>
+									if ($_.Tags.Count) {
+									$_.Tags -join ', '
+									} else {
+									"`e[2m`e[3mN/A`e[0m"
+									}
+								</ScriptBlock>
+							</ListItem>
+							<ListItem>
+								<Label>Description</Label>
+								<ScriptBlock>
+									if ([string]::IsNullOrWhiteSpace($_.Description)) {
+									"`e[2m`e[3mN/A`e[0m"
+									} else {
+									$_.Description
+									}
+								</ScriptBlock>
+							</ListItem>
+						</ListItems>
+					</ListEntry>
+				</ListEntries>
+			</ListControl>
+		</View>
+	</ViewDefinitions>
+</Configuration>

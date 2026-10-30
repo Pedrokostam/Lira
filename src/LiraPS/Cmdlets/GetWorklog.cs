@@ -137,7 +137,7 @@ namespace LiraPS.Cmdlets
             base.EndProcessing();
         }
 
-        private void CommentState(in FindWorklogByQueryStateMachine.State currState)
+        private  void CommentState(in FindWorklogByQueryStateMachine.State currState)
         {
             WriteVerbose($"{currState.FinishedStep} => {currState.NextStep}");
             if (currState.FinishedStep < FindWorklogByQueryStateMachine.Steps.QueryForIssues && currState.FinishedStep == FindWorklogByQueryStateMachine.Steps.QueryForIssues)

@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Configuration
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd">
+	<ViewDefinitions>
+		<!--COMPARISON-->
+		<View>
+			<Name>Default</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Toggl.TogglJiraComparison</TypeName>
+			</ViewSelectedBy>
+			<CustomControl>
+				<CustomEntries>
+					<CustomEntry>
+						<CustomItem>
+							<Text>Summary</Text>
+							<NewLine/>
+							<ExpressionBinding>
+								<ScriptBlock>$_.Summary | Format-Table | Out-String</ScriptBlock>
+							</ExpressionBinding>
+							<Text>Suggestions</Text>
+							<NewLine/>
+							<ExpressionBinding>
+								<ScriptBlock>
+									if ($_.Suggestions.Count) {
+									$_.Suggestions | Format-Table | Out-String
+									} else {
+									"`n`e[2m`e[3mNo suggestions`e[0m`n"
+									}
+								</ScriptBlock>
+							</ExpressionBinding>
+						</CustomItem>
+					</CustomEntry>
+				</CustomEntries>
+			</CustomControl>
+		</View>
+		<!--DAY SUMMARY-->
+		<View>
+			<Name>Default</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Toggl.TogglJiraDaySummary</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Label>Date</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Issue</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Status</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Toggl</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Entries</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Jira</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Worklogs</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Difference</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<ScriptBlock>$_.Date.ToString('yyyy-MM-dd')</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ([string]::IsNullOrEmpty($_.Issue)) {
+									"`e[2m`e[3mN/A`e[0m"
+									} else {
+									$_.Issue
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>Status</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.TogglTime,1)</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>TogglCount</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.JiraTime,1)</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<PropertyName>JiraCount</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									$sign = if ($_.Difference -lt [timespan]::Zero) { '-' } else { '' }
+									" $sign$([LiraPS.Extensions.TimeExtensions]::PrettyTime($_.Difference.Duration())) "
+								</ScriptBlock>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
+		<!--SUGGESTION-->
+		<View>
+			<Name>Default</Name>
+			<ViewSelectedBy>
+				<TypeName>Lira.Toggl.TogglJiraSuggestion</TypeName>
+			</ViewSelectedBy>
+			<TableControl>
+				<TableHeaders>
+					<TableColumnHeader>
+						<Label>Issue</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Started</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Time</Label>
+						<Alignment>Center</Alignment>
+					</TableColumnHeader>
+					<TableColumnHeader>
+						<Label>Comment</Label>
+					</TableColumnHeader>
+				</TableHeaders>
+				<TableRowEntries>
+					<TableRowEntry>
+						<TableColumnItems>
+							<TableColumnItem>
+								<PropertyName>Issue</PropertyName>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyDate($_.Started,1)</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>[LiraPS.Extensions.TimeExtensions]::PrettyTime($_.Duration,1)</ScriptBlock>
+							</TableColumnItem>
+							<TableColumnItem>
+								<ScriptBlock>
+									if ([string]::IsNullOrWhiteSpace($_.Comment)) {
+									"`e[2m`e[3mNo comment`e[0m"
+									} else {
+									$_.Comment
+									}
+								</ScriptBlock>
+							</TableColumnItem>
+						</TableColumnItems>
+					</TableRowEntry>
+				</TableRowEntries>
+			</TableControl>
+		</View>
+	</ViewDefinitions>
+</Configuration>

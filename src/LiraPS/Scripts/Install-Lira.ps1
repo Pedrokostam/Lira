@@ -8,7 +8,7 @@ param (
 $ErrorActionPreference = 'Stop'
 
 $versionedFolders = Get-ChildItem $PSScriptRoot -Directory
-$newestVersion = $versionedFolders | Sort-Object BaseName | Select-Object -First 1
+$newestVersion = $versionedFolders | Sort-Object { [version]$_.BaseName } -Descending | Select-Object -First 1
 
 $paths = $env:PSModulePath -split ';'
 foreach ($path in $paths)

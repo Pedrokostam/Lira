@@ -24,6 +24,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Serilog.Events;
 using Serilog.Formatting.Display;
+using ConsoleMenu;
 
 namespace LiraPS.Cmdlets
 {
@@ -39,6 +40,13 @@ namespace LiraPS.Cmdlets
             if (string.IsNullOrWhiteSpace(text))
             {
                 Terminate(new PSArgumentException($"{name} cannot be empty"), $"Empty{name}");
+            }
+        }
+        protected static void ThrowIfNull([NotNull] object? argument, [CallerArgumentExpression("argument")] string? paramName = null)
+        {
+            if (argument is null)
+            {
+                throw new PSArgumentNullException(paramName, "Argument must not be null");
             }
         }
         static LiraCmdlet()
@@ -205,34 +213,34 @@ namespace LiraPS.Cmdlets
             return new(good, bad);
         }
 
-        protected record MenuItem
-        {
-            private string? _tooltip;
+        //protected record MenuItem
+        //{
+        //    private string? _tooltip;
 
-            public required string Name { get; init; }
-            public string? Tooltip
-            {
-                get => _tooltip; init
-                {
-                    TooltipLines = value?.Split(["\n", "\r\n", "\r"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
-                    TooltipHeight = TooltipLines.Length;
-                    TooltipWidth = TooltipLines.Length == 0 ? 0 : TooltipLines.Max(x => x.Length);
-                    _tooltip = string.Join(Environment.NewLine, TooltipLines);
-                }
-            }
-            public string[] TooltipLines { get; private init; } = [];
-            public int TooltipHeight { get; private init; }
-            public int TooltipWidth { get; private init; }
-            public required object? Payload { get; init; }
-            public bool HasTooltip => !string.IsNullOrEmpty(Tooltip);
-            [SetsRequiredMembers]
-            public MenuItem(string name, object? payload, string? tooltip = null)
-            {
-                Name = name;
-                Tooltip = tooltip;
-                Payload = payload;
-            }
-        }
+        //    public required string Name { get; init; }
+        //    public string? Tooltip
+        //    {
+        //        get => _tooltip; init
+        //        {
+        //            TooltipLines = value?.Split(["\n", "\r\n", "\r"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.RemoveEmptyEntries) ?? [];
+        //            TooltipHeight = TooltipLines.Length;
+        //            TooltipWidth = TooltipLines.Length == 0 ? 0 : TooltipLines.Max(x => x.Length);
+        //            _tooltip = string.Join(Environment.NewLine, TooltipLines);
+        //        }
+        //    }
+        //    public string[] TooltipLines { get; private init; } = [];
+        //    public int TooltipHeight { get; private init; }
+        //    public int TooltipWidth { get; private init; }
+        //    public required object? Payload { get; init; }
+        //    public bool HasTooltip => !string.IsNullOrEmpty(Tooltip);
+        //    [SetsRequiredMembers]
+        //    public MenuItem(string name, object? payload, string? tooltip = null)
+        //    {
+        //        Name = name;
+        //        Tooltip = tooltip;
+        //        Payload = payload;
+        //    }
+        //}
 
         public const string Reset = "\u001b[0m";
         public const string Invert = "\u001b[7m";
