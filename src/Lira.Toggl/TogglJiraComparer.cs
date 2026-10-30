@@ -19,6 +19,7 @@ namespace Lira.Toggl
         public static TogglJiraComparison Compare(IEnumerable<TogglTimeEntry> toggl, IEnumerable<Worklog> jira, TimeZoneInfo timeZone, bool forceAggregate = false, DateTimeOffset? now = null)
         {
             var timeOfDay = TimeZoneInfo.ConvertTime(now ?? DateTimeOffset.Now, timeZone).TimeOfDay;
+
             DateOnly DayOf(DateTimeOffset date) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(date, timeZone).DateTime);
 
             var togglEntries = toggl.ToList();
@@ -32,7 +33,8 @@ namespace Lira.Toggl
 
             var togglGroups = togglEntries.Where(x => x.JiraIssue is not null).ToLookup(x => new DayIssue(DayOf(x.Start), x.JiraIssue!));
             var jiraGroups = jira.ToLookup(x => new DayIssue(DayOf(x.Started), x.Issue.Key.ToUpperInvariant()));
-            foreach (var key in togglGroups.Select(x => x.Key).Union(jiraGroups.Select(x => x.Key)))
+            var unionKeys = togglGroups.Select(x => x.Key).Union(jiraGroups.Select(x => x.Key));
+            foreach (var key in unionKeys)
             {
                 var entries = togglGroups[key].ToList();
                 var logs = jiraGroups[key].ToList();
@@ -50,8 +52,19 @@ namespace Lira.Toggl
             }
 
             return new(
-                [.. suggestions.Where(x => x.Duration > TimeSpan.Zero).OrderBy(x => x.Started).ThenBy(x => x.Issue, StringComparer.Ordinal)],
-                [.. summary.OrderBy(x => x.Date).ThenBy(x => x.Issue is null).ThenBy(x => x.Issue, StringComparer.Ordinal)]);
+                [..
+                suggestions
+                .Where(x => x.Duration > TimeSpan.Zero)
+                .OrderBy(x => x.Started)
+                .ThenBy(x => x.Issue, StringComparer.Ordinal)
+                ],
+                [..
+                summary
+                .OrderBy(x => x.Date)
+                .ThenBy(x => x.Issue is null)
+                .ThenBy(x => x.Issue, StringComparer.Ordinal)
+                ]
+                );
         }
 
         private static List<TogglJiraSuggestion> Suggest(DayIssue key, List<TogglTimeEntry> entries, List<Worklog> logs, TimeSpan difference, bool forceAggregate, TimeZoneInfo timeZone, TimeSpan timeOfDay)
@@ -63,10 +76,14 @@ namespace Lira.Toggl
                 var comment = descriptions.Count == 0 ? null : string.Join("; ", descriptions);
                 return [Aggregated(key, difference, comment, timeZone, timeOfDay)];
             }
-            List<TogglJiraSuggestion> result = [.. unmatched
+            List<TogglJiraSuggestion> result = [.. 
+                unmatched
                 .Where(x => x.DescriptionWithoutIssue is not null)
-                .Select(x => new TogglJiraSuggestion(key.Issue, TimeZoneInfo.ConvertTime(x.Start, timeZone), RoundToMinutes(x.Duration), x.DescriptionWithoutIssue))];
-            var undescribed = unmatched.Where(x => x.DescriptionWithoutIssue is null).Select(x => x.Duration).Sum();
+                .Select(x => new TogglJiraSuggestion(key.Issue, TimeZoneInfo.ConvertTime(x.Start, timeZone), RoundToMinutes(x.Duration), x.DescriptionWithoutIssue))
+                ];
+            var undescribed = unmatched
+                .Where(x => x.DescriptionWithoutIssue is null)
+                .Select(x => x.Duration).Sum();
             result.Add(Aggregated(key, undescribed, null, timeZone, timeOfDay));
             return result;
         }
