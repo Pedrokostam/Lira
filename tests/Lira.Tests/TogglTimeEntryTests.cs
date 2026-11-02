@@ -13,7 +13,7 @@ public class TogglTimeEntryTests
     [InlineData("no issue", "Project [PRJ-4567]", "PRJ-4567")]
     [InlineData(null, "PRJ4567 project", "PRJ-4567")]
     [InlineData("DES-111", "PRJ-222", "DES-111")]
-    [InlineData("AB-123", null, null)]
+    [InlineData("AB-123", null, "AB-123")]
     [InlineData("ABC-12", null, null)]
     [InlineData("xABC-123x", null, null)]
     [InlineData(null, null, null)]

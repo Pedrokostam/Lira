@@ -51,7 +51,7 @@ namespace LiraPS.Toggl.Cmdlets
         public Worklog[] Worklog { get; set; } = [];
 
         [Parameter]
-        public SwitchParameter ForceAggregate { get; set; }
+        public TogglGrouping Grouping { get; set; } = TogglGrouping.ByName;
 
         protected override void ProcessRecord()
         {
@@ -69,7 +69,7 @@ namespace LiraPS.Toggl.Cmdlets
                 toggl = FetchToggl(DateFrom, DateTo);
                 jira = FetchJira(DateFrom,DateTo);
             }
-            var result = TogglJiraComparer.Compare(toggl, jira, LiraSession.Client.AccountTimezone, ForceAggregate.IsPresent);
+            var result = TogglJiraComparer.Compare(toggl, jira, LiraSession.Client.AccountTimezone, Grouping);
             WriteObject(result);
         }
 

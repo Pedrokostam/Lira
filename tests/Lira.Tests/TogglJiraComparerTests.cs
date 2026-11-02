@@ -19,8 +19,8 @@ public class TogglJiraComparerTests
     private static Objects.Worklog Jira(double startHour, double hours, string comment = "", string issue = "ABC-123")
         => TestData.Worklog("me", Day.AddHours(startHour), TimeSpan.FromHours(hours), issueKey: issue, comment: comment);
 
-    private static TogglJiraComparison Compare(IEnumerable<TogglTimeEntry> toggl, IEnumerable<Objects.Worklog> jira, bool forceAggregate = false, DateTimeOffset? now = null)
-        => TogglJiraComparer.Compare(toggl, jira, Utc, forceAggregate, now ?? Now);
+    private static TogglJiraComparison Compare(IEnumerable<TogglTimeEntry> toggl, IEnumerable<Objects.Worklog> jira, TogglGrouping grouping = TogglGrouping.ByName, DateTimeOffset? now = null)
+        => TogglJiraComparer.Compare(toggl, jira, Utc, grouping, now ?? Now);
 
     // 6h in 5 Toggl entries
     private static List<TogglTimeEntry> SixHours() =>
@@ -67,12 +67,49 @@ public class TogglJiraComparerTests
     }
 
     [Fact]
-    public void ForceAggregateGivesOneSuggestion()
+    public void ByDayGivesOneSuggestion()
     {
-        var result = Compare(SixHours(), [Jira(17, 1, "design"), Jira(18, 1, "review")], forceAggregate: true);
+        var result = Compare(SixHours(), [Jira(17, 1, "design"), Jira(18, 1, "review")], grouping: TogglGrouping.ByDay);
 
         var suggestion = Assert.Single(result.Suggestions);
         Assert.Equal(TimeSpan.FromHours(4), suggestion.Duration);
+    }
+
+    private static List<TogglTimeEntry> Repeated() =>
+    [
+        Toggl(8, 1, "[ABC-123] code"),
+        Toggl(9, 0.5, "ABC-123"),
+        Toggl(10, 1, "[ABC-123] Code"),
+        Toggl(11, 0.25, "[ABC-123]"),
+    ];
+
+    [Fact]
+    public void ByNameSumsSameDescriptions()
+    {
+        var result = Compare(Repeated(), []);
+
+        Assert.Equal(2, result.Suggestions.Count);
+        var code = result.Suggestions.Single(x => x.Comment is not null);
+        Assert.Equal(Day.AddHours(8), code.Started);
+        Assert.Equal(TimeSpan.FromHours(2), code.Duration);
+        Assert.Equal(TimeSpan.FromMinutes(45), result.Suggestions.Single(x => x.Comment is null).Duration);
+    }
+
+    [Fact]
+    public void NoGroupingKeepsDescribedEntriesSeparateAndSumsUndescribed()
+    {
+        var result = Compare(Repeated(), [], grouping: TogglGrouping.NoGrouping);
+
+        Assert.Equal([Day.AddHours(8), Day.AddHours(10)], result.Suggestions.Where(x => x.Comment is not null).Select(x => x.Started));
+        Assert.Equal(TimeSpan.FromMinutes(45), result.Suggestions.Single(x => x.Comment is null).Duration);
+    }
+
+    [Fact]
+    public void ByNameMatchesJiraLogsAgainstSums()
+    {
+        var result = Compare(Repeated(), [Jira(17, 2, "code")]);
+
+        Assert.Null(Assert.Single(result.Suggestions).Comment);
     }
 
     [Fact]
@@ -96,6 +133,30 @@ public class TogglJiraComparerTests
 
         var suggestion = Assert.Single(result.Suggestions);
         Assert.Equal(Day.AddHours(22), suggestion.Started);
+    }
+
+    [Fact]
+    public void MergeUncommentedJoinsClearedSuggestionsPerDayAndIssue()
+    {
+        var suggestions = Compare([Toggl(8, 1, "[ABC-123] code"), Toggl(9, 1, "[ABC-123] test"), Toggl(10, 0.5, "ABC-123"), Toggl(22, 1.5, "[XYZ-999] late")], [], now: Now.Date.AddHours(23)).Suggestions;
+        var cleared = suggestions.Select(x => x.Comment == "late" ? x : x with { Comment = null });
+
+        var result = TogglJiraComparer.MergeUncommented(cleared);
+
+        Assert.Equal(2, result.Count);
+        var merged = result.Single(x => x.Issue == "ABC-123");
+        Assert.Null(merged.Comment);
+        Assert.Equal(TimeSpan.FromHours(2.5), merged.Duration);
+        Assert.Equal(Day.AddHours(8), merged.Started);
+        Assert.Equal("late", result.Single(x => x.Issue == "XYZ-999").Comment);
+    }
+
+    [Fact]
+    public void MergeUncommentedDoesNotCrossMidnight()
+    {
+        var result = TogglJiraComparer.MergeUncommented([new("ABC-123", Day.AddHours(22), TimeSpan.FromHours(1), null), new("ABC-123", Day.AddHours(23), TimeSpan.FromHours(1), null)]);
+
+        Assert.Equal(Day.AddHours(22), Assert.Single(result).Started);
     }
 
     [Fact]

@@ -14,9 +14,9 @@ namespace Lira.Toggl
         /// </summary>
         /// <param name="jira">Worklogs of the user the Toggl entries belong to.</param>
         /// <param name="timeZone">Time zone defining day boundaries, usually the Jira account time zone.</param>
-        /// <param name="forceAggregate">Always suggest one worklog per day and issue, never 1-to-1 copies of Toggl entries.</param>
+        /// <param name="grouping">How Toggl entries of one day and issue are grouped into suggestions.</param>
         /// <param name="now">Time of day used for aggregated worklogs. Defaults to <see cref="DateTimeOffset.Now"/>.</param>
-        public static TogglJiraComparison Compare(IEnumerable<TogglTimeEntry> toggl, IEnumerable<Worklog> jira, TimeZoneInfo timeZone, bool forceAggregate = false, DateTimeOffset? now = null)
+        public static TogglJiraComparison Compare(IEnumerable<TogglTimeEntry> toggl, IEnumerable<Worklog> jira, TimeZoneInfo timeZone, TogglGrouping grouping = TogglGrouping.ByName, DateTimeOffset? now = null)
         {
             var timeOfDay = TimeZoneInfo.ConvertTime(now ?? DateTimeOffset.Now, timeZone).TimeOfDay;
 
@@ -47,7 +47,7 @@ namespace Lira.Toggl
                 summary.Add(new(key.Date, key.Issue, togglTime, entries.Count, jiraTime, logs.Count, status));
                 if (status == TogglSyncStatus.Missing)
                 {
-                    suggestions.AddRange(Suggest(key, entries, logs, difference, forceAggregate, timeZone, timeOfDay));
+                    suggestions.AddRange(Suggest(key, entries, logs, difference, grouping, timeZone, timeOfDay));
                 }
             }
 
@@ -67,32 +67,75 @@ namespace Lira.Toggl
                 );
         }
 
-        private static List<TogglJiraSuggestion> Suggest(DayIssue key, List<TogglTimeEntry> entries, List<Worklog> logs, TimeSpan difference, bool forceAggregate, TimeZoneInfo timeZone, TimeSpan timeOfDay)
+        private static List<TogglJiraSuggestion> Suggest(DayIssue key, List<TogglTimeEntry> entries, List<Worklog> logs, TimeSpan difference, TogglGrouping grouping, TimeZoneInfo timeZone, TimeSpan timeOfDay)
         {
-            List<TogglTimeEntry> unmatched = [.. entries];
-            if (forceAggregate || !logs.TrueForAll(log => TryRemoveMatch(unmatched, log)))
+            var unmatched = Candidates(entries, grouping);
+            if (grouping == TogglGrouping.ByDay || !logs.TrueForAll(log => TryRemoveMatch(unmatched, log)))
             {
                 var descriptions = entries.Select(x => x.DescriptionWithoutIssue).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToList();
                 var comment = descriptions.Count == 0 ? null : string.Join("; ", descriptions);
                 return [Aggregated(key, difference, comment, timeZone, timeOfDay)];
             }
-            List<TogglJiraSuggestion> result = [.. 
+            List<TogglJiraSuggestion> result = [..
                 unmatched
-                .Where(x => x.DescriptionWithoutIssue is not null)
-                .Select(x => new TogglJiraSuggestion(key.Issue, TimeZoneInfo.ConvertTime(x.Start, timeZone), RoundToMinutes(x.Duration), x.DescriptionWithoutIssue))
+                .Where(x => x.Description is not null)
+                .Select(x => new TogglJiraSuggestion(key.Issue, TimeZoneInfo.ConvertTime(x.Start, timeZone), RoundToMinutes(x.Duration), x.Description))
                 ];
             var undescribed = unmatched
-                .Where(x => x.DescriptionWithoutIssue is null)
+                .Where(x => x.Description is null)
                 .Select(x => x.Duration).Sum();
             result.Add(Aggregated(key, undescribed, null, timeZone, timeOfDay));
             return result;
         }
 
-        private static bool TryRemoveMatch(List<TogglTimeEntry> unmatched, Worklog log)
+        private readonly record struct Candidate(DateTimeOffset Start, TimeSpan Duration, string? Description);
+
+        // Entries without description are always summed into one candidate.
+        private static List<Candidate> Candidates(List<TogglTimeEntry> entries, TogglGrouping grouping)
+        {
+            var described = entries.Where(x => x.DescriptionWithoutIssue is not null);
+            var undescribed = entries.Where(x => x.DescriptionWithoutIssue is null).ToList();
+            IEnumerable<Candidate> candidates = grouping == TogglGrouping.NoGrouping
+                ? described.Select(x => new Candidate(x.Start, x.Duration, x.DescriptionWithoutIssue))
+                : described
+                    .GroupBy(x => x.DescriptionWithoutIssue!, StringComparer.OrdinalIgnoreCase)
+                    .Select(g => new Candidate(g.Min(x => x.Start), g.Select(x => x.Duration).Sum(), g.First().DescriptionWithoutIssue));
+            if (undescribed.Count > 0)
+            {
+                candidates = candidates.Append(new Candidate(undescribed.Min(x => x.Start), undescribed.Select(x => x.Duration).Sum(), null));
+            }
+            return [.. candidates];
+        }
+
+        /// <summary>
+        /// Merges uncommented suggestions of the same day and issue into one, e.g. after their comments were cleared.
+        /// </summary>
+        public static List<TogglJiraSuggestion> MergeUncommented(IEnumerable<TogglJiraSuggestion> suggestions)
+        {
+            var list = suggestions.ToList();
+            var merged = list
+                .Where(x => string.IsNullOrWhiteSpace(x.Comment))
+                .GroupBy(x => (DateOnly.FromDateTime(x.Started.DateTime), x.Issue))
+                .Select(g =>
+                {
+                    var first = g.MinBy(x => x.Started)!.Started;
+                    var duration = g.Select(x => x.Duration).Sum();
+                    return new TogglJiraSuggestion(g.Key.Issue, new DateTimeOffset(FitInDay(first.DateTime, duration), first.Offset), duration, null);
+                });
+            return [..
+                list
+                .Where(x => !string.IsNullOrWhiteSpace(x.Comment))
+                .Concat(merged)
+                .OrderBy(x => x.Started)
+                .ThenBy(x => x.Issue, StringComparer.Ordinal)
+                ];
+        }
+
+        private static bool TryRemoveMatch(List<Candidate> unmatched, Worklog log)
         {
             var comment = log.CommentPlain.Trim();
             var index = unmatched.FindIndex(x =>
-                string.Equals(x.DescriptionWithoutIssue ?? "", comment, StringComparison.OrdinalIgnoreCase)
+                string.Equals(x.Description ?? "", comment, StringComparison.OrdinalIgnoreCase)
                 && (x.Duration - log.TimeSpent).Duration() <= Tolerance);
             if (index < 0)
             {
@@ -106,14 +149,19 @@ namespace Lira.Toggl
         private static TogglJiraSuggestion Aggregated(DayIssue key, TimeSpan duration, string? comment, TimeZoneInfo timeZone, TimeSpan timeOfDay)
         {
             duration = RoundToMinutes(duration);
-            var dayStart = key.Date.ToDateTime(TimeOnly.MinValue);
-            var dayEnd = dayStart.AddDays(1);
-            var start = dayStart + timeOfDay;
-            if (start + duration > dayEnd)
-            {
-                start = dayEnd - duration < dayStart ? dayStart : dayEnd - duration;
-            }
+            var start = FitInDay(key.Date.ToDateTime(TimeOnly.MinValue) + timeOfDay, duration);
             return new(key.Issue, new DateTimeOffset(start, timeZone.GetUtcOffset(start)), duration, comment);
+        }
+
+        private static DateTime FitInDay(DateTime start, TimeSpan duration)
+        {
+            var dayStart = start.Date;
+            var dayEnd = dayStart.AddDays(1);
+            if (start + duration <= dayEnd)
+            {
+                return start;
+            }
+            return dayEnd - duration < dayStart ? dayStart : dayEnd - duration;
         }
 
         private static TimeSpan RoundToMinutes(TimeSpan time) => TimeSpan.FromMinutes(Math.Round(time.TotalMinutes));

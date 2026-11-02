@@ -15,7 +15,7 @@ $ErrorActionPreference = 'Stop'
 Push-Location (Split-Path $PSScriptRoot)
 $csprojXmlProperties = ([xml](Get-Content "$ProjectName.csproj")).Project.PropertyGroup
 $version = $csprojXmlProperties.Version ?? '0.0.1'
-$publishedFolder = "$PSScriptRoot/../Published/"
+$publishedFolder = "$PSScriptRoot/../published/"
 $versionedFolder = "$publishedFolder/$version"
 New-Item -ItemType Directory -Path $versionedFolder -Force
 Write-Host "Building $ProjectName with version $version"

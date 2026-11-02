@@ -12,7 +12,7 @@ using System.Net.Http;
 
 namespace LiraPS.Toggl.Cmdlets
 {
-    [Cmdlet(VerbsData.Sync, "LiraJiraToggl", DefaultParameterSetName = "ASK")]
+    [Cmdlet(VerbsData.Sync, "LiraJiraToggl", DefaultParameterSetName = "NOCOMMENTS")]
     [OutputType(typeof(Worklog))]
     public sealed class SyncJiraToggl : TogglCmdlet
     {
@@ -32,7 +32,7 @@ namespace LiraPS.Toggl.Cmdlets
         [Parameter(ParameterSetName = "FORCECOMMENTS")]
         public SwitchParameter ForceComments { get; set; }
 
-        [Parameter(ParameterSetName = "FORCEALL")]
+        [Parameter(Mandatory = true, ParameterSetName = "FORCEALL")]
         public SwitchParameter Force { get; set; }
 
         private readonly List<TogglJiraSuggestion> _suggestions = [];
@@ -51,7 +51,15 @@ namespace LiraPS.Toggl.Cmdlets
             }
             int issueWidth = _suggestions.Max(x => x.Issue.Length);
             List<TogglJiraSuggestion> selected = _suggestions;
-            if (!Force.IsPresent)
+            if (Force.IsPresent)
+            {
+                if (NoComments.IsPresent)
+                {
+                    selected = [.. _suggestions.Select(x => x with { Comment = null })];
+                }
+                selected = TogglJiraComparer.MergeUncommented(selected);
+            }
+            else
             {
                 var menuItemsInitial = _suggestions
                     .Select(x => new MenuItem(FormatLine(x, issueWidth), x))
@@ -106,19 +114,8 @@ namespace LiraPS.Toggl.Cmdlets
                         }
                     }
                 }
-                WriteHost("The following worklogs will be added", ConsoleColor.Cyan);
-                WriteHost("");
-                WriteHost(FormatHeader(issueWidth));
-                foreach (var log in selected)
-                {
-                    var comment = log.Comment ?? $"{Dim}None{Reset}";
-                    WriteHost(FormatLine(log, issueWidth));
-                }
-                WriteHost("");
-                if (ChoiceYesNo("Add these worklogs?", "Send the worklogs to the Jira server", "Abort and send nothing to the Jira server") == ChoiceOptions.No)
-                {
-                    UserCancel("worklog adding");
-                }
+                selected = TogglJiraComparer.MergeUncommented(selected);
+                Confirm(selected, issueWidth);
             }
             AddLogs(selected);
             base.EndProcessing();
@@ -139,7 +136,6 @@ namespace LiraPS.Toggl.Cmdlets
             WriteHost(FormatHeader(issueWidth));
             foreach (var log in pending)
             {
-                var comment = log.Comment ?? $"{Dim}None{Reset}";
                 WriteHost(FormatLine(log, issueWidth));
             }
             WriteHost("");
