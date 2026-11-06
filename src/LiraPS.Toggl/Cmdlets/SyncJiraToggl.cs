@@ -8,9 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
-using System.Management.Automation.Provider;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 
 namespace LiraPS.Toggl.Cmdlets
 {
@@ -39,12 +37,6 @@ namespace LiraPS.Toggl.Cmdlets
         private int IssueWidth { get; set; }
 
         private readonly List<TogglJiraSuggestion> _suggestions = [];
-        public SyncJiraToggl()
-        {
-            _commentSelectionFormatter = new(CommentFormat, ContentFormatComment);
-            _syncSelectionFormatter = new(SyncFormat, ContentFormat);
-        }
-
 
         protected override void ProcessRecord()
         {
@@ -59,7 +51,7 @@ namespace LiraPS.Toggl.Cmdlets
                 WriteWarning("No worklogs to add.");
                 return;
             }
-            int issueWidth = _suggestions.Max(x => x.Issue.Length);
+            IssueWidth = _suggestions.Max(x => x.Issue.Length);
             List<TogglJiraSuggestion> selected = _suggestions;
             if (Force.IsPresent)
             {
@@ -72,18 +64,16 @@ namespace LiraPS.Toggl.Cmdlets
             else
             {
                 var menuItemsInitial = _suggestions
-                    .Select(x => new MenuItem(FormatLine(x, issueWidth).Format().PlainText, x))
-                    .Select(x => new ToggleMenu<SyncState>.MenuItemWithState(x, SyncState.Take))
-                    .ToList();
-                ShowToggleMenu(menuItemsInitial, "Select logs to add", issueWidth, _syncSelectionFormatter);
-                var selectedMenuItems = menuItemsInitial.Where(x => x.State == SyncState.Take).Select(x => x.Item).ToList();
+                    .Select(x => new MenuItemWithState<SyncState, TogglJiraSuggestion>(new(FormatLine(x, IssueWidth).Format().PlainText, x), SyncState.Take));
+                var selectedMenuItems = ShowToggleMenu(menuItemsInitial, "Select logs to add", SyncFormat, ContentFormat)
+                    .Where(x => x.State == SyncState.Take).Select(x => x.Item).ToList();
                 if (selectedMenuItems.Count == 0)
                 {
                     WriteWarning("No worklogs selected.");
                     return;
                 }
 
-                var commented = selectedMenuItems.Where(x => !string.IsNullOrWhiteSpace((x.Payload as TogglJiraSuggestion)?.Comment));
+                var commented = selectedMenuItems.Where(x => !string.IsNullOrWhiteSpace(x.Payload.Comment));
 
                 if (!NoComments.IsPresent && !ForceComments.IsPresent)
                 {
@@ -91,7 +81,7 @@ namespace LiraPS.Toggl.Cmdlets
                     {
                         NoComments = true; // remove one case - no comments in suggestion set NoComments and takes its path
                     }
-                    else if (ChoiceYesNo("Do you want to remove comments from some of the logs?", ChoiceOptions.No) == ChoiceOptions.No)
+                    else if (!ChoiceYesNo("Do you want to remove comments from some of the logs?", defaultNo: true))
                     {
                         ForceComments = true; // remove one case - now if the user decline it will take the path of force comments
                     }
@@ -99,57 +89,59 @@ namespace LiraPS.Toggl.Cmdlets
 
                 if (NoComments.IsPresent)
                 {
-                    selected = [.. selectedMenuItems.Select(x => (TogglJiraSuggestion)x.Payload! with { Comment = null })];
+                    selected = [.. selectedMenuItems.Select(x => x.Payload with { Comment = null })];
                 }
                 else if (ForceComments.IsPresent)
                 {
-                    selected = [.. selectedMenuItems.Select(x => (TogglJiraSuggestion)x.Payload!)];
+                    selected = [.. selectedMenuItems.Select(x => x.Payload)];
                 }
                 else
                 {
-                    var items = commented.Select(x => new ToggleMenu<CommentState>.MenuItemWithState(x, CommentState.Use)).ToList();
-                    ShowToggleMenu(items, "Select comments to clear", issueWidth, _commentSelectionFormatter);
-                    var cleared = items.Where(x => x.State == CommentState.Clear).Select(x => x.Payload).OfType<TogglJiraSuggestion>().ToHashSet(ReferenceEqualityComparer.Instance);
+                    var items = commented.Select(x => new MenuItemWithState<CommentState, TogglJiraSuggestion>(x, CommentState.Use));
+                    var cleared = ShowToggleMenu(items, "Select comments to clear", CommentFormat, ContentFormatComment)
+                        .Where(x => x.State == CommentState.Clear).Select(x => x.Payload).ToHashSet(ReferenceEqualityComparer.Instance);
                     selected.Clear();
                     for (int i = 0; i < selectedMenuItems.Count; i++)
                     {
-                        var curr = selectedMenuItems[i].Payload as TogglJiraSuggestion;
+                        var curr = selectedMenuItems[i].Payload;
                         if (cleared.Contains(curr))
                         {
-                            selected.Add(curr! with { Comment = null });
+                            selected.Add(curr with { Comment = null });
                         }
                         else
                         {
-                            selected.Add(curr!);
+                            selected.Add(curr);
                         }
                     }
                 }
                 selected = TogglJiraComparer.MergeUncommented(selected);
-                Confirm(selected, issueWidth);
+                Confirm(selected);
             }
             AddLogs(selected);
             base.EndProcessing();
         }
 
-        private static void ShowToggleMenu<TState>(List<ToggleMenu<TState>.MenuItemWithState> items, string preamble, int issueWidth, ToggleMenu<TState>.StateFormat? formatter) where TState : struct, Enum
+        private IReadOnlyList<MenuItemWithState<TState, TogglJiraSuggestion>> ShowToggleMenu<TState>(IEnumerable<MenuItemWithState<TState, TogglJiraSuggestion>> items, string preamble,
+            Func<TState, bool, LineParts> stateFormatter, Func<MenuItemWithState<TState, TogglJiraSuggestion>, bool, LineParts> contentFormatter) where TState : struct, Enum
         {
             int stateWidth = Enum.GetNames<TState>().Max(x => x.Length);
-            var header = new string(' ', stateWidth + 4) + FormatHeader(issueWidth);
-            var menu = new ToggleMenu<TState>(header, items, new Part(preamble), stateFormatter: formatter, clearAfterFinish: true);
-            menu.Show();
+            // "==> [" + state + "] " precedes each row
+            var header = new string(' ', stateWidth + 7) + FormatHeader(IssueWidth);
+            var menu = new ToggleMenu<TState, TogglJiraSuggestion>(header, items, new Part(preamble), clearAfterFinish: true, stateFormatter: stateFormatter, contentFormatter: contentFormatter);
+            return menu.Show();
         }
 
-        private void Confirm(List<TogglJiraSuggestion> pending, int issueWidth)
+        private void Confirm(List<TogglJiraSuggestion> pending)
         {
             WriteHost("The following worklogs will be added", ConsoleColor.Cyan);
             WriteHost("");
-            WriteHost(FormatHeader(issueWidth));
+            WriteHost(FormatHeader(IssueWidth));
             foreach (var log in pending)
             {
-                WriteHost(FormatLine(log, issueWidth).Format(Console.BufferWidth).Text);
+                WriteHost(FormatLine(log, IssueWidth).Format().Text);
             }
             WriteHost("");
-            if (ChoiceYesNo("Add these worklogs?", "Send the worklogs to the Jira server", "Abort and send nothing to the Jira server") == ChoiceOptions.No)
+            if (!ChoiceYesNo("Add these worklogs?", "Send the worklogs to the Jira server", "Abort and send nothing to the Jira server"))
             {
                 UserCancel("worklog adding");
             }
@@ -212,7 +204,7 @@ namespace LiraPS.Toggl.Cmdlets
 
         private static string FormatHeader(int issueWidth)
         {
-            return $"    {"Issue".PadRight(issueWidth)} | {"Started",16} | {"Duration",8} | Comment";
+            return $"{"Issue".PadRight(issueWidth)} | {"Started",16} | {"Duration",8} | Comment";
         }
 
         // Same columns as the TogglJiraSuggestion view in Formatters/TogglJiraComparison.ps1xml.
@@ -246,22 +238,18 @@ namespace LiraPS.Toggl.Cmdlets
                 _ => [new Part("Clear", StartMode: GraphicModes.Dim)],
             };
         }
-        private LineParts ContentFormat<TState>(TState state, MenuItem item, bool selected) where TState : struct, Enum
+        private LineParts ContentFormat(MenuItemWithState<SyncState, TogglJiraSuggestion> item, bool selected)
         {
-            return FormatLine((TogglJiraSuggestion)item.Payload!,this.IssueWidth);
+            return FormatLine(item.Payload, IssueWidth);
         }
-        private LineParts ContentFormatComment(CommentState state, MenuItem item, bool selected)
+        private LineParts ContentFormatComment(MenuItemWithState<CommentState, TogglJiraSuggestion> item, bool selected)
         {
-            var sugg = state switch
+            var sugg = item.State switch
             {
-                CommentState.Use => (TogglJiraSuggestion)item.Payload!,
-                _ => (TogglJiraSuggestion)item.Payload! with { Comment = null },
+                CommentState.Use => item.Payload,
+                _ => item.Payload with { Comment = null },
             };
-            return FormatLine(sugg, this.IssueWidth);
+            return FormatLine(sugg, IssueWidth);
         }
-
-        private readonly ToggleMenu<CommentState>.StateFormat _commentSelectionFormatter;
-        private readonly ToggleMenu<SyncState>.StateFormat _syncSelectionFormatter;
-
     }
 }

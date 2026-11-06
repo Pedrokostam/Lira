@@ -2,7 +2,7 @@
 
 namespace ConsoleMenu;
 
-public record MenuItem
+public abstract record MenuItem
 {
     private string? _tooltip;
 
@@ -20,13 +20,21 @@ public record MenuItem
     public string[] TooltipLines { get; private init; } = [];
     public int TooltipHeight { get; private init; }
     public int TooltipWidth { get; private init; }
-    public required object? Payload { get; init; }
     public bool HasTooltip => !string.IsNullOrEmpty(Tooltip);
     [SetsRequiredMembers]
-    public MenuItem(string name, object? payload, string? tooltip = null)
+    protected MenuItem(string name, string? tooltip)
     {
         Name = name;
         Tooltip = tooltip;
+    }
+}
+
+public record MenuItem<T> : MenuItem
+{
+    public required T Payload { get; init; }
+    [SetsRequiredMembers]
+    public MenuItem(string name, T payload, string? tooltip = null) : base(name, tooltip)
+    {
         Payload = payload;
     }
 }

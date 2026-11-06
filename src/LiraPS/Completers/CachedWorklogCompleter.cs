@@ -32,7 +32,7 @@ internal class CachedWorklogCompleter : IArgumentCompleter, ISimpleArgumentCompl
     {
         wordToComplete = wordToComplete?.Trim() ?? string.Empty;
         var matching = LiraSession.GetMatchingCachedWorklogs(wordToComplete).OrderByDescending(x => x.Started);
-        var placeholder = $"{LiraCmdlet.Dim}No comment{LiraCmdlet.Reset}";
+        var placeholder = Part.GetConsoleString("No comment", GraphicModes.Dim);
         foreach (var item in matching)
         {
             var comment = string.IsNullOrWhiteSpace(item.CommentPlain) ? placeholder : item.CommentPlain;

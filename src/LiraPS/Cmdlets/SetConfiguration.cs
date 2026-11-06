@@ -61,20 +61,24 @@ public sealed class SetConfiguration : LiraCmdlet
     {
         if (Type == ConfigurationType.ManualChoice)
         {
-            Type = (ConfigurationType)Menu("Choose what kind of authentication you want to use",
-                                           new MenuItem(
+            if (Console.IsInputRedirected)
+            {
+                Terminate(new PSInvalidOperationException("Host does not allow interactivity"), "UnsupportedHost", ErrorCategory.InvalidOperation);
+            }
+            Type = new ChoiceMenu<ConfigurationType>("Choose what kind of authentication you want to use", [
+                                           new MenuItem<ConfigurationType>(
                                                "Personal Access Token",
                                                ConfigurationType.PersonalAccessToken,
                                                "You will be asked to provide a Personal Access Token.\nThe token can be created in your account's settings.\nhttps://developer.atlassian.com/server/jira/platform/personal-access-token/"),
-                                           new MenuItem(
+                                           new MenuItem<ConfigurationType>(
                                                "Username and password",
                                                ConfigurationType.Credentials,
                                                "You will be asked to provide your username and password"),
-                                           new MenuItem(
+                                           new MenuItem<ConfigurationType>(
                                                "Atlassian API key",
                                                ConfigurationType.AttlasianApiKey,
                                                "You will be asked to provide your e-mail and an API key.\nThe key can be created in your Atlassian account's settings.\nhttps://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/")
-                                           )!;
+                                           ]).Show();
         }
     }
     // This method will be called for each input received from the pipeline to this cmdlet; if no input is received, this method is not called

@@ -51,7 +51,10 @@ namespace LiraPS.Cmdlets
         }
         protected override void ProcessRecord()
         {
-            var q = Prompt("Dawaj datę, frajerze", new LiraPS.Completers.JqlDateCurrentArgumentCompleter());
+            var q = new ConsoleMenu.InteractiveMenu<DateTimeOffset>(
+                new DateTimeOffsetDateTransformerAttribute(DateMode.Current),
+                "Dawaj datę, frajerze",
+                new JqlDateCurrentArgumentCompleter()).Show();
             WriteObject(q);
             if (TestBoundParameter(nameof(DateCurrent)))
             { WriteObject(DateCurrent); }

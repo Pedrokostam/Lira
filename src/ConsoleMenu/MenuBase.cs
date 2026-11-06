@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 
 namespace ConsoleMenu;
 
@@ -26,17 +25,7 @@ public abstract partial class MenuBase<T>
 
     protected int WrapIndex(int current, int change, int optionCount)
     {
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(Math.Abs(change), optionCount, nameof(change));
-        var newVal = current + change;
-        if (newVal < 0)
-        {
-            newVal += optionCount;
-        }
-        else if (newVal > optionCount-1)
-        {
-            newVal -= optionCount;
-        }
-        return newVal;
+        return ((current + change) % optionCount + optionCount) % optionCount;
     }
 
     protected void Append(LineParts parts)

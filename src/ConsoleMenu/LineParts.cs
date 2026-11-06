@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace ConsoleMenu;
 
@@ -19,34 +18,35 @@ public class LineParts : IEnumerable<Part>
     /// <returns></returns>
     public (string Text, string PlainText) Format(int minLength = 0, int maxLength = -1)
     {
+        List<Part> parts = [.. _parts];
         var lengthToPad = minLength - Length;
-        if (lengthToPad > 0)
+
+        if (lengthToPad > 0 && (maxLength < 0 || maxLength > lengthToPad))
         {
-            Add(new("".PadLeft(lengthToPad)));
+            parts.Add("".PadLeft(lengthToPad));
         }
-        List<Part> cropParts;
-        if (maxLength < 0)
+        if (maxLength >= 0)
         {
-            cropParts = _parts;
-        }
-        else
-        {
-            cropParts = [];
+            List<Part> cropParts = [];
             int runLength = 0;
-            foreach (var part in _parts)
+            foreach (var part in parts)
             {
-                int len = part.Length;
                 int diff = maxLength - runLength;
-                if (diff < len)
+                if (diff < part.Length)
                 {
-                    cropParts.Add(part with { Text = part.Text.Substring(0, diff) });
+                    if (diff > 0)
+                    {
+                        cropParts.Add(part with { Text = part.Text[..(diff - 1)] + "~" });
+                    }
                     break;
                 }
-                runLength += len;
+                cropParts.Add(part);
+                runLength += part.Length;
             }
+            parts = cropParts;
         }
-        var formatted = string.Join("", _parts.Select(x => x.GetConsoleString(false)));
-        var plain = string.Join("", _parts.Select(x => x.GetConsoleString(true)));
+        var formatted = string.Join("", parts.Select(x => x.GetConsoleString(false)));
+        var plain = string.Join("", parts.Select(x => x.GetConsoleString(true)));
 
         return (formatted, plain);
     }

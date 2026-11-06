@@ -119,14 +119,13 @@ namespace LiraPS.Cmdlets
                 WriteHost("");
                 WriteHost($"The following worklog will be added", ConsoleColor.Cyan);
                 WriteHost("");
-                WriteHost($"     Issue: {Bold}{Issue}{Reset}");
-                WriteHost($"   Started: {Bold}{worklogToAdd.Started.UnambiguousForm()}{Reset}");
-                WriteHost($" TimeSpent: {Bold}{worklogToAdd.TimeSpent.PrettyTime()}{Reset}");
-                string com = string.IsNullOrWhiteSpace(worklogToAdd.Comment) ? $"{Dim}None{Reset}" : worklogToAdd.Comment;
-                WriteHost($"   Comment: {Bold}{com}{Reset}");
+                WriteHost(["     Issue: ", new Part(Issue, GraphicModes.Bold)]);
+                WriteHost(["   Started: ", new Part(worklogToAdd.Started.UnambiguousForm(), GraphicModes.Bold)]);
+                WriteHost([" TimeSpent: ", new Part(worklogToAdd.TimeSpent.PrettyTime(), GraphicModes.Bold)]);
+                Part com = string.IsNullOrWhiteSpace(worklogToAdd.Comment) ? new("None", GraphicModes.Bold | GraphicModes.Dim) : new(worklogToAdd.Comment, GraphicModes.Bold);
+                WriteHost(["   Comment: ", com]);
                 WriteHost("");
-                var choice = ChoiceYesNo($"Is the worklog correct?","Sent this log to the Jira server","Abort and send nothing to the Jira server");
-                if (choice == ChoiceOptions.No)
+                if (!ChoiceYesNo("Is the worklog correct?", "Send this log to the Jira server", "Abort and send nothing to the Jira server"))
                 {
                     UserCancel("worklog adding");
                 }
