@@ -242,6 +242,7 @@ namespace LiraPS.Cmdlets
         //    }
         //}
 
+        public const string Green = "\u001b[92m";
         public const string Reset = "\u001b[0m";
         public const string Invert = "\u001b[7m";
         public const string Bold = "\u001b[1m";

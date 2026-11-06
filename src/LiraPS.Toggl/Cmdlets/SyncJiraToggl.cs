@@ -8,11 +8,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
+using System.Management.Automation.Provider;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 
 namespace LiraPS.Toggl.Cmdlets
 {
-    [Cmdlet(VerbsData.Sync, "LiraJiraToggl", DefaultParameterSetName = "NOCOMMENTS")]
+    [Cmdlet(VerbsData.Sync, "LiraJiraToggl", DefaultParameterSetName = "NORMAL")]
     [OutputType(typeof(Worklog))]
     public sealed class SyncJiraToggl : TogglCmdlet
     {
@@ -26,21 +28,29 @@ namespace LiraPS.Toggl.Cmdlets
         public TogglJiraComparison Comparison { get; set; }
 
         [Parameter(ParameterSetName = "FORCEALL")]
-        [Parameter(ParameterSetName = "NOCOMMENTS")]
+        [Parameter(ParameterSetName = "NOCOMMENTS", Mandatory = true)]
         public SwitchParameter NoComments { get; set; }
 
-        [Parameter(ParameterSetName = "FORCECOMMENTS")]
+        [Parameter(ParameterSetName = "FORCECOMMENTS", Mandatory = true)]
         public SwitchParameter ForceComments { get; set; }
 
-        [Parameter(Mandatory = true, ParameterSetName = "FORCEALL")]
+        [Parameter(ParameterSetName = "FORCEALL", Mandatory = true)]
         public SwitchParameter Force { get; set; }
+        private int IssueWidth { get; set; }
 
         private readonly List<TogglJiraSuggestion> _suggestions = [];
+        public SyncJiraToggl()
+        {
+            _commentSelectionFormatter = new(CommentFormat, ContentFormatComment);
+            _syncSelectionFormatter = new(SyncFormat, ContentFormat);
+        }
+
 
         protected override void ProcessRecord()
         {
             _suggestions.AddRange(Comparison.Suggestions);
         }
+
 
         protected override void EndProcessing()
         {
@@ -62,10 +72,10 @@ namespace LiraPS.Toggl.Cmdlets
             else
             {
                 var menuItemsInitial = _suggestions
-                    .Select(x => new MenuItem(FormatLine(x, issueWidth), x))
+                    .Select(x => new MenuItem(FormatLine(x, issueWidth).Format().PlainText, x))
                     .Select(x => new ToggleMenu<SyncState>.MenuItemWithState(x, SyncState.Take))
                     .ToList();
-                ShowToggleMenu(menuItemsInitial, "Select logs to add", issueWidth, SyncFormat);
+                ShowToggleMenu(menuItemsInitial, "Select logs to add", issueWidth, _syncSelectionFormatter);
                 var selectedMenuItems = menuItemsInitial.Where(x => x.State == SyncState.Take).Select(x => x.Item).ToList();
                 if (selectedMenuItems.Count == 0)
                 {
@@ -98,7 +108,7 @@ namespace LiraPS.Toggl.Cmdlets
                 else
                 {
                     var items = commented.Select(x => new ToggleMenu<CommentState>.MenuItemWithState(x, CommentState.Use)).ToList();
-                    ShowToggleMenu(items, "Select comments to clear", issueWidth, CommentFormat);
+                    ShowToggleMenu(items, "Select comments to clear", issueWidth, _commentSelectionFormatter);
                     var cleared = items.Where(x => x.State == CommentState.Clear).Select(x => x.Payload).OfType<TogglJiraSuggestion>().ToHashSet(ReferenceEqualityComparer.Instance);
                     selected.Clear();
                     for (int i = 0; i < selectedMenuItems.Count; i++)
@@ -121,11 +131,11 @@ namespace LiraPS.Toggl.Cmdlets
             base.EndProcessing();
         }
 
-        private static void ShowToggleMenu<TState>(List<ToggleMenu<TState>.MenuItemWithState> items, string preamble, int issueWidth, Func<TState, string>? formatter) where TState : struct, Enum
+        private static void ShowToggleMenu<TState>(List<ToggleMenu<TState>.MenuItemWithState> items, string preamble, int issueWidth, ToggleMenu<TState>.StateFormat? formatter) where TState : struct, Enum
         {
             int stateWidth = Enum.GetNames<TState>().Max(x => x.Length);
             var header = new string(' ', stateWidth + 4) + FormatHeader(issueWidth);
-            var menu = new ToggleMenu<TState>(header, items, new Part(preamble), stateFormatter: formatter ?? (x => x.ToString().PadRight(stateWidth)), clearAfterFinish: true);
+            var menu = new ToggleMenu<TState>(header, items, new Part(preamble), stateFormatter: formatter, clearAfterFinish: true);
             menu.Show();
         }
 
@@ -136,7 +146,7 @@ namespace LiraPS.Toggl.Cmdlets
             WriteHost(FormatHeader(issueWidth));
             foreach (var log in pending)
             {
-                WriteHost(FormatLine(log, issueWidth));
+                WriteHost(FormatLine(log, issueWidth).Format(Console.BufferWidth).Text);
             }
             WriteHost("");
             if (ChoiceYesNo("Add these worklogs?", "Send the worklogs to the Jira server", "Abort and send nothing to the Jira server") == ChoiceOptions.No)
@@ -202,31 +212,56 @@ namespace LiraPS.Toggl.Cmdlets
 
         private static string FormatHeader(int issueWidth)
         {
-            return $"{"Issue".PadRight(issueWidth)} | {"Started",16} | {"Duration",8} | Comment";
+            return $"    {"Issue".PadRight(issueWidth)} | {"Started",16} | {"Duration",8} | Comment";
         }
 
         // Same columns as the TogglJiraSuggestion view in Formatters/TogglJiraComparison.ps1xml.
-        private static string FormatLine(TogglJiraSuggestion suggestion, int issueWidth)
+        private static LineParts FormatLine(TogglJiraSuggestion suggestion, int issueWidth, GraphicModes mode = GraphicModes.None)
         {
-            return $"{suggestion.Issue.PadRight(issueWidth)}   {suggestion.Started.PrettyDate()}   {suggestion.Duration.PrettyTime(0),8}   {suggestion.Comment ?? $"{Dim}No comment{Reset}"}";
+            var commentMode = string.IsNullOrWhiteSpace(suggestion.Comment) ? GraphicModes.Dim | GraphicModes.Italics : GraphicModes.None;
+            var com = string.IsNullOrWhiteSpace(suggestion.Comment) ? "No comment" : suggestion.Comment;
+            return [
+                new Part(suggestion.Issue.PadRight(issueWidth),mode|GraphicModes.Bold),
+                " | ",
+                new Part(suggestion.Started.PrettyDate(),mode,ConsoleColor.Cyan)
+                ," | ",
+                new Part(suggestion.Duration.PrettyTime(0).PadRight(8),mode,ConsoleColor.Magenta),
+                " | ",
+                new Part(com,commentMode),
+                ];
         }
-        private string SyncFormat(SyncState state)
+        private static LineParts SyncFormat(SyncState state, bool selected)
         {
             return state switch
             {
-                SyncState.Take => "Take",
-
-                _ => $"{Dim}Skip{Reset}",
+                SyncState.Take => [new Part("TAKE", Color: ConsoleColor.Green)],
+                _ => [new Part("SKIP", StartMode: GraphicModes.Dim)],
             };
         }
-        private string CommentFormat(CommentState state)
+        private static LineParts CommentFormat(CommentState state, bool selected)
         {
             return state switch
             {
-                CommentState.Use => "Use  ",
-
-                _ => $"{Dim}Clear{Reset}",
+                CommentState.Use => [new Part(" Use ", Color: ConsoleColor.Green)],
+                _ => [new Part("Clear", StartMode: GraphicModes.Dim)],
             };
         }
+        private LineParts ContentFormat<TState>(TState state, MenuItem item, bool selected) where TState : struct, Enum
+        {
+            return FormatLine((TogglJiraSuggestion)item.Payload!,this.IssueWidth);
+        }
+        private LineParts ContentFormatComment(CommentState state, MenuItem item, bool selected)
+        {
+            var sugg = state switch
+            {
+                CommentState.Use => (TogglJiraSuggestion)item.Payload!,
+                _ => (TogglJiraSuggestion)item.Payload! with { Comment = null },
+            };
+            return FormatLine(sugg, this.IssueWidth);
+        }
+
+        private readonly ToggleMenu<CommentState>.StateFormat _commentSelectionFormatter;
+        private readonly ToggleMenu<SyncState>.StateFormat _syncSelectionFormatter;
+
     }
 }

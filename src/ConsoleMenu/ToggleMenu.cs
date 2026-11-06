@@ -8,6 +8,41 @@ namespace ConsoleMenu;
 
 public class ToggleMenu<TState> : MenuBase<object?> where TState : struct, Enum
 {
+    public class StateFormat
+    {
+        public static StateFormat Default { get; } = new();
+        private static readonly int _stateWidth;
+        private Func<TState, bool, LineParts> _stateFormat { get; }
+        private Func<TState, MenuItem, bool, LineParts> _contentFormat { get; }
+        static StateFormat()
+        {
+            _stateWidth = Enum.GetValues<TState>().Max(x => x.ToString().Length);
+        }
+        public LineParts FormatState(MenuItemWithState item, bool selected) => _stateFormat(item.State, selected);
+        public LineParts FormatState(TState state, bool selected) => _stateFormat(state, selected);
+        public LineParts FormatContent(MenuItemWithState item, bool selected) => _contentFormat(item.State, item.Item, selected);
+        public LineParts FormatContent(TState state, MenuItem item, bool selected) => _contentFormat(state, item, selected);
+        private StateFormat()
+        {
+            _stateFormat = DefaultStateFormat;
+            _contentFormat = DefaultContentFormat;
+        }
+
+        public StateFormat(Func<TState, bool, LineParts>? stateFormat, Func<TState, MenuItem, bool, LineParts>? contentFormat)
+        {
+            _stateFormat = stateFormat ?? DefaultStateFormat;
+            _contentFormat = contentFormat ?? DefaultContentFormat;
+        }
+
+        private static LineParts DefaultStateFormat(TState state, bool selected)
+        {
+            return [new Part(state.ToString().PadRight(_stateWidth))];
+        }
+        private static LineParts DefaultContentFormat(TState state, MenuItem item, bool selected)
+        {
+            return [new(item.Name)];
+        }
+    }
     public class MenuItemWithState
     {
         public MenuItemWithState(MenuItem item, TState state)
@@ -32,7 +67,7 @@ public class ToggleMenu<TState> : MenuBase<object?> where TState : struct, Enum
     public Part? Preamble { get; }
     public Part? Epilogue { get; }
     public bool ClearAfterFinish { get; }
-    public Func<TState, string> StateFormatter { get; init; }
+    public StateFormat StateFormatter { get; init; }
     private List<TState> _states = Enum.GetValues<TState>().ToList();
 
     public ToggleMenu<TState> Add(MenuItemWithState item)
@@ -41,14 +76,14 @@ public class ToggleMenu<TState> : MenuBase<object?> where TState : struct, Enum
         return this;
     }
 
-    public ToggleMenu(string prompt, IEnumerable<MenuItemWithState> items, Part? preamble = null, Part? epilogue = null, bool clearAfterFinish = false, Func<TState, string>? stateFormatter = null)
+    public ToggleMenu(string prompt, IEnumerable<MenuItemWithState> items, Part? preamble = null, Part? epilogue = null, bool clearAfterFinish = false, StateFormat? stateFormatter = null)
     {
         _items.AddRange(items);
         Prompt = prompt;
         Preamble = preamble;
         Epilogue = epilogue;
         ClearAfterFinish = clearAfterFinish;
-        StateFormatter = stateFormatter ?? (x => x.ToString());
+        StateFormatter = stateFormatter ?? StateFormat.Default;
     }
     public override object? Show()
     {
@@ -103,21 +138,28 @@ public class ToggleMenu<TState> : MenuBase<object?> where TState : struct, Enum
             AdvanceLine();
             for (int i = 0; i < _items.Count; i++)
             {
-                string stateFormat = StateFormatter(_items[i].State);
-                Append($" [{stateFormat}] ");
-                if (i == selectedIndex)
+                bool selected = i == selectedIndex;
+                var arrowPre = selected switch
                 {
-                    Append(_items[i].Name, GraphicModes.Invert);
-                }
-                else
+                    true => "==> ",
+                    false => "    "
+                };
+                var arrowPost = selected switch
                 {
-                    Append(_items[i].Name);
-                }
+                    true => " <==",
+                    false => "    "
+                };
+                Append(arrowPre);
+                Append("[");
+                Append(StateFormatter.FormatState(_items[i], selected));
+                Append("] ");
+                Append(" ");
+                Append(StateFormatter.FormatContent(_items[i], selected));
+                Append(arrowPost);
                 AdvanceLine();
             }
             AdvanceLine();
-            Append("Press space to change the state for the selected option; press Enter to accept current states");
-            AdvanceLine();
+
             if (selectedItem.HasTooltip)
             {
                 foreach (var tLine in selectedItem.TooltipLines)
@@ -126,7 +168,14 @@ public class ToggleMenu<TState> : MenuBase<object?> where TState : struct, Enum
                     AdvanceLine();
                 }
             }
-
+            Append(["Press Up/Down or W/S to change selection"]);
+            AdvanceLine();
+            Append(["Press [", new("SPACE", GraphicModes.Bold), "] to toggle state of selected option"]);
+            AdvanceLine();
+            Append(["Press [", new("ENTER", GraphicModes.Bold), "] to accept the current view"]);
+            AdvanceLine();
+            Append(["Press [", new("BACKSPACE", GraphicModes.Bold), "] or [", new("CTRL-C", GraphicModes.Bold), "] to abort"]);
+            AdvanceLine();
             Print();
             var info = Console.ReadKey(intercept: true);
 
@@ -140,11 +189,11 @@ public class ToggleMenu<TState> : MenuBase<object?> where TState : struct, Enum
             {
                 case ConsoleKey.DownArrow:
                 case ConsoleKey.S:
-                    selectedIndex = Math.Clamp(selectedIndex + 1, 0, maxIndex);
+                    selectedIndex = WrapIndex(selectedIndex,+1, _items.Count);
                     break;
                 case ConsoleKey.UpArrow:
                 case ConsoleKey.W:
-                    selectedIndex = Math.Clamp(selectedIndex - 1, 0, maxIndex);
+                    selectedIndex = WrapIndex(selectedIndex, -1, _items.Count);
                     break;
                 case ConsoleKey.Backspace:
                     Terminate();

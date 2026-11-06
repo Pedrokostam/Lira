@@ -80,7 +80,7 @@ public partial record Part(string Text, GraphicModes StartMode = GraphicModes.No
         var start = EscapeStart + string.Join(EscapeSeparator,bufferStart) + EscapeEnd;
         return (start, EscapeReset);
     }
-    //public static implicit operator Part(string txt) => new Part(txt);
+    public static implicit operator Part(string txt) => new Part(txt);
     public int Length => Text.Length;
     public string GetConsoleString(bool plainText = false)
     {

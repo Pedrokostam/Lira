@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 
 namespace ConsoleMenu;
 
@@ -23,27 +24,48 @@ public abstract partial class MenuBase<T>
         Index++;
     }
 
-    protected void Append(char sign, GraphicModes mode = GraphicModes.None, ConsoleColor? color = null) => Append(sign.ToString(), mode,color);
-    protected void Append(string text, GraphicModes mode=GraphicModes.None, ConsoleColor? color =null)
+    protected int WrapIndex(int current, int change, int optionCount)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(Math.Abs(change), optionCount, nameof(change));
+        var newVal = current + change;
+        if (newVal < 0)
+        {
+            newVal += optionCount;
+        }
+        else if (newVal > optionCount-1)
+        {
+            newVal -= optionCount;
+        }
+        return newVal;
+    }
+
+    protected void Append(LineParts parts)
+    {
+
+        while (QueuedLines.Count <= Index)
+        {
+            QueuedLines.Add([]);
+        }
+        var thisQueuedLine = QueuedLines[Index];
+        thisQueuedLine.AddRange(parts);
+    }
+    protected void Append(Part part)
+    {
+        while (QueuedLines.Count <= Index)
+        {
+            QueuedLines.Add([]);
+        }
+        var thisQueuedLine = QueuedLines[Index];
+        thisQueuedLine.Add(part);
+    }
+    protected void Append(char sign, GraphicModes mode = GraphicModes.None, ConsoleColor? color = null) => Append(sign.ToString(), mode, color);
+    protected void Append(string text, GraphicModes mode = GraphicModes.None, ConsoleColor? color = null)
     {
         var lines = Part.NewLineFinder().Split(text);
 
         foreach (var line in lines)
         {
-            while (QueuedLines.Count <= Index)
-            {
-                QueuedLines.Add([]);
-            }
-            var thisQueuedLine = QueuedLines[Index];
-            int diff = BufferWidth - thisQueuedLine.Length;
-            if (line.Length < diff)
-            {
-                thisQueuedLine.Add(new Part(line, mode,color));
-            }
-            else
-            {
-                thisQueuedLine.Add(new Part(CroPad(line, diff - 1), mode, color));
-            }
+            Append(new Part(line, mode, color));
         }
     }
     //protected void AppendLine(string text, GraphicModes wrap) => AppendLine(text, wrap, GraphicModes.Reset);
@@ -76,10 +98,9 @@ public abstract partial class MenuBase<T>
             {
                 var len = Console.BufferWidth;
                 //var len = toClear.ElementAtOrDefault(i);
-                var (text, printableLength) = QueuedLines[i].Format(len);
-                var (plainText, _) = QueuedLines[i].Format(len, true);
+                var (text, plainText) = QueuedLines[i].Format(len, currentWidth);
                 s += plainText + "\r\n";
-                PreviousLineLengths.Add(printableLength);
+                PreviousLineLengths.Add(plainText.Length);
                 Console.WriteLine(text);
             }
             QueuedLines[i].Clear();
@@ -165,7 +186,7 @@ public abstract partial class MenuBase<T>
     protected void UpdateBufferWidth()
     {
         var interim = Console.BufferWidth;
-        if (interim != BufferWidth && BufferWidth>=0)
+        if (interim != BufferWidth && BufferWidth >= 0)
         {
             ClearToBottom();
             PreviousLineLengths.Clear();

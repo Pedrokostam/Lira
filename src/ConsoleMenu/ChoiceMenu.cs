@@ -76,19 +76,24 @@ public class ChoiceMenu : MenuBase<object?>
             AdvanceLine();
             for (int i = 0; i < _items.Count; i++)
             {
+                bool selected = i== selectedIndex;
                 string formatedIndex = (i + 1).ToString().PadLeft(indexWidth, '0');
-                if (i == selectedIndex)
+                var arrowPre = selected switch
                 {
-                    Append($" [{formatedIndex}] ");
-                    Append(_items[i].Name, GraphicModes.Invert);
-                    AdvanceLine();
-                }
-                else
+                    false => "==> ",
+                    true =>  "    "
+                };
+                var arrowPost = selected switch
                 {
-                    Append($"  {formatedIndex}  ");
-                    Append(_items[i].Name);
-                    AdvanceLine();
-                }
+                    false => " <==",
+                    true =>  "    "
+                };
+                Append(arrowPre);
+                Append(formatedIndex);
+                Append(" ");
+                Append(_items[i].Name);
+                Append(arrowPost);
+                AdvanceLine();
             }
             AdvanceLine();
             if (selectedItem.HasTooltip)
@@ -99,6 +104,12 @@ public class ChoiceMenu : MenuBase<object?>
                     AdvanceLine();
                 }
             }
+
+            Append(["Press Up/Down or W/S to change selection"]);
+            AdvanceLine();
+            Append(["Press [", new("ENTER", GraphicModes.Bold), "] to accept the current view"]);
+            AdvanceLine();
+            Append(["Press [", new("BACKSPACE", GraphicModes.Bold), "] or [", new("CTRL-C", GraphicModes.Bold), "] to abort"]);
 
             Print();
             var info = Console.ReadKey(intercept: true);
@@ -113,11 +124,11 @@ public class ChoiceMenu : MenuBase<object?>
             {
                 case ConsoleKey.DownArrow:
                 case ConsoleKey.S:
-                    selectedIndex = Math.Clamp(selectedIndex + 1, 0, maxIndex);
+                    selectedIndex = WrapIndex(selectedIndex, +1, maxIndex);
                     break;
                 case ConsoleKey.UpArrow:
                 case ConsoleKey.W:
-                    selectedIndex = Math.Clamp(selectedIndex - 1, 0, maxIndex);
+                    selectedIndex = WrapIndex(selectedIndex, -1, maxIndex);
                     break;
                 case ConsoleKey.Backspace:
                     Terminate();
